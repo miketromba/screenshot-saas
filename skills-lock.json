@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "computedHash": "34bde65aabea7d757dffb84f68e9f25bc79a12b77042511515b9c820a1d107f8"
+    },
+    "bun": {
+      "source": "miketromba/skills",
+      "sourceType": "github",
+      "computedHash": "814e3657bbbeabae085259c2f7dd35b44dba110f2f9eba4c2085268c2c6d2e7b"
+    },
+    "drizzle": {
+      "source": "miketromba/skills",
+      "sourceType": "github",
+      "computedHash": "4c1c8c2fbce62de0b57c8157e13463d47ba2ca807c6ae8c7bb9ca23ab3a1a369"
+    },
+    "elysiajs": {
+      "source": "elysiajs/skills",
+      "sourceType": "github",
+      "computedHash": "55268e69a2c766ed67e56a0db57544f60cc52dba0c7f024a974baf965e525e1b"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
+    },
+    "fumadocs": {
+      "source": "miketromba/skills",
+      "sourceType": "github",
+      "computedHash": "905bd70c73402a90c33e567f21990a86e9cff5ef0977b0f15f38d73812bc28ed"
+    },
+    "issue-tracking": {
+      "source": "miketromba/issy",
+      "sourceType": "github",
+      "computedHash": "d93af1c1e4b99142bf73ec3ab52da4126f5afa40acd12c0d1d97b483d611e35e"
+    },
+    "legal-tos-privacy": {
+      "source": "miketromba/skills",
+      "sourceType": "github",
+      "computedHash": "1b8ac6e82c43c42dc19b43beadcf3fa88410810add545b9c3aef280cff90906e"
+    },
+    "polar": {
+      "source": "miketromba/polar-cli",
+      "sourceType": "github",
+      "computedHash": "999d40e3d1582300bb5bfdd02a0c46393b1fccba36f8fcf0aabb76e28a30e45c"
+    },
+    "resend": {
+      "source": "resend/resend-skills",
+      "sourceType": "github",
+      "computedHash": "e756972f463d161f3c227eab41d119fd7430249736bc770d00b21c3eeb68f91a"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "computedHash": "2174b5ef380de7df689c0c1ca95d3c0fcd75672b6ab1ba886e39358cc18296f4"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "f98931159fa9c7fed043bcd18a891a46dcf89ababa38df13a4c5b7b30dc0ce07"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "bbc31a48537b473ff4feea6360ef0de3bfdcbef26c14f4967a5deefe8ca801d3"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    }
+  }
+}

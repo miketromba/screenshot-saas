@@ -1,0 +1,23 @@
+{
+	"name": "@screenshot-saas/db",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"db:generate": "drizzle-kit generate",
+		"db:generate:custom": "drizzle-kit generate --custom",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.45.1",
+		"postgres": "^3.4.8",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"drizzle-kit": "^0.31.10"
+	}
+}

@@ -1,0 +1,4 @@
+bunx biome check --write --staged --no-errors-on-unmatched --log-level=warn
+git update-index --again
+bunx turbo typecheck --output-logs=errors-only
+bunx turbo test --output-logs=errors-only
