@@ -1,50 +1,61 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 export default function SignUpPage() {
-	const _router = useRouter()
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(false)
 	const [success, setSuccess] = useState(false)
+	const configured = isSupabaseConfigured()
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		setError(null)
 		setLoading(true)
 
-		const supabase = createClient()
-		const { error: authError } = await supabase.auth.signUp({
-			email,
-			password,
-			options: {
-				emailRedirectTo: `${window.location.origin}/auth/callback`
+		try {
+			const supabase = createClient()
+			const { error: authError } = await supabase.auth.signUp({
+				email,
+				password,
+				options: {
+					emailRedirectTo: `${window.location.origin}/auth/callback`
+				}
+			})
+
+			if (authError) {
+				setError(authError.message)
+				setLoading(false)
+				return
 			}
-		})
 
-		if (authError) {
-			setError(authError.message)
+			setSuccess(true)
 			setLoading(false)
-			return
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Sign up failed')
+			setLoading(false)
 		}
-
-		setSuccess(true)
-		setLoading(false)
 	}
 
 	async function handleOAuth(provider: 'github' | 'google') {
-		const supabase = createClient()
-		await supabase.auth.signInWithOAuth({
-			provider,
-			options: {
-				redirectTo: `${window.location.origin}/auth/callback`
-			}
-		})
+		try {
+			const supabase = createClient()
+			const { error: oauthError } = await supabase.auth.signInWithOAuth({
+				provider,
+				options: {
+					redirectTo: `${window.location.origin}/auth/callback`
+				}
+			})
+			if (oauthError) setError(oauthError.message)
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : 'OAuth sign-in failed'
+			)
+		}
 	}
 
 	if (success) {
@@ -88,11 +99,23 @@ export default function SignUpPage() {
 				</p>
 			</div>
 
+			{!configured && (
+				<div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+					<p className="font-medium">Auth not configured</p>
+					<p className="mt-1 text-xs opacity-80">
+						Set NEXT_PUBLIC_SUPABASE_URL and
+						NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment
+						variables to enable authentication.
+					</p>
+				</div>
+			)}
+
 			<div className="space-y-3">
 				<button
 					type="button"
 					onClick={() => handleOAuth('github')}
-					className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+					disabled={!configured}
+					className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<svg
 						className="h-4 w-4"
@@ -106,7 +129,8 @@ export default function SignUpPage() {
 				<button
 					type="button"
 					onClick={() => handleOAuth('google')}
-					className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+					disabled={!configured}
+					className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					<svg className="h-4 w-4" viewBox="0 0 24 24">
 						<path
@@ -158,7 +182,8 @@ export default function SignUpPage() {
 						onChange={e => setEmail(e.target.value)}
 						placeholder="you@example.com"
 						required
-						className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+						disabled={!configured}
+						className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -173,12 +198,13 @@ export default function SignUpPage() {
 						placeholder="••••••••"
 						minLength={8}
 						required
-						className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+						disabled={!configured}
+						className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 					/>
 				</div>
 				<button
 					type="submit"
-					disabled={loading}
+					disabled={loading || !configured}
 					className="w-full cursor-pointer rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					{loading ? 'Creating account...' : 'Create account'}
