@@ -1,7 +1,7 @@
 import { db, eq, schema } from '@screenshot-saas/db'
 import { Elysia, t } from 'elysia'
 import { sessionAuth } from '../middleware/session-auth'
-import { checkAutoTopup, deductCredit, getBalance } from '../services/credits'
+import { deductCredit, getBalance } from '../services/credits'
 import { type ScreenshotOptions, takeScreenshot } from '../services/screenshot'
 
 export const playgroundRoutes = new Elysia({
@@ -71,8 +71,6 @@ export const playgroundRoutes = new Elysia({
 						.where(eq(schema.screenshots.id, screenshotId))
 						.execute()
 				}
-
-				checkAutoTopup(user.id).catch(() => {})
 
 				set.headers['content-type'] = contentType
 				set.headers['x-credits-remaining'] = String(

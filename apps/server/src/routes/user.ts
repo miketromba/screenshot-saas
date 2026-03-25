@@ -23,22 +23,11 @@ export const userRoutes = new Elysia({
 
 		const balance = await getBalance(user.id)
 
-		const autoTopup = await db.query.autoTopupConfigs.findFirst({
-			where: eq(schema.autoTopupConfigs.userId, user.id)
-		})
-
 		return {
 			id: user.id,
 			email: user.email ?? profile?.email ?? '',
 			displayName: profile?.displayName ?? null,
 			balance,
-			autoTopup: autoTopup
-				? {
-						enabled: autoTopup.enabled,
-						threshold: autoTopup.threshold,
-						packId: autoTopup.packId
-					}
-				: null,
 			createdAt: profile?.created_at ?? null
 		}
 	})

@@ -6,34 +6,33 @@ export const PRODUCT_DESCRIPTION =
 export const SUPPORT_EMAIL = 'support@screenshotapi.to'
 
 export const FREE_CREDITS = 5
-export const DEFAULT_AUTO_TOPUP_THRESHOLD = 10
 
 export const CREDIT_PACKS = [
 	{
 		name: 'Starter',
-		credits: 100,
-		priceCents: 500,
+		credits: 500,
+		priceCents: 2000,
 		isPopular: false,
 		sortOrder: 0
 	},
 	{
 		name: 'Growth',
-		credits: 500,
-		priceCents: 2000,
+		credits: 2_000,
+		priceCents: 6000,
 		isPopular: true,
 		sortOrder: 1
 	},
 	{
 		name: 'Pro',
-		credits: 2_000,
-		priceCents: 6000,
+		credits: 10_000,
+		priceCents: 20_000,
 		isPopular: false,
 		sortOrder: 2
 	},
 	{
 		name: 'Scale',
-		credits: 10_000,
-		priceCents: 20_000,
+		credits: 50_000,
+		priceCents: 75_000,
 		isPopular: false,
 		sortOrder: 3
 	}

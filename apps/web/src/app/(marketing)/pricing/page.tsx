@@ -10,31 +10,31 @@ export const metadata: Metadata = {
 const packs = [
 	{
 		name: 'Starter',
-		credits: 100,
-		price: 5,
-		perCredit: '0.050',
+		credits: 500,
+		price: 20,
+		perCredit: '0.040',
 		description: 'Perfect for side projects and prototypes'
 	},
 	{
 		name: 'Growth',
-		credits: 500,
-		price: 20,
-		perCredit: '0.040',
+		credits: 2_000,
+		price: 60,
+		perCredit: '0.030',
 		popular: true,
 		description: 'Great for growing applications'
 	},
 	{
 		name: 'Pro',
-		credits: 2_000,
-		price: 60,
-		perCredit: '0.030',
+		credits: 10_000,
+		price: 200,
+		perCredit: '0.020',
 		description: 'For production workloads'
 	},
 	{
 		name: 'Scale',
-		credits: 10_000,
-		price: 200,
-		perCredit: '0.020',
+		credits: 50_000,
+		price: 750,
+		perCredit: '0.015',
 		description: 'Best value for high-volume use'
 	}
 ]

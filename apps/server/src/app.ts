@@ -1,7 +1,6 @@
 import { cors } from '@elysiajs/cors'
 import { Elysia } from 'elysia'
 import { apiKeyRoutes } from './routes/api-keys'
-import { autoTopupRoutes } from './routes/auto-topup'
 import { creditRoutes } from './routes/credits'
 import { playgroundRoutes } from './routes/playground'
 import { screenshotRoutes } from './routes/screenshot'
@@ -22,7 +21,6 @@ export const app = new Elysia({ prefix: '/api' })
 			.use(creditRoutes)
 			.use(usageRoutes)
 			.use(userRoutes)
-			.use(autoTopupRoutes)
 			.use(playgroundRoutes)
 	)
 	.use(webhookRoutes)

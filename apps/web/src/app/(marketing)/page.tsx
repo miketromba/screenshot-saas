@@ -104,16 +104,16 @@ const steps = [
 ]
 
 const packs = [
-	{ name: 'Starter', credits: 100, price: 5, perCredit: '0.050' },
+	{ name: 'Starter', credits: 500, price: 20, perCredit: '0.040' },
 	{
 		name: 'Growth',
-		credits: 500,
-		price: 20,
-		perCredit: '0.040',
+		credits: 2_000,
+		price: 60,
+		perCredit: '0.030',
 		popular: true
 	},
-	{ name: 'Pro', credits: 2_000, price: 60, perCredit: '0.030' },
-	{ name: 'Scale', credits: 10_000, price: 200, perCredit: '0.020' }
+	{ name: 'Pro', credits: 10_000, price: 200, perCredit: '0.020' },
+	{ name: 'Scale', credits: 50_000, price: 750, perCredit: '0.015' }
 ]
 
 export default function HomePage() {
