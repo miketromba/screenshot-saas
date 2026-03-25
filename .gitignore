@@ -8,6 +8,6 @@ dist/
 .env.*.local
 *.tsbuildinfo
 .DS_Store
-bun.lock
+# bun.lock is included for Vercel deployment reproducibility
 .source/
 .vercel
