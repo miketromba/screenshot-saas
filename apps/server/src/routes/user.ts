@@ -1,7 +1,7 @@
 import { db, eq, schema } from '@screenshot-saas/db'
 import { Elysia } from 'elysia'
 import { sessionAuth } from '../middleware/session-auth'
-import { getBalance } from '../services/credits'
+import { getBalance, initializeCredits } from '../services/credits'
 
 export const userRoutes = new Elysia({
 	name: 'user-routes',
@@ -12,6 +12,14 @@ export const userRoutes = new Elysia({
 		const profile = await db.query.profiles.findFirst({
 			where: eq(schema.profiles.id, user.id)
 		})
+
+		const existingBalance = await db.query.creditBalances.findFirst({
+			where: eq(schema.creditBalances.userId, user.id)
+		})
+
+		if (!existingBalance) {
+			await initializeCredits(user.id)
+		}
 
 		const balance = await getBalance(user.id)
 
