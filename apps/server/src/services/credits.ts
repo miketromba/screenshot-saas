@@ -1,5 +1,5 @@
 import { FREE_CREDITS } from '@screenshot-saas/config'
-import { db, eq, schema, sql } from '@screenshot-saas/db'
+import { and, db, eq, ne, schema, sql } from '@screenshot-saas/db'
 
 export async function getBalance(userId: string): Promise<number> {
 	const row = await db.query.creditBalances.findFirst({
@@ -115,7 +115,10 @@ export async function getTransactions({
 	offset?: number
 }) {
 	return db.query.creditTransactions.findMany({
-		where: eq(schema.creditTransactions.userId, userId),
+		where: and(
+			eq(schema.creditTransactions.userId, userId),
+			ne(schema.creditTransactions.type, 'usage')
+		),
 		orderBy: (t, { desc }) => [desc(t.createdAt)],
 		limit,
 		offset
