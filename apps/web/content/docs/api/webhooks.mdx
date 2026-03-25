@@ -1,13 +1,13 @@
 ---
 title: Webhooks
-description: How ScreenshotAPI processes Stripe webhooks for payment events.
+description: How ScreenshotAPI processes Polar webhooks for payment events.
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
 
 ## Overview
 
-ScreenshotAPI uses Stripe webhooks to process payment events. When a user purchases credits through Stripe Checkout, a webhook event is sent to our server to fulfill the order by adding credits to the user's account.
+ScreenshotAPI uses Polar webhooks to process payment events. When a user purchases credits through Polar Checkout, a webhook event is sent to our server to fulfill the order by adding credits to the user's account.
 
 <Callout type="info">
 Webhooks are handled server-side and are not something you need to configure as an API consumer. This documentation is provided for transparency and for developers integrating with the ScreenshotAPI platform.
@@ -16,52 +16,44 @@ Webhooks are handled server-side and are not something you need to configure as 
 ## Webhook Endpoint
 
 ```
-POST /api/v1/webhooks/stripe
+POST /api/webhooks/polar
 ```
 
-This endpoint receives events from Stripe. All events are verified using the `stripe-signature` header and the webhook signing secret configured on the server.
+This endpoint receives events from Polar. All events are verified using the [Standard Webhooks](https://www.standardwebhooks.com/) signature verification method with the `webhook-id`, `webhook-timestamp`, and `webhook-signature` headers.
 
 ## Handled Events
 
-### `checkout.session.completed`
+### `checkout.updated`
 
-Fired when a user completes a credit pack purchase through Stripe Checkout.
-
-**Processing logic:**
-
-1. Extract `userId`, `credits`, and `packId` from the session metadata.
-2. Add the specified number of credits to the user's account.
-3. Record a `purchase` transaction in the credit history.
-
-### `payment_intent.succeeded`
-
-Fired when a payment intent succeeds. Used specifically for auto top-up payments.
+Fired when a checkout session is updated. We process this event when the checkout `status` becomes `succeeded`.
 
 **Processing logic:**
 
-1. Check if the payment intent metadata contains `type: "auto_topup"`.
-2. If so, extract `userId` and `credits` from the metadata.
-3. Add the credits to the user's account.
-4. Record an `auto_topup` transaction in the credit history.
+1. Verify the webhook signature using the Polar webhook secret.
+2. Check that the event type is `checkout.updated` and status is `succeeded`.
+3. Extract `userId`, `credits`, and `packId` from the checkout metadata.
+4. Add the specified number of credits to the user's account.
+5. Record a `purchase` transaction in the credit history.
 
 ## Security
 
 ### Signature Verification
 
-Every incoming webhook request is verified using Stripe's signature verification:
+Every incoming webhook request is verified using the Standard Webhooks specification. The following headers are validated:
 
 ```
-stripe-signature: t=1234567890,v1=abc123def456...
+webhook-id: msg_abc123
+webhook-timestamp: 1234567890
+webhook-signature: v1,abc123def456...
 ```
 
-If the signature is missing or invalid, the webhook returns a `400` error and the event is discarded. This prevents replay attacks and ensures events genuinely originate from Stripe.
+If the signature is invalid, the webhook returns a `403` error and the event is discarded. This prevents replay attacks and ensures events genuinely originate from Polar.
 
 ### Error Responses
 
 | Status | Body | Description |
 |---|---|---|
-| `400` | `{"error": "Missing stripe-signature header"}` | No signature header was provided |
-| `400` | `{"error": "Invalid webhook signature"}` | Signature verification failed |
+| `403` | `{"error": "Invalid webhook signature"}` | Signature verification failed |
 
 ### Success Response
 
@@ -77,30 +69,22 @@ Here's the complete payment flow involving webhooks:
 
 1. User selects a credit pack in the dashboard.
 2. Frontend calls `POST /api/v1/credits/purchase` with the `packId`.
-3. Server creates a Stripe Checkout session with user metadata.
-4. User is redirected to Stripe Checkout to complete payment.
-5. After successful payment, Stripe sends a `checkout.session.completed` event to our webhook.
+3. Server creates a Polar Checkout session with user metadata.
+4. User is redirected to Polar Checkout to complete payment.
+5. After successful payment, Polar sends a `checkout.updated` event to our webhook.
 6. Webhook handler verifies the signature, extracts the metadata, and adds credits.
 7. User is redirected back to the dashboard where their updated balance is visible.
 
-## Auto Top-Up Flow
-
-1. User configures auto top-up with a threshold and credit pack in the dashboard.
-2. When a screenshot is taken and the credit balance drops below the threshold, the server creates a Stripe PaymentIntent with auto-topup metadata.
-3. Stripe processes the payment against the user's saved payment method.
-4. On success, Stripe sends a `payment_intent.succeeded` event.
-5. Webhook handler verifies the event and adds credits to the user's account.
-
 ## Testing Webhooks Locally
 
-If you're developing against the ScreenshotAPI platform or running it locally, you can use the Stripe CLI to forward webhook events:
+If you're developing against the ScreenshotAPI platform or running it locally, you can use a tunneling service like ngrok to forward webhook events:
 
 ```bash
-stripe listen --forward-to localhost:3001/api/v1/webhooks/stripe
+ngrok http 3001
 ```
 
-The CLI will output a webhook signing secret (starting with `whsec_`) that you should set as your `STRIPE_WEBHOOK_SECRET` environment variable.
+Then register the ngrok URL as your webhook endpoint in the Polar dashboard (e.g., `https://your-id.ngrok.io/api/webhooks/polar`). Set the `POLAR_WEBHOOK_SECRET` environment variable to match the secret configured in Polar.
 
 ## Idempotency
 
-Webhook handlers are designed to be idempotent. If the same event is delivered multiple times (which Stripe may do for reliability), credits are only added once because each transaction references the unique Stripe session or payment intent ID.
+Webhook handlers are designed to be idempotent. If the same event is delivered multiple times (which Polar may do for reliability), credits are only added once because each transaction references the unique Polar checkout ID.

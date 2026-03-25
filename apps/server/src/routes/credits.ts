@@ -6,7 +6,7 @@ import {
 	getTransactions,
 	initializeCredits
 } from '../services/credits'
-import { stripe as stripeService } from '../services/stripe'
+import { polar } from '../services/polar'
 
 export const creditRoutes = new Elysia({
 	name: 'credit-routes',
@@ -61,20 +61,24 @@ export const creditRoutes = new Elysia({
 				return { error: 'Credit pack not found' }
 			}
 
+			if (!pack.stripePriceId) {
+				set.status = 500
+				return { error: 'Product not configured for this pack' }
+			}
+
 			const appUrl =
 				process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-			const session = await stripeService.createCheckoutSession({
+			const checkout = await polar.createCheckout({
 				userId: user.id,
 				packId: pack.id,
 				packName: pack.name,
 				credits: pack.credits,
-				priceCents: pack.priceCents,
-				successUrl: `${appUrl}/dashboard/credits?success=true`,
-				cancelUrl: `${appUrl}/dashboard/credits?canceled=true`
+				productId: pack.stripePriceId,
+				successUrl: `${appUrl}/dashboard/credits?success=true`
 			})
 
-			return { checkoutUrl: session.url }
+			return { checkoutUrl: checkout.url }
 		},
 		{
 			body: t.Object({

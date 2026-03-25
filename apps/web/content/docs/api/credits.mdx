@@ -154,7 +154,7 @@ for pack in response.json():
 POST /api/v1/credits/purchase
 ```
 
-Initiates a credit purchase by creating a Stripe Checkout session. Returns a URL to redirect the user to complete payment. Requires session authentication.
+Initiates a credit purchase by creating a Polar Checkout session. Returns a URL to redirect the user to complete payment. Requires session authentication.
 
 ### Request Body
 
@@ -166,7 +166,7 @@ Initiates a credit purchase by creating a Stripe Checkout session. Returns a URL
 
 ```json
 {
-  "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_live_..."
+  "checkoutUrl": "https://polar.sh/checkout/..."
 }
 ```
 
@@ -175,6 +175,7 @@ Initiates a credit purchase by creating a Stripe Checkout session. Returns a URL
 | Status | Body | Description |
 |---|---|---|
 | `404` | `{"error": "Credit pack not found"}` | Pack ID doesn't exist or is inactive |
+| `500` | `{"error": "Product not configured for this pack"}` | Polar product ID not set for pack |
 
 ### Example
 
@@ -222,8 +223,8 @@ print(f"Complete payment at: {checkout_url}")
 
 1. Call `/credits/purchase` with the desired `packId`.
 2. Redirect the user to the returned `checkoutUrl`.
-3. The user completes payment on Stripe's hosted checkout page.
-4. On success, Stripe sends a webhook to `/api/v1/webhooks/stripe`.
+3. The user completes payment on Polar's hosted checkout page.
+4. On success, Polar sends a webhook to `/api/webhooks/polar`.
 5. Credits are automatically added to the user's balance.
 6. The user is redirected back to the dashboard.
 
@@ -263,7 +264,7 @@ Returns an array of transactions ordered by creation date (newest first).
     "type": "purchase",
     "amount": 1000,
     "description": "Purchased 1,000 credits",
-    "referenceId": "cs_live_abc123",
+    "referenceId": "checkout_abc123",
     "createdAt": "2026-03-24T12:00:00.000Z"
   },
   {
@@ -281,7 +282,7 @@ Returns an array of transactions ordered by creation date (newest first).
 
 | Type | Description |
 |---|---|
-| `purchase` | Credits purchased via Stripe checkout |
+| `purchase` | Credits purchased via Polar checkout |
 | `auto_topup` | Credits added via automatic top-up |
 | `usage` | Credits deducted for a screenshot (amount is negative) |
 | `signup_bonus` | Free credits awarded on account creation |

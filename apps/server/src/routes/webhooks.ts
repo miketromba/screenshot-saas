@@ -1,33 +1,33 @@
 import { Elysia } from 'elysia'
 import { addCredits } from '../services/credits'
-import { stripe as stripeService } from '../services/stripe'
+import { polar, WebhookVerificationError } from '../services/polar'
 
 export const webhookRoutes = new Elysia({
 	name: 'webhook-routes',
 	prefix: '/webhooks'
-}).post('/stripe', async ({ request, set }) => {
+}).post('/polar', async ({ request, set }) => {
 	const body = await request.text()
-	const signature = request.headers.get('stripe-signature')
+	const headers: Record<string, string> = {}
+	request.headers.forEach((value, key) => {
+		headers[key] = value
+	})
 
-	if (!signature) {
-		set.status = 400
-		return { error: 'Missing stripe-signature header' }
-	}
-
-	let event: Awaited<ReturnType<typeof stripeService.constructWebhookEvent>>
+	let event: ReturnType<typeof polar.verifyWebhookSignature>
 	try {
-		event = await stripeService.constructWebhookEvent(body, signature)
-	} catch {
-		set.status = 400
-		return { error: 'Invalid webhook signature' }
+		event = polar.verifyWebhookSignature({ body, headers })
+	} catch (error) {
+		if (error instanceof WebhookVerificationError) {
+			set.status = 403
+			return { error: 'Invalid webhook signature' }
+		}
+		throw error
 	}
 
-	switch (event.type) {
-		case 'checkout.session.completed': {
-			const session = event.data.object
-			const userId = session.metadata?.userId
-			const credits = Number(session.metadata?.credits)
-			const _packName = session.metadata?.packId ?? 'Credit pack purchase'
+	if (event.type === 'checkout.updated') {
+		const checkout = event.data
+		if (checkout.status === 'succeeded') {
+			const userId = checkout.metadata?.userId as string | undefined
+			const credits = Number(checkout.metadata?.credits)
 
 			if (userId && credits > 0) {
 				await addCredits({
@@ -35,27 +35,9 @@ export const webhookRoutes = new Elysia({
 					amount: credits,
 					type: 'purchase',
 					description: `Purchased ${credits.toLocaleString()} credits`,
-					referenceId: session.id
+					referenceId: checkout.id
 				})
 			}
-			break
-		}
-		case 'payment_intent.succeeded': {
-			const intent = event.data.object
-			if (intent.metadata?.type === 'auto_topup') {
-				const userId = intent.metadata.userId
-				const credits = Number(intent.metadata.credits)
-				if (userId && credits > 0) {
-					await addCredits({
-						userId,
-						amount: credits,
-						type: 'auto_topup',
-						description: `Auto top-up: ${credits.toLocaleString()} credits`,
-						referenceId: intent.id
-					})
-				}
-			}
-			break
 		}
 	}
 

@@ -250,18 +250,18 @@ export default function PrivacyPage() {
 					</thead>
 					<tbody>
 						<tr>
-							<td>Stripe</td>
+							<td>Polar</td>
 							<td>Payment processing</td>
 							<td>
 								Email, payment details, transaction metadata
 							</td>
 							<td>
 								<a
-									href="https://stripe.com/privacy"
+									href="https://polar.sh/legal/privacy"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									stripe.com/privacy
+									polar.sh/legal/privacy
 								</a>
 							</td>
 						</tr>
@@ -361,8 +361,8 @@ export default function PrivacyPage() {
 							<td>Financial record-keeping and tax compliance</td>
 						</tr>
 						<tr>
-							<td>Payment records (via Stripe)</td>
-							<td>As required by Stripe and applicable law</td>
+							<td>Payment records (via Polar)</td>
+							<td>As required by Polar and applicable law</td>
 							<td>Financial compliance and dispute resolution</td>
 						</tr>
 						<tr>
@@ -403,8 +403,8 @@ export default function PrivacyPage() {
 						industry-standard bcrypt hashing.
 					</li>
 					<li>
-						Payment information is processed and stored by Stripe,
-						which is PCI DSS Level 1 certified.
+						Payment information is processed and stored by Polar,
+						our merchant of record.
 					</li>
 					<li>
 						Database access is restricted and requires authenticated
@@ -609,7 +609,7 @@ export default function PrivacyPage() {
 					</li>
 					<li>
 						The data protection commitments of our service providers
-						(Supabase, Stripe, and Vercel each maintain appropriate
+						(Supabase, Polar, and Vercel each maintain appropriate
 						data transfer mechanisms).
 					</li>
 				</ul>

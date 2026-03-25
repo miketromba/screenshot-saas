@@ -1,49 +1,45 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { Elysia } from 'elysia'
 
-const VALID_SIG = 'whsec_test_valid_signature'
-
 let addedCredits: Array<{
 	userId: string
 	amount: number
 	type: string
 }> = []
 
-async function mockConstructWebhookEvent(body: string, signature: string) {
-	if (signature !== VALID_SIG) throw new Error('Invalid signature')
+function mockVerifyWebhook(body: string, headers: Record<string, string>) {
+	if (headers['webhook-id'] !== 'valid') throw new Error('Invalid signature')
 	return JSON.parse(body) as {
 		type: string
-		data: { object: Record<string, unknown> }
+		data: Record<string, unknown>
 	}
 }
 
 const app = new Elysia({ prefix: '/webhooks' }).post(
-	'/stripe',
+	'/polar',
 	async ({ request, set }) => {
 		const body = await request.text()
-		const signature = request.headers.get('stripe-signature')
+		const headers: Record<string, string> = {}
+		request.headers.forEach((value, key) => {
+			headers[key] = value
+		})
 
-		if (!signature) {
-			set.status = 400
-			return { error: 'Missing stripe-signature header' }
-		}
-
-		let event: Awaited<ReturnType<typeof mockConstructWebhookEvent>>
+		let event: ReturnType<typeof mockVerifyWebhook>
 		try {
-			event = await mockConstructWebhookEvent(body, signature)
+			event = mockVerifyWebhook(body, headers)
 		} catch {
-			set.status = 400
+			set.status = 403
 			return { error: 'Invalid webhook signature' }
 		}
 
-		switch (event.type) {
-			case 'checkout.session.completed': {
-				const session = event.data.object as Record<string, unknown>
-				const meta = session.metadata as
+		if (event.type === 'checkout.updated') {
+			const checkout = event.data
+			if (checkout.status === 'succeeded') {
+				const metadata = checkout.metadata as
 					| Record<string, string>
 					| undefined
-				const userId = meta?.userId
-				const credits = Number(meta?.credits)
+				const userId = metadata?.userId
+				const credits = Number(metadata?.credits)
 				if (userId && credits > 0) {
 					addedCredits.push({
 						userId,
@@ -51,25 +47,6 @@ const app = new Elysia({ prefix: '/webhooks' }).post(
 						type: 'purchase'
 					})
 				}
-				break
-			}
-			case 'payment_intent.succeeded': {
-				const intent = event.data.object as Record<string, unknown>
-				const meta = intent.metadata as
-					| Record<string, string>
-					| undefined
-				if (meta?.type === 'auto_topup') {
-					const userId = meta.userId
-					const credits = Number(meta.credits)
-					if (userId && credits > 0) {
-						addedCredits.push({
-							userId,
-							amount: credits,
-							type: 'auto_topup'
-						})
-					}
-				}
-				break
 			}
 		}
 
@@ -78,7 +55,7 @@ const app = new Elysia({ prefix: '/webhooks' }).post(
 )
 
 function webhookRequest(event: unknown, headers: Record<string, string> = {}) {
-	return new Request('http://localhost/webhooks/stripe', {
+	return new Request('http://localhost/webhooks/polar', {
 		method: 'POST',
 		body: JSON.stringify(event),
 		headers: {
@@ -88,46 +65,35 @@ function webhookRequest(event: unknown, headers: Record<string, string> = {}) {
 	})
 }
 
-describe('Stripe webhook routes', () => {
+describe('Polar webhook routes', () => {
 	beforeEach(() => {
 		addedCredits = []
 	})
 
-	it('returns 400 when stripe-signature is missing', async () => {
-		const res = await app.handle(webhookRequest({ type: 'test' }))
-		expect(res.status).toBe(400)
-		const body = await res.json()
-		expect(body.error).toBe('Missing stripe-signature header')
-	})
-
-	it('returns 400 for invalid signature', async () => {
+	it('returns 403 when webhook signature is invalid', async () => {
 		const res = await app.handle(
-			webhookRequest(
-				{ type: 'test' },
-				{ 'stripe-signature': 'invalid_sig' }
-			)
+			webhookRequest({ type: 'test' }, { 'webhook-id': 'invalid' })
 		)
-		expect(res.status).toBe(400)
+		expect(res.status).toBe(403)
 		const body = await res.json()
 		expect(body.error).toBe('Invalid webhook signature')
 	})
 
-	it('handles checkout.session.completed and adds credits', async () => {
+	it('handles checkout.updated with succeeded status and adds credits', async () => {
 		const event = {
-			type: 'checkout.session.completed',
+			type: 'checkout.updated',
 			data: {
-				object: {
-					id: 'cs_test_123',
-					metadata: {
-						userId: 'user-123',
-						credits: '500',
-						packId: 'pack-growth'
-					}
+				id: 'checkout_test_123',
+				status: 'succeeded',
+				metadata: {
+					userId: 'user-123',
+					credits: '500',
+					packId: 'pack-growth'
 				}
 			}
 		}
 		const res = await app.handle(
-			webhookRequest(event, { 'stripe-signature': VALID_SIG })
+			webhookRequest(event, { 'webhook-id': 'valid' })
 		)
 		expect(res.status).toBe(200)
 		expect(await res.json()).toEqual({ received: true })
@@ -139,40 +105,33 @@ describe('Stripe webhook routes', () => {
 		})
 	})
 
-	it('handles payment_intent.succeeded with auto_topup', async () => {
+	it('ignores checkout.updated with non-succeeded status', async () => {
 		const event = {
-			type: 'payment_intent.succeeded',
+			type: 'checkout.updated',
 			data: {
-				object: {
-					id: 'pi_test_456',
-					metadata: {
-						type: 'auto_topup',
-						userId: 'user-456',
-						credits: '100'
-					}
+				id: 'checkout_test_456',
+				status: 'pending',
+				metadata: {
+					userId: 'user-123',
+					credits: '500'
 				}
 			}
 		}
 		const res = await app.handle(
-			webhookRequest(event, { 'stripe-signature': VALID_SIG })
+			webhookRequest(event, { 'webhook-id': 'valid' })
 		)
 		expect(res.status).toBe(200)
 		expect(await res.json()).toEqual({ received: true })
-		expect(addedCredits).toHaveLength(1)
-		expect(addedCredits[0]).toEqual({
-			userId: 'user-456',
-			amount: 100,
-			type: 'auto_topup'
-		})
+		expect(addedCredits).toHaveLength(0)
 	})
 
 	it('returns received:true for unknown event types', async () => {
 		const event = {
-			type: 'customer.subscription.created',
-			data: { object: { id: 'sub_test' } }
+			type: 'order.created',
+			data: { id: 'order_test' }
 		}
 		const res = await app.handle(
-			webhookRequest(event, { 'stripe-signature': VALID_SIG })
+			webhookRequest(event, { 'webhook-id': 'valid' })
 		)
 		expect(res.status).toBe(200)
 		expect(await res.json()).toEqual({ received: true })

@@ -102,7 +102,7 @@ const app = new Elysia({ prefix: '/credits' })
 				return { error: 'Credit pack not found' }
 			}
 			return {
-				checkoutUrl: `https://checkout.stripe.com/session/${pack.id}`
+				checkoutUrl: `https://polar.sh/checkout/${pack.id}`
 			}
 		},
 		{ body: t.Object({ packId: t.String() }) }
@@ -191,7 +191,7 @@ describe('Credit routes', () => {
 			)
 			expect(res.status).toBe(200)
 			const body = await res.json()
-			expect(body.checkoutUrl).toContain('https://checkout.stripe.com/')
+			expect(body.checkoutUrl).toContain('https://polar.sh/checkout/')
 		})
 
 		it('returns 404 for invalid pack', async () => {

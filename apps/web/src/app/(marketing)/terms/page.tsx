@@ -194,11 +194,11 @@ export default function TermsPage() {
 
 				<h3>5.4 Payment Processing</h3>
 				<p>
-					All payments are processed securely through Stripe, our
-					third-party payment processor. By making a purchase, you
-					agree to Stripe&apos;s{' '}
+					All payments are processed securely through Polar, our
+					merchant of record. By making a purchase, you agree to
+					Polar&apos;s{' '}
 					<a
-						href="https://stripe.com/legal"
+						href="https://polar.sh/legal/terms"
 						target="_blank"
 						rel="noopener noreferrer"
 					>
@@ -206,8 +206,7 @@ export default function TermsPage() {
 					</a>
 					. We do not directly store your credit card numbers or
 					banking information. Payment information is collected and
-					processed by Stripe in accordance with the Payment Card
-					Industry Data Security Standards (PCI DSS).
+					processed by Polar as a merchant of record.
 				</p>
 
 				<h3>5.5 Taxes</h3>
@@ -335,7 +334,7 @@ export default function TermsPage() {
 				<h2>9. Third-Party Services</h2>
 				<p>
 					The Service integrates with third-party services, including
-					but not limited to Stripe (payment processing) and Supabase
+					but not limited to Polar (payment processing) and Supabase
 					(authentication and database infrastructure). Your use of
 					these third-party services is subject to their respective
 					terms of service and privacy policies. We are not

@@ -99,7 +99,7 @@ The `/credits/packs` endpoint is public and does not require authentication.
 
 ## Purchasing Credits
 
-To purchase a credit pack, send the pack ID. You'll receive a Stripe checkout URL:
+To purchase a credit pack, send the pack ID. You'll receive a Polar checkout URL:
 
 <Tabs items={['cURL', 'JavaScript', 'Python']}>
 <Tab value="cURL">
@@ -140,7 +140,7 @@ checkout_url = response.json()["checkoutUrl"]
 </Tab>
 </Tabs>
 
-After successful payment through Stripe, credits are automatically added to your account via webhooks.
+After successful payment through Polar, credits are automatically added to your account via webhooks.
 
 ## Transaction History
 
@@ -156,18 +156,18 @@ Each transaction shows the type (`purchase`, `auto_topup`, `usage`, `signup_bonu
 ## Auto Top-Up
 
 <Callout type="info">
-Auto top-up ensures your API never returns `402 Insufficient Credits` during critical operations.
+Auto top-up helps you stay ahead of credit shortages by notifying you when your balance is low.
 </Callout>
 
-Configure automatic credit replenishment from your [dashboard](https://screenshotapi.to/dashboard/credits). When your balance drops below a threshold you set, we'll automatically charge your saved payment method for your chosen credit pack.
+Configure credit balance monitoring from your [dashboard](https://screenshotapi.to/dashboard/settings). When your balance drops below a threshold you set, you'll be prompted to purchase more credits.
 
 **How it works:**
 
 1. Set a **threshold** (e.g., 50 credits).
-2. Choose a **credit pack** to auto-purchase (e.g., Pro pack with 1,000 credits).
-3. When your balance drops below 50, the Pro pack is automatically purchased.
+2. Choose a **credit pack** to suggest (e.g., Pro pack with 1,000 credits).
+3. When your balance drops below 50, you'll see a prompt to buy more credits.
 
-You can enable, disable, or reconfigure auto top-up at any time. Failed auto top-up charges (e.g., expired card) will not retry automatically — you'll need to update your payment method and manually purchase credits.
+You can enable, disable, or reconfigure auto top-up at any time from the settings page.
 
 ## Insufficient Credits
 

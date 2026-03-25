@@ -1,13 +1,6 @@
 'use client'
 
-import {
-	AlertTriangle,
-	Check,
-	Loader2,
-	LogOut,
-	RefreshCw,
-	User
-} from 'lucide-react'
+import { Check, Loader2, LogOut, RefreshCw, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
@@ -78,7 +71,7 @@ export default function SettingsPage() {
 						<h2 className="text-sm font-semibold">Auto Top-up</h2>
 					</div>
 					<p className="mt-1 text-xs text-muted-foreground">
-						Automatically purchase credits when your balance is low
+						Get notified when your credit balance is low
 					</p>
 				</div>
 				<div className="space-y-5 p-5">
@@ -96,8 +89,8 @@ export default function SettingsPage() {
 										Enable Auto Top-up
 									</p>
 									<p className="text-xs text-muted-foreground">
-										Credits are purchased automatically when
-										balance is low
+										Get prompted to buy credits when your
+										balance drops below a threshold
 									</p>
 								</div>
 								<button
@@ -181,18 +174,6 @@ export default function SettingsPage() {
 											</select>
 										)}
 									</div>
-
-									{!topup?.hasPaymentMethod && (
-										<div className="flex items-start gap-2 rounded-lg border border-chart-4/30 bg-chart-4/5 px-3 py-2.5">
-											<AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-chart-4" />
-											<p className="text-xs text-muted-foreground">
-												A payment method is required for
-												auto top-up. Save your settings
-												first, then set up a payment
-												method via the Stripe portal.
-											</p>
-										</div>
-									)}
 								</>
 							)}
 

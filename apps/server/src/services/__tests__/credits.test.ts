@@ -256,7 +256,7 @@ describe('addCredits', () => {
 			amount: 100,
 			type: 'purchase',
 			description: 'Bought 100 credits',
-			referenceId: 'pi_123'
+			referenceId: 'checkout_123'
 		})
 		const txnCall = mockInsertValues.mock.calls.find(
 			c => (c[0] as Record<string, unknown>)?.type === 'purchase'
@@ -264,7 +264,7 @@ describe('addCredits', () => {
 		expect(txnCall).toBeDefined()
 		expect((txnCall?.[0] as Record<string, unknown>).amount).toBe(100)
 		expect((txnCall?.[0] as Record<string, unknown>).referenceId).toBe(
-			'pi_123'
+			'checkout_123'
 		)
 	})
 
@@ -355,8 +355,6 @@ describe('checkAutoTopup', () => {
 		mockFindFirst.mockReturnValue({
 			enabled: false,
 			packId: 'pack-1',
-			stripeCustomerId: 'cus_1',
-			stripePaymentMethodId: 'pm_1',
 			threshold: 10
 		})
 		await checkAutoTopup('user-1')
@@ -371,8 +369,6 @@ describe('checkAutoTopup', () => {
 				return {
 					enabled: true,
 					packId: 'pack-1',
-					stripeCustomerId: 'cus_1',
-					stripePaymentMethodId: 'pm_1',
 					threshold: 10
 				}
 			}
@@ -386,27 +382,13 @@ describe('checkAutoTopup', () => {
 		mockFindFirst.mockReturnValue({
 			enabled: true,
 			packId: null,
-			stripeCustomerId: 'cus_1',
-			stripePaymentMethodId: 'pm_1',
 			threshold: 10
 		})
 		await checkAutoTopup('user-1')
 		expect(mockUpdate).not.toHaveBeenCalled()
 	})
 
-	it('does nothing when stripeCustomerId is missing', async () => {
-		mockFindFirst.mockReturnValue({
-			enabled: true,
-			packId: 'pack-1',
-			stripeCustomerId: null,
-			stripePaymentMethodId: 'pm_1',
-			threshold: 10
-		})
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('charges and adds credits when balance < threshold', async () => {
+	it('logs warning when balance is below threshold (no auto-charge with Polar)', async () => {
 		let callCount = 0
 		mockFindFirst.mockImplementation(() => {
 			callCount++
@@ -414,90 +396,15 @@ describe('checkAutoTopup', () => {
 				return {
 					enabled: true,
 					packId: 'pack-1',
-					stripeCustomerId: 'cus_1',
-					stripePaymentMethodId: 'pm_1',
 					threshold: 10
 				}
 			}
-			if (callCount === 2) {
-				return { userId: 'user-1', balance: 3 }
-			}
-			return {
-				id: 'pack-1',
-				name: 'Starter',
-				credits: 100,
-				priceCents: 500
-			}
-		})
-
-		const mockChargePaymentMethod = mock(() =>
-			Promise.resolve({ id: 'pi_auto_123', status: 'succeeded' })
-		)
-
-		mock.module('../stripe', () => ({
-			stripe: {
-				chargePaymentMethod: mockChargePaymentMethod
-			}
-		}))
-
-		mockReturning.mockReturnValue([{ balance: 103 }])
-
-		await checkAutoTopup('user-1')
-
-		expect(mockChargePaymentMethod).toHaveBeenCalledWith(
-			expect.objectContaining({
-				customerId: 'cus_1',
-				paymentMethodId: 'pm_1',
-				amount: 500
-			})
-		)
-	})
-
-	it('does not add credits when charge fails', async () => {
-		let callCount = 0
-		mockFindFirst.mockImplementation(() => {
-			callCount++
-			if (callCount === 1) {
-				return {
-					enabled: true,
-					packId: 'pack-1',
-					stripeCustomerId: 'cus_1',
-					stripePaymentMethodId: 'pm_1',
-					threshold: 10
-				}
-			}
-			if (callCount === 2) {
-				return { userId: 'user-1', balance: 3 }
-			}
-			return {
-				id: 'pack-1',
-				name: 'Starter',
-				credits: 100,
-				priceCents: 500
-			}
-		})
-
-		mock.module('../stripe', () => ({
-			stripe: {
-				chargePaymentMethod: mock(() => {
-					throw new Error('Card declined')
-				})
-			}
-		}))
-
-		mockReturning.mockReturnValue([])
-		mockInsertValues.mockReset()
-		mockInsert.mockReturnValue({ values: mockInsertValues })
-		mockInsertValues.mockReturnValue({
-			onConflictDoNothing: mockOnConflictDoNothing
+			return { userId: 'user-1', balance: 3 }
 		})
 
 		await checkAutoTopup('user-1')
 
-		const txnCalls = mockInsertValues.mock.calls.filter(
-			c => (c[0] as Record<string, unknown>)?.type === 'auto_topup'
-		)
-		expect(txnCalls.length).toBe(0)
+		expect(mockUpdate).not.toHaveBeenCalled()
 	})
 
 	it('does nothing when pack is not found', async () => {
@@ -508,15 +415,10 @@ describe('checkAutoTopup', () => {
 				return {
 					enabled: true,
 					packId: 'pack-gone',
-					stripeCustomerId: 'cus_1',
-					stripePaymentMethodId: 'pm_1',
 					threshold: 10
 				}
 			}
-			if (callCount === 2) {
-				return { userId: 'user-1', balance: 3 }
-			}
-			return null
+			return { userId: 'user-1', balance: 3 }
 		})
 
 		await checkAutoTopup('user-1')
