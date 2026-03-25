@@ -1,0 +1,221 @@
+---
+title: Ruby
+description: Use ScreenshotAPI from Ruby with net/http or the Faraday gem.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```ruby
+require "net/http"
+require "uri"
+
+api_key = ENV["SCREENSHOTAPI_KEY"]
+params = URI.encode_www_form(url: "https://example.com")
+uri = URI("https://screenshotapi.dev/api/v1/screenshot?#{params}")
+
+req = Net::HTTP::Get.new(uri)
+req["x-api-key"] = api_key
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+raise "Error #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+
+File.binwrite("screenshot.png", response.body)
+puts "Credits remaining: #{response["x-credits-remaining"]}"
+```
+
+</Step>
+
+</Steps>
+
+## Client Class
+
+A reusable client with all screenshot options:
+
+```ruby
+require "net/http"
+require "uri"
+require "json"
+
+class ScreenshotAPI
+  Result = Struct.new(:content, :content_type, :credits_remaining,
+                      :screenshot_id, :duration_ms, keyword_init: true)
+
+  def initialize(api_key, base_url: "https://screenshotapi.dev")
+    @api_key = api_key
+    @base_url = base_url
+  end
+
+  def capture(url, width: nil, height: nil, full_page: false,
+              format: "png", quality: nil, color_scheme: nil,
+              wait_until: nil, wait_for_selector: nil, delay: nil)
+    params = { url: url }
+    params[:width] = width if width
+    params[:height] = height if height
+    params[:fullPage] = "true" if full_page
+    params[:type] = format if format != "png"
+    params[:quality] = quality if quality
+    params[:colorScheme] = color_scheme if color_scheme
+    params[:waitUntil] = wait_until if wait_until
+    params[:waitForSelector] = wait_for_selector if wait_for_selector
+    params[:delay] = delay if delay
+
+    query = URI.encode_www_form(params)
+    uri = URI("#{@base_url}/api/v1/screenshot?#{query}")
+
+    req = Net::HTTP::Get.new(uri)
+    req["x-api-key"] = @api_key
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+      http.request(req)
+    }
+
+    unless response.is_a?(Net::HTTPSuccess)
+      raise "ScreenshotAPI error #{response.code}: #{response.body}"
+    end
+
+    Result.new(
+      content: response.body,
+      content_type: response["content-type"],
+      credits_remaining: response["x-credits-remaining"].to_i,
+      screenshot_id: response["x-screenshot-id"],
+      duration_ms: response["x-duration-ms"].to_i
+    )
+  end
+end
+
+# Usage
+api = ScreenshotAPI.new(ENV["SCREENSHOTAPI_KEY"])
+
+result = api.capture(
+  "https://github.com",
+  width: 1280,
+  height: 720,
+  format: "webp",
+  quality: 85
+)
+
+File.binwrite("github.webp", result.content)
+puts "Credits remaining: #{result.credits_remaining}"
+puts "Duration: #{result.duration_ms}ms"
+```
+
+## Common Patterns
+
+### Batch Screenshots with Threads
+
+```ruby
+require "concurrent-ruby"
+
+urls = %w[
+  https://example.com
+  https://github.com
+  https://news.ycombinator.com
+]
+
+pool = Concurrent::FixedThreadPool.new(5)
+results = Concurrent::Array.new
+
+urls.each_with_index do |url, i|
+  pool.post do
+    result = api.capture(url)
+    File.binwrite("screenshot-#{i}.png", result.content)
+    results << { url: url, status: :ok }
+  rescue => e
+    results << { url: url, status: :error, message: e.message }
+  end
+end
+
+pool.shutdown
+pool.wait_for_termination
+
+results.each do |r|
+  if r[:status] == :ok
+    puts "✓ #{r[:url]}"
+  else
+    puts "✗ #{r[:url]}: #{r[:message]}"
+  end
+end
+```
+
+### Rails Controller
+
+```ruby
+class ScreenshotsController < ApplicationController
+  def show
+    url = params[:url]
+    return render json: { error: "url is required" }, status: :bad_request unless url
+
+    result = screenshot_api.capture(url, format: "webp", quality: 80)
+
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    send_data result.content, type: result.content_type, disposition: "inline"
+  rescue => e
+    render json: { error: e.message }, status: :bad_gateway
+  end
+
+  private
+
+  def screenshot_api
+    @screenshot_api ||= ScreenshotAPI.new(ENV["SCREENSHOTAPI_KEY"])
+  end
+end
+```
+
+### Sinatra Route
+
+```ruby
+require "sinatra"
+
+api = ScreenshotAPI.new(ENV["SCREENSHOTAPI_KEY"])
+
+get "/screenshot" do
+  url = params[:url]
+  halt 400, { error: "url is required" }.to_json unless url
+
+  result = api.capture(url, format: "webp", quality: 80)
+  content_type result.content_type
+  cache_control :public, max_age: 3600
+  result.content
+rescue => e
+  halt 502, { error: e.message }.to_json
+end
+```
+
+## Error Handling
+
+```ruby
+begin
+  result = api.capture("https://example.com")
+rescue => e
+  case e.message
+  when /402/
+    puts "Out of credits — purchase more at screenshotapi.dev"
+  when /403/
+    puts "Invalid API key — check your configuration"
+  else
+    puts "Screenshot failed: #{e.message}"
+  end
+end
+```

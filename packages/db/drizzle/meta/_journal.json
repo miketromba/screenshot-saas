@@ -1,20 +1,34 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1774400951281,
-      "tag": "0000_graceful_diamondback",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1774400951504,
-      "tag": "0001_profiles-sync-triggers",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "7",
+			"when": 1774400951281,
+			"tag": "0000_graceful_diamondback",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "7",
+			"when": 1774400951504,
+			"tag": "0001_profiles-sync-triggers",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1774404694277,
+			"tag": "0002_steep_human_fly",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "7",
+			"when": 1774404700273,
+			"tag": "0003_seed-credit-packs",
+			"breakpoints": true
+		}
+	]
 }

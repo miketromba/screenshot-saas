@@ -1,0 +1,233 @@
+---
+title: cURL
+description: Take screenshots from the command line with cURL.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+cURL is the simplest way to use ScreenshotAPI. Every parameter is passed as a query string, and the response is the raw image binary.
+
+## Setup
+
+Set your API key as an environment variable:
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+## Basic Screenshot
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png
+```
+
+## Full-Page Screenshot
+
+Capture the entire scrollable page:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.png
+```
+
+## Custom Dimensions
+
+Screenshot at mobile dimensions (iPhone 15 Pro):
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=393&height=852" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output mobile.png
+```
+
+Screenshot at tablet dimensions (iPad):
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=1024&height=1366" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output tablet.png
+```
+
+## Image Format and Quality
+
+### PNG (default, lossless)
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=png" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png
+```
+
+### JPEG (smaller file size)
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=jpeg&quality=85" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.jpg
+```
+
+### WebP (smallest file size)
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=webp&quality=80" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.webp
+```
+
+## Dark Mode
+
+Force dark mode on pages that support `prefers-color-scheme`:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output dark.png
+```
+
+## Waiting Strategies
+
+### Wait for network idle
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitUntil=networkidle0" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png
+```
+
+### Wait for a specific element
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitForSelector=.main-content" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png
+```
+
+### Add a delay after page load
+
+Wait 2 seconds for animations to complete:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&delay=2000" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png
+```
+
+## Combined Parameters
+
+Desktop, dark mode, full-page WebP screenshot with a delay:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?\
+url=https://github.com&\
+width=1440&\
+height=900&\
+fullPage=true&\
+type=webp&\
+quality=90&\
+colorScheme=dark&\
+waitUntil=networkidle2&\
+delay=500" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output github-dark-full.webp
+```
+
+## Viewing Response Headers
+
+Use `-v` (verbose) or `-D -` to see response headers including your remaining credits:
+
+```bash
+curl -v "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output screenshot.png 2>&1 | grep -i "x-credits\|x-screenshot\|x-duration"
+```
+
+Output:
+
+```
+< x-credits-remaining: 847
+< x-screenshot-id: scr_abc123def456
+< x-duration-ms: 2340
+```
+
+## Checking Your Balance
+
+```bash
+curl "https://screenshotapi.dev/api/v1/credits" \
+  --cookie "session=your_session_cookie"
+```
+
+## Shell Script: Batch Screenshots
+
+Screenshot multiple URLs from a file:
+
+```bash
+#!/bin/bash
+
+API_KEY="$SCREENSHOTAPI_KEY"
+OUTPUT_DIR="./screenshots"
+mkdir -p "$OUTPUT_DIR"
+
+while IFS= read -r url; do
+  # Create a safe filename from the URL
+  filename=$(echo "$url" | sed 's|https\?://||; s|/|_|g; s|[^a-zA-Z0-9._-]||g')
+
+  echo "Capturing: $url"
+  curl -s "https://screenshotapi.dev/api/v1/screenshot?url=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$url', safe=''))")" \
+    -H "x-api-key: $API_KEY" \
+    --output "$OUTPUT_DIR/${filename}.png"
+
+  if [ $? -eq 0 ]; then
+    echo "  ✓ Saved to $OUTPUT_DIR/${filename}.png"
+  else
+    echo "  ✗ Failed"
+  fi
+done < urls.txt
+```
+
+Create a `urls.txt` file with one URL per line:
+
+```
+https://example.com
+https://github.com
+https://news.ycombinator.com
+```
+
+Then run:
+
+```bash
+chmod +x batch-screenshots.sh
+./batch-screenshots.sh
+```
+
+## Error Handling
+
+<Callout type="info">
+Check the HTTP status code to detect errors. Non-200 responses return JSON error bodies instead of image data.
+</Callout>
+
+```bash
+HTTP_CODE=$(curl -s -o response.bin -w "%{http_code}" \
+  "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY")
+
+if [ "$HTTP_CODE" -eq 200 ]; then
+  mv response.bin screenshot.png
+  echo "Screenshot saved"
+elif [ "$HTTP_CODE" -eq 402 ]; then
+  echo "Out of credits"
+  cat response.bin
+elif [ "$HTTP_CODE" -eq 403 ]; then
+  echo "Invalid API key"
+  cat response.bin
+else
+  echo "Error $HTTP_CODE:"
+  cat response.bin
+fi
+
+rm -f response.bin
+```

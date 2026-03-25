@@ -1,0 +1,329 @@
+---
+title: Credits API
+description: Endpoints for checking credit balance, listing packs, purchasing credits, and viewing transaction history.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Get Credit Balance
+
+```
+GET /api/v1/credits
+```
+
+Returns the current credit balance for the authenticated user. Requires session authentication.
+
+### Response
+
+```json
+{
+  "balance": 847
+}
+```
+
+### Example
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/credits" \
+  --cookie "session=your_session_cookie"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.dev/api/v1/credits', {
+  credentials: 'include'
+})
+
+const { balance } = await response.json()
+console.log(`Credits remaining: ${balance}`)
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/credits",
+    cookies={"session": "your_session_cookie"}
+)
+
+print(f"Credits remaining: {response.json()['balance']}")
+```
+</Tab>
+</Tabs>
+
+<Callout type="info">
+You can also check your balance from the `x-credits-remaining` response header returned with every screenshot request — no extra API call needed.
+</Callout>
+
+---
+
+## List Credit Packs
+
+```
+GET /api/v1/credits/packs
+```
+
+Returns all available credit packs with pricing. This endpoint is **public** — no authentication required.
+
+### Response
+
+```json
+[
+  {
+    "id": "pack_starter",
+    "name": "Starter",
+    "credits": 100,
+    "priceCents": 500,
+    "isPopular": false
+  },
+  {
+    "id": "pack_pro",
+    "name": "Pro",
+    "credits": 1000,
+    "priceCents": 3500,
+    "isPopular": true
+  },
+  {
+    "id": "pack_business",
+    "name": "Business",
+    "credits": 5000,
+    "priceCents": 12500,
+    "isPopular": false
+  },
+  {
+    "id": "pack_enterprise",
+    "name": "Enterprise",
+    "credits": 25000,
+    "priceCents": 50000,
+    "isPopular": false
+  }
+]
+```
+
+### Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `string` | Pack identifier (used when purchasing) |
+| `name` | `string` | Human-readable pack name |
+| `credits` | `number` | Number of credits included |
+| `priceCents` | `number` | Price in US cents (e.g., `3500` = $35.00) |
+| `isPopular` | `boolean` | Whether this pack is highlighted as the recommended option |
+
+### Example
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/credits/packs"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.dev/api/v1/credits/packs')
+const packs = await response.json()
+
+packs.forEach(pack => {
+  const price = (pack.priceCents / 100).toFixed(2)
+  console.log(`${pack.name}: ${pack.credits} credits for $${price}`)
+})
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get("https://screenshotapi.dev/api/v1/credits/packs")
+
+for pack in response.json():
+    price = pack["priceCents"] / 100
+    print(f"{pack['name']}: {pack['credits']} credits for ${price:.2f}")
+```
+</Tab>
+</Tabs>
+
+---
+
+## Purchase Credits
+
+```
+POST /api/v1/credits/purchase
+```
+
+Initiates a credit purchase by creating a Stripe Checkout session. Returns a URL to redirect the user to complete payment. Requires session authentication.
+
+### Request Body
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `packId` | `string` | Yes | The ID of the credit pack to purchase (from the packs endpoint) |
+
+### Response
+
+```json
+{
+  "checkoutUrl": "https://checkout.stripe.com/c/pay/cs_live_..."
+}
+```
+
+### Error Responses
+
+| Status | Body | Description |
+|---|---|---|
+| `404` | `{"error": "Credit pack not found"}` | Pack ID doesn't exist or is inactive |
+
+### Example
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl -X POST "https://screenshotapi.dev/api/v1/credits/purchase" \
+  -H "Content-Type: application/json" \
+  -d '{"packId": "pack_pro"}' \
+  --cookie "session=your_session_cookie"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.dev/api/v1/credits/purchase', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({ packId: 'pack_pro' })
+})
+
+const { checkoutUrl } = await response.json()
+
+// In a browser, redirect the user to complete payment
+window.location.href = checkoutUrl
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.post(
+    "https://screenshotapi.dev/api/v1/credits/purchase",
+    json={"packId": "pack_pro"},
+    cookies={"session": "your_session_cookie"}
+)
+
+checkout_url = response.json()["checkoutUrl"]
+print(f"Complete payment at: {checkout_url}")
+```
+</Tab>
+</Tabs>
+
+### Flow
+
+1. Call `/credits/purchase` with the desired `packId`.
+2. Redirect the user to the returned `checkoutUrl`.
+3. The user completes payment on Stripe's hosted checkout page.
+4. On success, Stripe sends a webhook to `/api/v1/webhooks/stripe`.
+5. Credits are automatically added to the user's balance.
+6. The user is redirected back to the dashboard.
+
+---
+
+## Transaction History
+
+```
+GET /api/v1/credits/transactions
+```
+
+Returns the credit transaction history for the authenticated user. Requires session authentication.
+
+### Query Parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | `number` | `50` | Number of transactions to return (max 100) |
+| `offset` | `number` | `0` | Number of transactions to skip (for pagination) |
+
+### Response
+
+Returns an array of transactions ordered by creation date (newest first).
+
+```json
+[
+  {
+    "id": "txn_abc123",
+    "type": "usage",
+    "amount": -1,
+    "description": "Screenshot captured",
+    "referenceId": "screenshot_xyz",
+    "createdAt": "2026-03-24T15:30:00.000Z"
+  },
+  {
+    "id": "txn_def456",
+    "type": "purchase",
+    "amount": 1000,
+    "description": "Purchased 1,000 credits",
+    "referenceId": "cs_live_abc123",
+    "createdAt": "2026-03-24T12:00:00.000Z"
+  },
+  {
+    "id": "txn_ghi789",
+    "type": "signup_bonus",
+    "amount": 5,
+    "description": "Welcome bonus",
+    "referenceId": null,
+    "createdAt": "2026-03-20T09:00:00.000Z"
+  }
+]
+```
+
+### Transaction Types
+
+| Type | Description |
+|---|---|
+| `purchase` | Credits purchased via Stripe checkout |
+| `auto_topup` | Credits added via automatic top-up |
+| `usage` | Credits deducted for a screenshot (amount is negative) |
+| `signup_bonus` | Free credits awarded on account creation |
+
+### Example
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/credits/transactions?limit=20&offset=0" \
+  --cookie "session=your_session_cookie"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const params = new URLSearchParams({ limit: '20', offset: '0' })
+
+const response = await fetch(
+  `https://screenshotapi.dev/api/v1/credits/transactions?${params}`,
+  { credentials: 'include' }
+)
+
+const transactions = await response.json()
+transactions.forEach(txn => {
+  const sign = txn.amount > 0 ? '+' : ''
+  console.log(`${txn.type}: ${sign}${txn.amount} — ${txn.description}`)
+})
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/credits/transactions",
+    params={"limit": 20, "offset": 0},
+    cookies={"session": "your_session_cookie"}
+)
+
+for txn in response.json():
+    sign = "+" if txn["amount"] > 0 else ""
+    print(f"{txn['type']}: {sign}{txn['amount']} — {txn['description']}")
+```
+</Tab>
+</Tabs>

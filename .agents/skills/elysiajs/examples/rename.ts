@@ -22,11 +22,8 @@ new Elysia()
 			// Add prefix
 			.prefix('decorator', 'unstable')
 	)
-	.get(
-		'/mapped',
-		({ unstableRenamedProperty }) => unstableRenamedProperty
-	)
+	.get('/mapped', ({ unstableRenamedProperty }) => unstableRenamedProperty)
 	.post('/pepper', ({ body }) => body, {
-		body: 'pepper',
+		body: 'pepper'
 		// response: t.String()
 	})

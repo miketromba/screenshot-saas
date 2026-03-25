@@ -16,10 +16,10 @@ const app = new Elysia()
 		}
 	})
 	.get('/publish/:publish', ({ params: { publish: text } }) => {
-		app.server!.publish('asdf', text)
+		app.server?.publish('asdf', text)
 
 		return text
 	})
-	.listen(3000, (server) => {
+	.listen(3000, server => {
 		console.log(`http://${server.hostname}:${server.port}`)
 	})

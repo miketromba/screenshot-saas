@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 
-const app = new Elysia({
+const _app = new Elysia({
 	cookie: {
 		secrets: 'Fischl von Luftschloss Narfidort',
 		sign: ['name']

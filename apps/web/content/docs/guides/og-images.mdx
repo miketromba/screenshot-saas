@@ -1,0 +1,251 @@
+---
+title: Generating OG Images
+description: Use ScreenshotAPI to generate Open Graph images for social media sharing.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+Open Graph (OG) images are the preview images shown when links are shared on social media platforms like Twitter/X, Facebook, LinkedIn, and Slack. ScreenshotAPI can generate these images dynamically by screenshotting a purpose-built template page.
+
+The general approach:
+
+1. Create an HTML template page for your OG images.
+2. Use ScreenshotAPI to screenshot that template with dynamic parameters.
+3. Serve the generated image from a cached API route.
+
+## Architecture
+
+```
+User shares link → Social platform requests OG image
+→ Your server receives request → Calls ScreenshotAPI
+→ ScreenshotAPI renders your template → Returns image
+→ Image cached and served to social platform
+```
+
+## Step-by-Step
+
+<Steps>
+
+<Step>
+
+### Create an OG image template page
+
+Create a dedicated page in your app that renders the OG image design. This page will only be accessed by the screenshot API, not by users directly.
+
+```typescript
+// app/og-template/page.tsx
+export default async function OGTemplate(props: {
+  searchParams: Promise<{ title?: string; description?: string; author?: string }>
+}) {
+  const searchParams = await props.searchParams
+  const title = searchParams.title ?? 'My Blog Post'
+  const description = searchParams.description ?? ''
+  const author = searchParams.author ?? ''
+
+  return (
+    <div
+      style={{
+        width: 1200,
+        height: 630,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '60px 80px',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+        fontFamily: 'system-ui, sans-serif',
+        color: 'white'
+      }}
+    >
+      <div style={{ fontSize: 28, fontWeight: 600, color: '#38bdf8', marginBottom: 24 }}>
+        yoursite.com
+      </div>
+      <h1 style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.2, margin: 0 }}>
+        {title}
+      </h1>
+      {description && (
+        <p style={{ fontSize: 24, color: '#94a3b8', marginTop: 20, lineHeight: 1.4 }}>
+          {description}
+        </p>
+      )}
+      {author && (
+        <div style={{ fontSize: 20, color: '#64748b', marginTop: 'auto' }}>
+          By {author}
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+</Step>
+
+<Step>
+
+### Create an OG image API route
+
+```typescript
+// app/api/og/route.ts
+import { NextResponse, type NextRequest } from 'next/server'
+
+const SCREENSHOTAPI_KEY = process.env.SCREENSHOTAPI_KEY!
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+
+export async function GET(request: NextRequest) {
+  const title = request.nextUrl.searchParams.get('title') ?? 'Untitled'
+  const description = request.nextUrl.searchParams.get('description') ?? ''
+  const author = request.nextUrl.searchParams.get('author') ?? ''
+
+  const templateParams = new URLSearchParams({ title, description, author })
+  const templateUrl = `${APP_URL}/og-template?${templateParams}`
+
+  const screenshotParams = new URLSearchParams({
+    url: templateUrl,
+    width: '1200',
+    height: '630',
+    type: 'png',
+    waitUntil: 'networkidle0'
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?${screenshotParams}`,
+    { headers: { 'x-api-key': SCREENSHOTAPI_KEY } }
+  )
+
+  if (!response.ok) {
+    return NextResponse.json({ error: 'OG image generation failed' }, { status: 500 })
+  }
+
+  const buffer = await response.arrayBuffer()
+
+  return new NextResponse(buffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800'
+    }
+  })
+}
+```
+
+</Step>
+
+<Step>
+
+### Add the OG meta tags
+
+In your page's metadata:
+
+```typescript
+// app/blog/[slug]/page.tsx
+import type { Metadata } from 'next'
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const params = await props.params
+  const post = await getPost(params.slug)
+
+  const ogParams = new URLSearchParams({
+    title: post.title,
+    description: post.excerpt,
+    author: post.author
+  })
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: [`/api/og?${ogParams}`]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: [`/api/og?${ogParams}`]
+    }
+  }
+}
+```
+
+</Step>
+
+</Steps>
+
+## OG Image Sizes
+
+Different platforms recommend different sizes:
+
+| Platform | Recommended Size | Aspect Ratio |
+|---|---|---|
+| Twitter/X | 1200×628 | ~1.91:1 |
+| Facebook | 1200×630 | ~1.91:1 |
+| LinkedIn | 1200×627 | ~1.91:1 |
+| Slack | 1200×630 | ~1.91:1 |
+
+Use **1200×630** as a universal size that works across all platforms.
+
+## Caching Best Practices
+
+<Callout type="info">
+OG images are typically requested once by each social platform and cached on their end. Aggressive server-side caching is safe and saves credits.
+</Callout>
+
+- **Cache for 24 hours minimum** — OG images rarely change. Use `max-age=86400`.
+- **Use `stale-while-revalidate`** — Serve cached images while refreshing in the background.
+- **Cache at the CDN level** — Vercel, Cloudflare, and other CDNs cache responses with appropriate `Cache-Control` headers.
+- **Generate at build time** — For static content, generate OG images during `next build` and store as static assets.
+
+## Advanced: Custom Fonts
+
+For OG images with custom typography, include web fonts in your template page:
+
+```typescript
+// app/og-template/layout.tsx
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export default function OGLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body className={inter.className} style={{ margin: 0, padding: 0 }}>
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+## Advanced: Template Variants
+
+Support different OG image styles for different content types:
+
+```typescript
+// app/api/og/route.ts
+export async function GET(request: NextRequest) {
+  const variant = request.nextUrl.searchParams.get('variant') ?? 'default'
+  const title = request.nextUrl.searchParams.get('title') ?? ''
+
+  const templatePath = variant === 'blog' ? '/og-template/blog' : '/og-template'
+  const templateUrl = `${APP_URL}${templatePath}?title=${encodeURIComponent(title)}`
+
+  // ... rest of screenshot logic
+}
+```
+
+## Debugging
+
+To preview your OG images locally:
+
+1. Start your dev server: `bun dev`
+2. Visit the template directly: `http://localhost:3000/og-template?title=Hello+World`
+3. Test the API route: `http://localhost:3000/api/og?title=Hello+World`
+4. Validate with social platform debuggers:
+   - [Twitter Card Validator](https://cards-dev.twitter.com/validator)
+   - [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+   - [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/)

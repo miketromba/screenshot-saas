@@ -9,13 +9,13 @@
  * Operators: add, subtract, multiply, divide
  */
 
-import { runOperations, type Operation } from '../src/calculator'
+import { type Operation, runOperations } from '../src/calculator'
 
 function main() {
 	const input = process.argv[2]
 
 	if (!input) {
-		console.error('Usage: bun cli.ts \'<json_operations>\'')
+		console.error("Usage: bun cli.ts '<json_operations>'")
 		console.error(
 			'Example: bun cli.ts \'[{"operator":"add","operands":[1,2,3]}]\''
 		)
@@ -36,7 +36,9 @@ function main() {
 			console.error('Error: Invalid JSON input')
 			process.exit(1)
 		}
-		console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+		console.error(
+			`Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+		)
 		process.exit(1)
 	}
 }

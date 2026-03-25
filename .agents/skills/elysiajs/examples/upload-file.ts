@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 
-const app = new Elysia()
+const _app = new Elysia()
 	.post('/single', ({ body: { file } }) => file, {
 		body: t.Object({
 			file: t.File({

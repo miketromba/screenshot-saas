@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 
-const app = new Elysia()
+const _app = new Elysia()
 	// Add custom body parser
 	.onParse(async ({ request, contentType }) => {
 		switch (contentType) {

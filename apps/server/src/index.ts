@@ -1,5 +1,7 @@
 import { app } from './app'
 
-app.listen(3001)
+const port = Number(process.env.PORT ?? 3001)
 
-console.log(`🚀 Server running at ${app.server?.url}`)
+app.listen(port)
+
+console.log(`ScreenshotAPI server running on http://localhost:${port}`)

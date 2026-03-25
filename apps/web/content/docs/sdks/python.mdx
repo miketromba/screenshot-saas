@@ -1,0 +1,290 @@
+---
+title: Python
+description: Use ScreenshotAPI from Python with the requests library.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+These examples use the popular `requests` library. Install it with:
+
+```bash
+pip install requests
+```
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```python
+import os
+import requests
+
+API_KEY = os.environ["SCREENSHOTAPI_KEY"]
+BASE_URL = "https://screenshotapi.dev"
+
+response = requests.get(
+    f"{BASE_URL}/api/v1/screenshot",
+    params={"url": "https://example.com"},
+    headers={"x-api-key": API_KEY}
+)
+response.raise_for_status()
+
+with open("screenshot.png", "wb") as f:
+    f.write(response.content)
+```
+
+</Step>
+
+</Steps>
+
+## Client Class
+
+A reusable client with full type hints:
+
+```python
+import os
+from dataclasses import dataclass
+from typing import Optional, Literal
+
+import requests
+
+
+@dataclass
+class ScreenshotResult:
+    content: bytes
+    content_type: str
+    credits_remaining: int
+    screenshot_id: str
+    duration_ms: int
+
+
+class ScreenshotAPI:
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str = "https://screenshotapi.dev"
+    ):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.session = requests.Session()
+        self.session.headers["x-api-key"] = api_key
+
+    def capture(
+        self,
+        url: str,
+        *,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        full_page: bool = False,
+        format: Literal["png", "jpeg", "webp"] = "png",
+        quality: Optional[int] = None,
+        color_scheme: Optional[Literal["light", "dark"]] = None,
+        wait_until: Optional[str] = None,
+        wait_for_selector: Optional[str] = None,
+        delay: Optional[int] = None,
+    ) -> ScreenshotResult:
+        params: dict = {"url": url}
+
+        if width is not None:
+            params["width"] = width
+        if height is not None:
+            params["height"] = height
+        if full_page:
+            params["fullPage"] = "true"
+        if format != "png":
+            params["type"] = format
+        if quality is not None:
+            params["quality"] = quality
+        if color_scheme is not None:
+            params["colorScheme"] = color_scheme
+        if wait_until is not None:
+            params["waitUntil"] = wait_until
+        if wait_for_selector is not None:
+            params["waitForSelector"] = wait_for_selector
+        if delay is not None:
+            params["delay"] = delay
+
+        response = self.session.get(
+            f"{self.base_url}/api/v1/screenshot",
+            params=params,
+        )
+        response.raise_for_status()
+
+        return ScreenshotResult(
+            content=response.content,
+            content_type=response.headers.get("content-type", "image/png"),
+            credits_remaining=int(
+                response.headers.get("x-credits-remaining", 0)
+            ),
+            screenshot_id=response.headers.get("x-screenshot-id", ""),
+            duration_ms=int(response.headers.get("x-duration-ms", 0)),
+        )
+
+
+# Usage
+api = ScreenshotAPI(os.environ["SCREENSHOTAPI_KEY"])
+
+result = api.capture(
+    "https://github.com",
+    width=1280,
+    height=720,
+    format="webp",
+    quality=85,
+)
+
+with open("github.webp", "wb") as f:
+    f.write(result.content)
+
+print(f"Credits remaining: {result.credits_remaining}")
+print(f"Duration: {result.duration_ms}ms")
+```
+
+## Common Patterns
+
+### Batch Screenshots
+
+Process multiple URLs concurrently with `concurrent.futures`:
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+urls = [
+    "https://example.com",
+    "https://github.com",
+    "https://news.ycombinator.com",
+]
+
+def capture_url(url: str, index: int):
+    result = api.capture(url)
+    filename = f"screenshot-{index}.png"
+    with open(filename, "wb") as f:
+        f.write(result.content)
+    return url, filename
+
+with ThreadPoolExecutor(max_workers=5) as pool:
+    futures = {
+        pool.submit(capture_url, url, i): url
+        for i, url in enumerate(urls)
+    }
+
+    for future in as_completed(futures):
+        try:
+            url, filename = future.result()
+            print(f"✓ {url} → {filename}")
+        except Exception as e:
+            print(f"✗ {futures[future]}: {e}")
+```
+
+### Async with httpx
+
+For async Python applications, use `httpx`:
+
+```python
+import httpx
+import asyncio
+
+async def capture_screenshot(url: str) -> bytes:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://screenshotapi.dev/api/v1/screenshot",
+            params={"url": url},
+            headers={"x-api-key": os.environ["SCREENSHOTAPI_KEY"]},
+        )
+        response.raise_for_status()
+        return response.content
+
+async def main():
+    urls = ["https://example.com", "https://github.com"]
+    tasks = [capture_screenshot(url) for url in urls]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for url, result in zip(urls, results):
+        if isinstance(result, Exception):
+            print(f"✗ {url}: {result}")
+        else:
+            filename = url.split("//")[1].replace("/", "_") + ".png"
+            with open(filename, "wb") as f:
+                f.write(result)
+            print(f"✓ {url}")
+
+asyncio.run(main())
+```
+
+### Django View
+
+Serve screenshots in a Django application:
+
+```python
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+def screenshot_view(request):
+    url = request.GET.get("url")
+    if not url:
+        return JsonResponse({"error": "url is required"}, status=400)
+
+    try:
+        result = api.capture(url, format="webp", quality=80)
+        response = HttpResponse(result.content, content_type=result.content_type)
+        response["Cache-Control"] = "public, max-age=3600"
+        return response
+    except requests.HTTPError as e:
+        return JsonResponse({"error": str(e)}, status=502)
+```
+
+### Flask Route
+
+```python
+from flask import Flask, request, Response, jsonify
+
+app = Flask(__name__)
+
+@app.route("/screenshot")
+def screenshot():
+    url = request.args.get("url")
+    if not url:
+        return jsonify(error="url is required"), 400
+
+    try:
+        result = api.capture(url, format="webp", quality=80)
+        return Response(
+            result.content,
+            mimetype=result.content_type,
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+    except requests.HTTPError as e:
+        return jsonify(error=str(e)), 502
+```
+
+## Error Handling
+
+```python
+try:
+    result = api.capture("https://example.com")
+except requests.HTTPError as e:
+    if e.response.status_code == 402:
+        print("Out of credits — purchase more at screenshotapi.dev")
+    elif e.response.status_code == 403:
+        print("Invalid API key — check your configuration")
+    else:
+        print(f"Screenshot failed ({e.response.status_code}): {e}")
+```

@@ -1,0 +1,256 @@
+---
+title: PHP
+description: Use ScreenshotAPI from PHP with cURL.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+Add to your `.env` or configuration:
+
+```
+SCREENSHOTAPI_KEY=sk_live_your_key_here
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```php
+<?php
+
+$apiKey = getenv('SCREENSHOTAPI_KEY');
+$params = http_build_query(['url' => 'https://example.com']);
+
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL            => "https://screenshotapi.dev/api/v1/screenshot?{$params}",
+    CURLOPT_HTTPHEADER     => ["x-api-key: {$apiKey}"],
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HEADER         => true,
+]);
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+curl_close($ch);
+
+$headers = substr($response, 0, $headerSize);
+$body = substr($response, $headerSize);
+
+if ($httpCode !== 200) {
+    die("Error {$httpCode}: {$body}");
+}
+
+file_put_contents('screenshot.png', $body);
+
+// Parse credits remaining from headers
+preg_match('/x-credits-remaining:\s*(\d+)/i', $headers, $matches);
+echo "Credits remaining: " . ($matches[1] ?? 'unknown') . "\n";
+```
+
+</Step>
+
+</Steps>
+
+## Client Class
+
+A reusable client class with all screenshot options:
+
+```php
+<?php
+
+class ScreenshotAPI
+{
+    private string $apiKey;
+    private string $baseUrl;
+
+    public function __construct(string $apiKey, string $baseUrl = 'https://screenshotapi.dev')
+    {
+        $this->apiKey = $apiKey;
+        $this->baseUrl = $baseUrl;
+    }
+
+    public function capture(string $url, array $options = []): array
+    {
+        $params = ['url' => $url];
+
+        $optionMap = [
+            'width'           => 'width',
+            'height'          => 'height',
+            'fullPage'        => 'fullPage',
+            'type'            => 'type',
+            'quality'         => 'quality',
+            'colorScheme'     => 'colorScheme',
+            'waitUntil'       => 'waitUntil',
+            'waitForSelector' => 'waitForSelector',
+            'delay'           => 'delay',
+        ];
+
+        foreach ($optionMap as $key => $param) {
+            if (isset($options[$key])) {
+                $value = $options[$key];
+                $params[$param] = is_bool($value) ? ($value ? 'true' : 'false') : $value;
+            }
+        }
+
+        $query = http_build_query($params);
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => "{$this->baseUrl}/api/v1/screenshot?{$query}",
+            CURLOPT_HTTPHEADER     => ["x-api-key: {$this->apiKey}"],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER         => true,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        curl_close($ch);
+
+        $headerStr = substr($response, 0, $headerSize);
+        $body = substr($response, $headerSize);
+
+        if ($httpCode !== 200) {
+            $error = json_decode($body, true);
+            throw new \RuntimeException(
+                "ScreenshotAPI error {$httpCode}: " . ($error['message'] ?? $error['error'] ?? $body)
+            );
+        }
+
+        $headers = $this->parseHeaders($headerStr);
+
+        return [
+            'content'           => $body,
+            'content_type'      => $headers['content-type'] ?? 'image/png',
+            'credits_remaining' => (int) ($headers['x-credits-remaining'] ?? 0),
+            'screenshot_id'     => $headers['x-screenshot-id'] ?? '',
+            'duration_ms'       => (int) ($headers['x-duration-ms'] ?? 0),
+        ];
+    }
+
+    private function parseHeaders(string $headerStr): array
+    {
+        $headers = [];
+        foreach (explode("\r\n", $headerStr) as $line) {
+            if (str_contains($line, ':')) {
+                [$key, $value] = explode(':', $line, 2);
+                $headers[strtolower(trim($key))] = trim($value);
+            }
+        }
+        return $headers;
+    }
+}
+
+// Usage
+$api = new ScreenshotAPI(getenv('SCREENSHOTAPI_KEY'));
+
+$result = $api->capture('https://github.com', [
+    'width'   => 1280,
+    'height'  => 720,
+    'type'    => 'webp',
+    'quality' => 85,
+]);
+
+file_put_contents('github.webp', $result['content']);
+echo "Credits remaining: {$result['credits_remaining']}\n";
+echo "Duration: {$result['duration_ms']}ms\n";
+```
+
+## Common Patterns
+
+### Laravel Controller
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+class ScreenshotController extends Controller
+{
+    public function show(Request $request): Response
+    {
+        $request->validate(['url' => 'required|url']);
+
+        $api = new \ScreenshotAPI(config('services.screenshotapi.key'));
+
+        try {
+            $result = $api->capture($request->input('url'), [
+                'type'    => 'webp',
+                'quality' => 80,
+            ]);
+
+            return response($result['content'])
+                ->header('Content-Type', $result['content_type'])
+                ->header('Cache-Control', 'public, max-age=3600');
+        } catch (\RuntimeException $e) {
+            return response()->json(['error' => $e->getMessage()], 502);
+        }
+    }
+}
+```
+
+### WordPress Shortcode
+
+```php
+<?php
+
+function screenshotapi_shortcode($atts): string
+{
+    $atts = shortcode_atts([
+        'url'    => '',
+        'width'  => 1440,
+        'height' => 900,
+    ], $atts);
+
+    if (empty($atts['url'])) {
+        return '<p>Error: URL is required</p>';
+    }
+
+    $api = new ScreenshotAPI(get_option('screenshotapi_key'));
+
+    try {
+        $result = $api->capture($atts['url'], [
+            'width'  => (int) $atts['width'],
+            'height' => (int) $atts['height'],
+            'type'   => 'webp',
+        ]);
+
+        $dataUri = 'data:' . $result['content_type'] . ';base64,' . base64_encode($result['content']);
+        return '<img src="' . $dataUri . '" alt="Screenshot of ' . esc_attr($atts['url']) . '">';
+    } catch (\RuntimeException $e) {
+        return '<p>Screenshot failed: ' . esc_html($e->getMessage()) . '</p>';
+    }
+}
+
+add_shortcode('screenshot', 'screenshotapi_shortcode');
+```
+
+## Error Handling
+
+```php
+try {
+    $result = $api->capture('https://example.com');
+} catch (\RuntimeException $e) {
+    if (str_contains($e->getMessage(), '402')) {
+        echo "Out of credits — purchase more at screenshotapi.dev\n";
+    } elseif (str_contains($e->getMessage(), '403')) {
+        echo "Invalid API key — check your configuration\n";
+    } else {
+        echo "Screenshot failed: {$e->getMessage()}\n";
+    }
+}
+```

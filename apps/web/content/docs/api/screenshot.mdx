@@ -1,0 +1,270 @@
+---
+title: Screenshot API
+description: Complete reference for the GET /api/v1/screenshot endpoint — capture any web page as an image.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Endpoint
+
+```
+GET /api/v1/screenshot
+```
+
+Captures a screenshot of the specified URL and returns the binary image data directly in the response body. Requires [API key authentication](/docs/authentication).
+
+## Authentication
+
+Include your API key in one of these headers:
+
+| Header | Format |
+|---|---|
+| `x-api-key` | `sk_live_your_key_here` |
+| `Authorization` | `Bearer sk_live_your_key_here` |
+
+## Query Parameters
+
+### Required
+
+| Parameter | Type | Description |
+|---|---|---|
+| `url` | `string` | The URL of the page to screenshot. Must be a valid, fully-qualified URL (including `https://`). |
+
+### Optional
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `width` | `number` | `1440` | Viewport width in pixels. Maximum: `1920`. |
+| `height` | `number` | `900` | Viewport height in pixels. Maximum: `10000`. |
+| `fullPage` | `string` | `"false"` | Set to `"true"` to capture the entire scrollable page. Ignores the `height` parameter when enabled. |
+| `type` | `string` | `"png"` | Image format: `"png"`, `"jpeg"`, or `"webp"`. |
+| `quality` | `number` | `100` | Image quality from `1` to `100`. Only applies to JPEG and WebP formats. Ignored for PNG. |
+| `colorScheme` | `string` | — | Force color scheme: `"light"` or `"dark"`. Emulates the `prefers-color-scheme` media feature. |
+| `waitUntil` | `string` | `"networkidle2"` | Page load event to wait for before capturing. See [Wait Strategies](#wait-strategies). |
+| `waitForSelector` | `string` | — | CSS selector to wait for before capturing. The screenshot is taken once this element exists in the DOM. |
+| `delay` | `number` | `0` | Additional delay in milliseconds after the page loads and before the screenshot is taken. Range: `0`–`30000`. |
+
+## Wait Strategies
+
+The `waitUntil` parameter controls when the page is considered "loaded":
+
+| Value | Description |
+|---|---|
+| `load` | Waits for the `load` event (all resources including images loaded). |
+| `domcontentloaded` | Waits for the `DOMContentLoaded` event (HTML parsed, but images/stylesheets may still be loading). |
+| `networkidle0` | Waits until there are no more than 0 network connections for 500ms. Best for fully static content. |
+| `networkidle2` | Waits until there are no more than 2 network connections for 500ms. **Default.** Good balance for most pages, tolerates long-polling or analytics connections. |
+
+<Callout type="info">
+For single-page applications (SPAs) that load content dynamically, combine `waitUntil: "networkidle2"` with `waitForSelector` targeting a key content element, or add a `delay`.
+</Callout>
+
+## Response
+
+### Success (200)
+
+**Headers:**
+
+| Header | Type | Description |
+|---|---|---|
+| `Content-Type` | `string` | `image/png`, `image/jpeg`, or `image/webp` |
+| `x-credits-remaining` | `string` | Your remaining credit balance |
+| `x-screenshot-id` | `string` | Unique identifier for this screenshot |
+| `x-duration-ms` | `string` | Time taken to capture the screenshot in milliseconds |
+
+**Body:** Binary image data.
+
+### Error Responses
+
+| Status | Body | Description |
+|---|---|---|
+| `401` | `{"error": "API key required"}` | No API key provided |
+| `402` | `{"error": "Insufficient credits", "balance": 0}` | Not enough credits |
+| `403` | `{"error": "Invalid API key"}` | API key is invalid or revoked |
+| `500` | `{"error": "Screenshot failed", "message": "..."}` | Server-side error during capture |
+
+## Examples
+
+### Basic Screenshot
+
+<Tabs items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output screenshot.png
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch(
+  'https://screenshotapi.dev/api/v1/screenshot?url=https://example.com',
+  { headers: { 'x-api-key': 'sk_live_your_key_here' } }
+)
+
+if (!response.ok) {
+  const error = await response.json()
+  throw new Error(error.message)
+}
+
+const buffer = Buffer.from(await response.arrayBuffer())
+await fs.promises.writeFile('screenshot.png', buffer)
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/screenshot",
+    params={"url": "https://example.com"},
+    headers={"x-api-key": "sk_live_your_key_here"}
+)
+response.raise_for_status()
+
+with open("screenshot.png", "wb") as f:
+    f.write(response.content)
+```
+</Tab>
+<Tab value="Go">
+```go
+req, _ := http.NewRequest("GET",
+    "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com", nil)
+req.Header.Set("x-api-key", "sk_live_your_key_here")
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+file, _ := os.Create("screenshot.png")
+defer file.Close()
+io.Copy(file, resp.Body)
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "uri"
+
+uri = URI("https://screenshotapi.dev/api/v1/screenshot?url=https://example.com")
+req = Net::HTTP::Get.new(uri)
+req["x-api-key"] = "sk_live_your_key_here"
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+File.binwrite("screenshot.png", response.body)
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com",
+    CURLOPT_HTTPHEADER => ["x-api-key: sk_live_your_key_here"],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$image = curl_exec($ch);
+curl_close($ch);
+file_put_contents("screenshot.png", $image);
+```
+</Tab>
+</Tabs>
+
+### Full-Page Screenshot
+
+Capture the entire scrollable page as a single tall image:
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output fullpage.webp
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const params = new URLSearchParams({
+  url: 'https://example.com',
+  fullPage: 'true',
+  type: 'webp',
+  quality: '90'
+})
+
+const response = await fetch(
+  `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+  { headers: { 'x-api-key': 'sk_live_your_key_here' } }
+)
+
+const buffer = Buffer.from(await response.arrayBuffer())
+await fs.promises.writeFile('fullpage.webp', buffer)
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/screenshot",
+    params={
+        "url": "https://example.com",
+        "fullPage": "true",
+        "type": "webp",
+        "quality": "90"
+    },
+    headers={"x-api-key": "sk_live_your_key_here"}
+)
+
+with open("fullpage.webp", "wb") as f:
+    f.write(response.content)
+```
+</Tab>
+</Tabs>
+
+### Dark Mode Screenshot
+
+Force dark mode rendering on any page that supports `prefers-color-scheme`:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output dark.png
+```
+
+### Custom Viewport Size
+
+Capture at a mobile viewport size:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=390&height=844" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output mobile.png
+```
+
+### Wait for Dynamic Content
+
+Wait for a specific element to appear before capturing:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitForSelector=.hero-loaded&delay=500" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output dynamic.png
+```
+
+## Rate Limits
+
+There are currently no enforced rate limits. However, screenshots are generated sequentially per API key. For maximum throughput, use multiple API keys or send requests in parallel — each request will be queued and processed as resources become available.
+
+## Best Practices
+
+- **Use `networkidle2`** (the default) for most pages. It handles analytics scripts and long-polling gracefully.
+- **Use `waitForSelector`** for SPAs where content loads asynchronously after the initial page load.
+- **Use WebP format** for smaller file sizes when quality is acceptable (typically 30–50% smaller than PNG).
+- **Set appropriate viewport dimensions** — the default 1440×900 works for most desktop pages, but use 390×844 for mobile screenshots.
+- **Add a small `delay`** (200–500ms) for pages with CSS animations or transitions that should complete before capture.

@@ -1,0 +1,340 @@
+---
+title: Go
+description: Use ScreenshotAPI from Go with the standard library net/http package.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+These examples use Go's standard library — no external dependencies required.
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+)
+
+func main() {
+	apiKey := os.Getenv("SCREENSHOTAPI_KEY")
+
+	params := url.Values{}
+	params.Set("url", "https://example.com")
+
+	req, err := http.NewRequest("GET",
+		"https://screenshotapi.dev/api/v1/screenshot?"+params.Encode(), nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("x-api-key", apiKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Fprintf(os.Stderr, "Error %d: %s\n", resp.StatusCode, body)
+		os.Exit(1)
+	}
+
+	file, err := os.Create("screenshot.png")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	io.Copy(file, resp.Body)
+	fmt.Printf("Credits remaining: %s\n", resp.Header.Get("x-credits-remaining"))
+}
+```
+
+</Step>
+
+</Steps>
+
+## Client Package
+
+A reusable client with all screenshot options:
+
+```go
+package screenshot
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+)
+
+type ImageFormat string
+
+const (
+	PNG  ImageFormat = "png"
+	JPEG ImageFormat = "jpeg"
+	WebP ImageFormat = "webp"
+)
+
+type Options struct {
+	URL             string
+	Width           int
+	Height          int
+	FullPage        bool
+	Format          ImageFormat
+	Quality         int
+	ColorScheme     string // "light" or "dark"
+	WaitUntil       string
+	WaitForSelector string
+	Delay           int
+}
+
+type Result struct {
+	Body             io.ReadCloser
+	ContentType      string
+	CreditsRemaining int
+	ScreenshotID     string
+	DurationMs       int
+}
+
+type Client struct {
+	apiKey  string
+	baseURL string
+	http    *http.Client
+}
+
+func NewClient(apiKey string) *Client {
+	return &Client{
+		apiKey:  apiKey,
+		baseURL: "https://screenshotapi.dev",
+		http:    &http.Client{},
+	}
+}
+
+func (c *Client) Capture(opts Options) (*Result, error) {
+	params := url.Values{}
+	params.Set("url", opts.URL)
+
+	if opts.Width > 0 {
+		params.Set("width", strconv.Itoa(opts.Width))
+	}
+	if opts.Height > 0 {
+		params.Set("height", strconv.Itoa(opts.Height))
+	}
+	if opts.FullPage {
+		params.Set("fullPage", "true")
+	}
+	if opts.Format != "" {
+		params.Set("type", string(opts.Format))
+	}
+	if opts.Quality > 0 {
+		params.Set("quality", strconv.Itoa(opts.Quality))
+	}
+	if opts.ColorScheme != "" {
+		params.Set("colorScheme", opts.ColorScheme)
+	}
+	if opts.WaitUntil != "" {
+		params.Set("waitUntil", opts.WaitUntil)
+	}
+	if opts.WaitForSelector != "" {
+		params.Set("waitForSelector", opts.WaitForSelector)
+	}
+	if opts.Delay > 0 {
+		params.Set("delay", strconv.Itoa(opts.Delay))
+	}
+
+	req, err := http.NewRequest("GET",
+		c.baseURL+"/api/v1/screenshot?"+params.Encode(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("x-api-key", c.apiKey)
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, body)
+	}
+
+	credits, _ := strconv.Atoi(resp.Header.Get("x-credits-remaining"))
+	duration, _ := strconv.Atoi(resp.Header.Get("x-duration-ms"))
+
+	return &Result{
+		Body:             resp.Body,
+		ContentType:      resp.Header.Get("Content-Type"),
+		CreditsRemaining: credits,
+		ScreenshotID:     resp.Header.Get("x-screenshot-id"),
+		DurationMs:       duration,
+	}, nil
+}
+```
+
+### Usage
+
+```go
+package main
+
+import (
+	"io"
+	"log"
+	"os"
+
+	"yourpackage/screenshot"
+)
+
+func main() {
+	client := screenshot.NewClient(os.Getenv("SCREENSHOTAPI_KEY"))
+
+	result, err := client.Capture(screenshot.Options{
+		URL:     "https://github.com",
+		Width:   1280,
+		Height:  720,
+		Format:  screenshot.WebP,
+		Quality: 85,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer result.Body.Close()
+
+	file, err := os.Create("github.webp")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	io.Copy(file, result.Body)
+	log.Printf("Credits remaining: %d", result.CreditsRemaining)
+	log.Printf("Duration: %dms", result.DurationMs)
+}
+```
+
+## Common Patterns
+
+### Concurrent Screenshots
+
+Capture multiple URLs concurrently with goroutines:
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"sync"
+
+	"yourpackage/screenshot"
+)
+
+func main() {
+	client := screenshot.NewClient(os.Getenv("SCREENSHOTAPI_KEY"))
+
+	urls := []string{
+		"https://example.com",
+		"https://github.com",
+		"https://news.ycombinator.com",
+	}
+
+	var wg sync.WaitGroup
+	for i, url := range urls {
+		wg.Add(1)
+		go func(idx int, u string) {
+			defer wg.Done()
+
+			result, err := client.Capture(screenshot.Options{URL: u})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "✗ %s: %v\n", u, err)
+				return
+			}
+			defer result.Body.Close()
+
+			filename := fmt.Sprintf("screenshot-%d.png", idx)
+			file, err := os.Create(filename)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "✗ %s: %v\n", u, err)
+				return
+			}
+			defer file.Close()
+
+			io.Copy(file, result.Body)
+			fmt.Printf("✓ %s → %s\n", u, filename)
+		}(i, url)
+	}
+
+	wg.Wait()
+}
+```
+
+### HTTP Handler
+
+Serve screenshots in a Go HTTP server:
+
+```go
+func screenshotHandler(w http.ResponseWriter, r *http.Request) {
+	targetURL := r.URL.Query().Get("url")
+	if targetURL == "" {
+		http.Error(w, `{"error":"url is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	result, err := client.Capture(screenshot.Options{
+		URL:     targetURL,
+		Format:  screenshot.WebP,
+		Quality: 80,
+	})
+	if err != nil {
+		http.Error(w, `{"error":"screenshot failed"}`, http.StatusBadGateway)
+		return
+	}
+	defer result.Body.Close()
+
+	w.Header().Set("Content-Type", result.ContentType)
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	io.Copy(w, result.Body)
+}
+```
+
+## Error Handling
+
+```go
+result, err := client.Capture(screenshot.Options{URL: "https://example.com"})
+if err != nil {
+	// err.Error() contains the status code and error body
+	// e.g., "API error 402: {"error":"Insufficient credits"}"
+	log.Printf("Screenshot failed: %v", err)
+	return
+}
+defer result.Body.Close()
+```

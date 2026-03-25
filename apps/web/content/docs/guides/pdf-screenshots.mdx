@@ -1,0 +1,222 @@
+---
+title: Full-Page Captures
+description: Capture entire web pages including below-the-fold content with full-page screenshots.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+Full-page screenshots capture the **entire scrollable content** of a web page as a single, tall image. This is useful for archiving pages, generating PDFs, visual regression testing, and creating long-form page previews.
+
+When `fullPage=true` is set, ScreenshotAPI scrolls the entire page and stitches the result into one image. The `height` parameter is ignored — the screenshot height matches the page's full scroll height.
+
+## Basic Full-Page Capture
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.png
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const params = new URLSearchParams({
+  url: 'https://example.com',
+  fullPage: 'true'
+})
+
+const response = await fetch(
+  `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+  { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+)
+
+const buffer = Buffer.from(await response.arrayBuffer())
+await fs.promises.writeFile('fullpage.png', buffer)
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/screenshot",
+    params={"url": "https://example.com", "fullPage": "true"},
+    headers={"x-api-key": os.environ["SCREENSHOTAPI_KEY"]}
+)
+
+with open("fullpage.png", "wb") as f:
+    f.write(response.content)
+```
+</Tab>
+</Tabs>
+
+## File Size Optimization
+
+Full-page screenshots can produce large files, especially for long pages. Use these strategies to reduce file size:
+
+### Use WebP format
+
+WebP typically produces 30–50% smaller files than PNG with minimal quality loss:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=85" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.webp
+```
+
+### Use JPEG for photographic content
+
+If the page is mostly photos (not text/UI), JPEG can be even smaller:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=jpeg&quality=80" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.jpg
+```
+
+### Reduce viewport width
+
+A narrower viewport produces a proportionally smaller image:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&width=800&type=webp&quality=85" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage-narrow.webp
+```
+
+## Handling Lazy-Loaded Content
+
+Many modern websites lazy-load images and content as the user scrolls. ScreenshotAPI handles this automatically in full-page mode by scrolling through the page before capturing. However, some sites may need additional waiting:
+
+### Wait for network idle
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?\
+url=https://example.com&\
+fullPage=true&\
+waitUntil=networkidle0" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.png
+```
+
+### Add a delay for animations
+
+```bash
+curl "https://screenshotapi.dev/api/v1/screenshot?\
+url=https://example.com&\
+fullPage=true&\
+waitUntil=networkidle2&\
+delay=2000" \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  --output fullpage.png
+```
+
+## Common Use Cases
+
+### Web Page Archival
+
+Archive a full page for compliance or records:
+
+```typescript
+async function archivePage(url: string, archiveDir: string) {
+  const params = new URLSearchParams({
+    url,
+    fullPage: 'true',
+    type: 'png',
+    width: '1440'
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const filename = `${archiveDir}/archive-${timestamp}.png`
+
+  await fs.promises.writeFile(filename, buffer)
+  return filename
+}
+```
+
+### Visual Regression Testing
+
+Capture full-page screenshots for comparison in CI:
+
+```typescript
+import { existsSync } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
+
+async function captureBaseline(url: string, name: string) {
+  const params = new URLSearchParams({
+    url,
+    fullPage: 'true',
+    width: '1440',
+    type: 'png'
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+  await writeFile(`__screenshots__/${name}.png`, buffer)
+}
+
+// In your CI pipeline:
+// 1. Capture screenshots after deploy
+// 2. Compare with baseline using pixelmatch or similar
+// 3. Flag visual regressions for review
+```
+
+### PDF Generation from Screenshots
+
+Convert full-page screenshots to PDF using sharp or other image libraries:
+
+```typescript
+import sharp from 'sharp'
+
+async function screenshotToPdf(url: string, outputPath: string) {
+  const params = new URLSearchParams({
+    url,
+    fullPage: 'true',
+    width: '1440',
+    type: 'png'
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+
+  // Get image dimensions for PDF page size
+  const metadata = await sharp(buffer).metadata()
+  const width = metadata.width ?? 1440
+  const height = metadata.height ?? 900
+
+  // Convert to PDF-compatible format
+  // Use a library like pdfkit or puppeteer for actual PDF generation
+  // This creates a single-page PDF with the screenshot
+  await sharp(buffer)
+    .resize(width, height)
+    .toFile(outputPath.replace('.pdf', '.png'))
+}
+```
+
+## Limitations
+
+<Callout type="warn">
+Full-page screenshots have a maximum height of **10,000 pixels**. Pages taller than this will be truncated. For extremely long pages, consider capturing specific sections using viewport-based screenshots with scroll offsets.
+</Callout>
+
+- **Sticky/fixed elements** — Headers and footers with `position: fixed` will appear once at their natural position, not repeated throughout the image.
+- **Infinite scroll pages** — Pages that load content endlessly (like social media feeds) will capture whatever has loaded at the time of capture. Add a `delay` to allow more content to load.
+- **Very tall pages** — Pages with thousands of pixels of scroll height may take longer to capture and produce very large files.

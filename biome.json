@@ -6,7 +6,14 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": true
+		"ignoreUnknown": true,
+		"includes": [
+			"apps/**/*.ts",
+			"apps/**/*.tsx",
+			"packages/**/*.ts",
+			"sdks/javascript/**/*.ts",
+			"*.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -17,7 +24,18 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"style": {
+				"noNonNullAssertion": "off"
+			},
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"noStaticElementInteractions": "off",
+				"useSemanticElements": "off"
+			},
+			"performance": {
+				"noImgElement": "off"
+			}
 		}
 	},
 	"javascript": {

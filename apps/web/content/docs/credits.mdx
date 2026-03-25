@@ -1,0 +1,195 @@
+---
+title: Credits
+description: Understand the credit-based pricing system, purchase credit packs, and configure auto top-up.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## How Credits Work
+
+ScreenshotAPI uses a simple credit-based pricing model:
+
+- **1 screenshot = 1 credit**
+- Credits are deducted only for **successful** screenshots
+- Failed requests are **never charged**
+- Credits **never expire**
+- New accounts receive **5 free credits**
+
+This means you only pay for what you use — no monthly subscriptions, no overage fees, and no wasted spend.
+
+## Checking Your Balance
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl "https://screenshotapi.dev/api/v1/credits" \
+  --cookie "session=your_session_cookie"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.dev/api/v1/credits', {
+  credentials: 'include'
+})
+
+const { balance } = await response.json()
+console.log(`Remaining credits: ${balance}`)
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.dev/api/v1/credits",
+    cookies={"session": "your_session_cookie"}
+)
+
+balance = response.json()["balance"]
+print(f"Remaining credits: {balance}")
+```
+</Tab>
+</Tabs>
+
+Your credit balance is also returned in the `x-credits-remaining` response header after every screenshot request, so you can track your balance without making a separate API call.
+
+## Credit Packs
+
+Purchase credits in pre-configured packs. View available packs:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/credits/packs"
+```
+
+```json
+[
+  {
+    "id": "pack_starter",
+    "name": "Starter",
+    "credits": 100,
+    "priceCents": 500,
+    "isPopular": false
+  },
+  {
+    "id": "pack_pro",
+    "name": "Pro",
+    "credits": 1000,
+    "priceCents": 3500,
+    "isPopular": true
+  },
+  {
+    "id": "pack_business",
+    "name": "Business",
+    "credits": 5000,
+    "priceCents": 12500,
+    "isPopular": false
+  },
+  {
+    "id": "pack_enterprise",
+    "name": "Enterprise",
+    "credits": 25000,
+    "priceCents": 50000,
+    "isPopular": false
+  }
+]
+```
+
+The `/credits/packs` endpoint is public and does not require authentication.
+
+## Purchasing Credits
+
+To purchase a credit pack, send the pack ID. You'll receive a Stripe checkout URL:
+
+<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl -X POST "https://screenshotapi.dev/api/v1/credits/purchase" \
+  -H "Content-Type: application/json" \
+  -d '{"packId": "pack_pro"}' \
+  --cookie "session=your_session_cookie"
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.dev/api/v1/credits/purchase', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({ packId: 'pack_pro' })
+})
+
+const { checkoutUrl } = await response.json()
+// Redirect user to checkoutUrl to complete payment
+window.location.href = checkoutUrl
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.post(
+    "https://screenshotapi.dev/api/v1/credits/purchase",
+    json={"packId": "pack_pro"},
+    cookies={"session": "your_session_cookie"}
+)
+
+checkout_url = response.json()["checkoutUrl"]
+# Redirect user to checkout_url to complete payment
+```
+</Tab>
+</Tabs>
+
+After successful payment through Stripe, credits are automatically added to your account via webhooks.
+
+## Transaction History
+
+View your credit transaction history:
+
+```bash
+curl "https://screenshotapi.dev/api/v1/credits/transactions?limit=10&offset=0" \
+  --cookie "session=your_session_cookie"
+```
+
+Each transaction shows the type (`purchase`, `auto_topup`, `usage`, `signup_bonus`), amount, description, and timestamp.
+
+## Auto Top-Up
+
+<Callout type="info">
+Auto top-up ensures your API never returns `402 Insufficient Credits` during critical operations.
+</Callout>
+
+Configure automatic credit replenishment from your [dashboard](https://screenshotapi.dev/dashboard/credits). When your balance drops below a threshold you set, we'll automatically charge your saved payment method for your chosen credit pack.
+
+**How it works:**
+
+1. Set a **threshold** (e.g., 50 credits).
+2. Choose a **credit pack** to auto-purchase (e.g., Pro pack with 1,000 credits).
+3. When your balance drops below 50, the Pro pack is automatically purchased.
+
+You can enable, disable, or reconfigure auto top-up at any time. Failed auto top-up charges (e.g., expired card) will not retry automatically — you'll need to update your payment method and manually purchase credits.
+
+## Insufficient Credits
+
+If you attempt a screenshot request with zero credits, you'll receive a `402` response:
+
+```json
+{
+  "error": "Insufficient credits",
+  "balance": 0,
+  "message": "Purchase more credits at screenshotapi.dev/dashboard/credits"
+}
+```
+
+The request is not processed and no credit is deducted.
+
+## Pricing Summary
+
+| Pack | Credits | Price | Per Credit |
+|---|---|---|---|
+| Starter | 100 | $5.00 | $0.050 |
+| Pro | 1,000 | $35.00 | $0.035 |
+| Business | 5,000 | $125.00 | $0.025 |
+| Enterprise | 25,000 | $500.00 | $0.020 |
+
+Higher-volume packs offer a lower cost per credit. All prices are in USD and exclude applicable taxes.

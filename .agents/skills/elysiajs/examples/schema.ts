@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 
-const app = new Elysia()
+const _app = new Elysia()
 	.model({
 		name: t.Object({
 			name: t.String()
@@ -43,7 +43,7 @@ const app = new Elysia()
 		{
 			headers: 'authorization'
 		},
-		(app) =>
+		app =>
 			app
 				.derive(({ headers }) => ({
 					userId: headers.authorization

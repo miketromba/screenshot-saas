@@ -1,0 +1,286 @@
+---
+title: JavaScript / TypeScript
+description: Use ScreenshotAPI from Node.js, Deno, Bun, or the browser with the JavaScript SDK.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+The JavaScript/TypeScript examples below use the native `fetch` API, which is available in Node.js 18+, Deno, Bun, and all modern browsers. No external dependencies are required.
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+Store your API key as an environment variable:
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```typescript
+const SCREENSHOTAPI_KEY = process.env.SCREENSHOTAPI_KEY
+
+async function takeScreenshot(url: string): Promise<Buffer> {
+  const params = new URLSearchParams({ url })
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': SCREENSHOTAPI_KEY! } }
+  )
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(`Screenshot failed: ${error.message ?? error.error}`)
+  }
+
+  return Buffer.from(await response.arrayBuffer())
+}
+
+const screenshot = await takeScreenshot('https://example.com')
+await fs.promises.writeFile('screenshot.png', screenshot)
+```
+
+</Step>
+
+</Steps>
+
+## Helper Class
+
+A reusable client class with full TypeScript types:
+
+```typescript
+import { writeFile } from 'node:fs/promises'
+
+interface ScreenshotOptions {
+  url: string
+  width?: number
+  height?: number
+  fullPage?: boolean
+  type?: 'png' | 'jpeg' | 'webp'
+  quality?: number
+  colorScheme?: 'light' | 'dark'
+  waitUntil?: 'load' | 'domcontentloaded' | 'networkidle0' | 'networkidle2'
+  waitForSelector?: string
+  delay?: number
+}
+
+interface ScreenshotResult {
+  buffer: Buffer
+  contentType: string
+  creditsRemaining: number
+  screenshotId: string
+  durationMs: number
+}
+
+class ScreenshotAPI {
+  private apiKey: string
+  private baseUrl: string
+
+  constructor(apiKey: string, baseUrl = 'https://screenshotapi.dev') {
+    this.apiKey = apiKey
+    this.baseUrl = baseUrl
+  }
+
+  async capture(options: ScreenshotOptions): Promise<ScreenshotResult> {
+    const params = new URLSearchParams({ url: options.url })
+
+    if (options.width) params.set('width', String(options.width))
+    if (options.height) params.set('height', String(options.height))
+    if (options.fullPage) params.set('fullPage', 'true')
+    if (options.type) params.set('type', options.type)
+    if (options.quality) params.set('quality', String(options.quality))
+    if (options.colorScheme) params.set('colorScheme', options.colorScheme)
+    if (options.waitUntil) params.set('waitUntil', options.waitUntil)
+    if (options.waitForSelector) params.set('waitForSelector', options.waitForSelector)
+    if (options.delay) params.set('delay', String(options.delay))
+
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/screenshot?${params}`,
+      { headers: { 'x-api-key': this.apiKey } }
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(`Screenshot failed (${response.status}): ${error.message ?? error.error}`)
+    }
+
+    return {
+      buffer: Buffer.from(await response.arrayBuffer()),
+      contentType: response.headers.get('content-type') ?? 'image/png',
+      creditsRemaining: Number(response.headers.get('x-credits-remaining') ?? 0),
+      screenshotId: response.headers.get('x-screenshot-id') ?? '',
+      durationMs: Number(response.headers.get('x-duration-ms') ?? 0)
+    }
+  }
+}
+
+// Usage
+const api = new ScreenshotAPI(process.env.SCREENSHOTAPI_KEY!)
+
+const result = await api.capture({
+  url: 'https://github.com',
+  width: 1280,
+  height: 720,
+  type: 'webp',
+  quality: 85
+})
+
+await writeFile('github.webp', result.buffer)
+console.log(`Credits remaining: ${result.creditsRemaining}`)
+console.log(`Duration: ${result.durationMs}ms`)
+```
+
+## Common Patterns
+
+### Batch Screenshots
+
+Take screenshots of multiple URLs in parallel:
+
+```typescript
+const urls = [
+  'https://example.com',
+  'https://github.com',
+  'https://news.ycombinator.com'
+]
+
+const results = await Promise.allSettled(
+  urls.map(url => api.capture({ url }))
+)
+
+for (const [i, result] of results.entries()) {
+  if (result.status === 'fulfilled') {
+    await writeFile(`screenshot-${i}.png`, result.value.buffer)
+    console.log(`✓ ${urls[i]}`)
+  } else {
+    console.error(`✗ ${urls[i]}: ${result.reason.message}`)
+  }
+}
+```
+
+### Express.js Middleware
+
+Serve screenshots as an image proxy:
+
+```typescript
+import express from 'express'
+
+const app = express()
+const api = new ScreenshotAPI(process.env.SCREENSHOTAPI_KEY!)
+
+app.get('/screenshot', async (req, res) => {
+  const url = req.query.url as string
+  if (!url) return res.status(400).json({ error: 'url is required' })
+
+  try {
+    const result = await api.capture({ url, type: 'webp', quality: 80 })
+    res.set('Content-Type', result.contentType)
+    res.set('Cache-Control', 'public, max-age=3600')
+    res.send(result.buffer)
+  } catch (error) {
+    res.status(500).json({ error: 'Screenshot failed' })
+  }
+})
+```
+
+### Next.js API Route
+
+Use in a Next.js API route for server-side screenshot generation:
+
+```typescript
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const url = searchParams.get('url')
+
+  if (!url) {
+    return NextResponse.json({ error: 'url is required' }, { status: 400 })
+  }
+
+  const response = await fetch(
+    `https://screenshotapi.dev/api/v1/screenshot?url=${encodeURIComponent(url)}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  if (!response.ok) {
+    return NextResponse.json({ error: 'Screenshot failed' }, { status: 500 })
+  }
+
+  const buffer = await response.arrayBuffer()
+  return new NextResponse(buffer, {
+    headers: {
+      'Content-Type': response.headers.get('content-type') ?? 'image/png',
+      'Cache-Control': 'public, max-age=3600'
+    }
+  })
+}
+```
+
+### Streaming to S3
+
+Upload screenshots directly to AWS S3:
+
+```typescript
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+
+const s3 = new S3Client({ region: 'us-east-1' })
+
+const result = await api.capture({ url: 'https://example.com' })
+
+await s3.send(new PutObjectCommand({
+  Bucket: 'my-screenshots',
+  Key: `screenshots/${Date.now()}.png`,
+  Body: result.buffer,
+  ContentType: result.contentType
+}))
+```
+
+## Error Handling
+
+```typescript
+try {
+  const result = await api.capture({ url: 'https://example.com' })
+  // Success
+} catch (error) {
+  if (error instanceof Error) {
+    if (error.message.includes('402')) {
+      console.error('Out of credits — purchase more at screenshotapi.dev')
+    } else if (error.message.includes('403')) {
+      console.error('Invalid API key — check your configuration')
+    } else {
+      console.error('Screenshot failed:', error.message)
+    }
+  }
+}
+```
+
+## Browser Usage
+
+<Callout type="warn">
+Never expose your API key in client-side JavaScript. Always proxy requests through your own backend.
+</Callout>
+
+Instead of calling ScreenshotAPI directly from the browser, create a backend endpoint that proxies the request:
+
+```typescript
+// Frontend
+const response = await fetch(`/api/screenshot?url=${encodeURIComponent(url)}`)
+const blob = await response.blob()
+const imageUrl = URL.createObjectURL(blob)
+```
+
+This keeps your API key secure on the server side.
