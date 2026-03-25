@@ -91,7 +91,7 @@ For single-page applications (SPAs) that load content dynamically, combine `wait
 <Tabs items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
   -H "x-api-key: sk_live_your_key_here" \
   --output screenshot.png
 ```
@@ -99,7 +99,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
 <Tab value="JavaScript">
 ```typescript
 const response = await fetch(
-  'https://screenshotapi.dev/api/v1/screenshot?url=https://example.com',
+  'https://screenshotapi.to/api/v1/screenshot?url=https://example.com',
   { headers: { 'x-api-key': 'sk_live_your_key_here' } }
 )
 
@@ -117,7 +117,7 @@ await fs.promises.writeFile('screenshot.png', buffer)
 import requests
 
 response = requests.get(
-    "https://screenshotapi.dev/api/v1/screenshot",
+    "https://screenshotapi.to/api/v1/screenshot",
     params={"url": "https://example.com"},
     headers={"x-api-key": "sk_live_your_key_here"}
 )
@@ -130,7 +130,7 @@ with open("screenshot.png", "wb") as f:
 <Tab value="Go">
 ```go
 req, _ := http.NewRequest("GET",
-    "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com", nil)
+    "https://screenshotapi.to/api/v1/screenshot?url=https://example.com", nil)
 req.Header.Set("x-api-key", "sk_live_your_key_here")
 
 resp, err := http.DefaultClient.Do(req)
@@ -149,7 +149,7 @@ io.Copy(file, resp.Body)
 require "net/http"
 require "uri"
 
-uri = URI("https://screenshotapi.dev/api/v1/screenshot?url=https://example.com")
+uri = URI("https://screenshotapi.to/api/v1/screenshot?url=https://example.com")
 req = Net::HTTP::Get.new(uri)
 req["x-api-key"] = "sk_live_your_key_here"
 
@@ -164,7 +164,7 @@ File.binwrite("screenshot.png", response.body)
 ```php
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL => "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com",
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/screenshot?url=https://example.com",
     CURLOPT_HTTPHEADER => ["x-api-key: sk_live_your_key_here"],
     CURLOPT_RETURNTRANSFER => true,
 ]);
@@ -183,7 +183,7 @@ Capture the entire scrollable page as a single tall image:
 <Tabs items={['cURL', 'JavaScript', 'Python']}>
 <Tab value="cURL">
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90" \
   -H "x-api-key: sk_live_your_key_here" \
   --output fullpage.webp
 ```
@@ -198,7 +198,7 @@ const params = new URLSearchParams({
 })
 
 const response = await fetch(
-  `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+  `https://screenshotapi.to/api/v1/screenshot?${params}`,
   { headers: { 'x-api-key': 'sk_live_your_key_here' } }
 )
 
@@ -211,7 +211,7 @@ await fs.promises.writeFile('fullpage.webp', buffer)
 import requests
 
 response = requests.get(
-    "https://screenshotapi.dev/api/v1/screenshot",
+    "https://screenshotapi.to/api/v1/screenshot",
     params={
         "url": "https://example.com",
         "fullPage": "true",
@@ -232,7 +232,7 @@ with open("fullpage.webp", "wb") as f:
 Force dark mode rendering on any page that supports `prefers-color-scheme`:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
   -H "x-api-key: sk_live_your_key_here" \
   --output dark.png
 ```
@@ -242,7 +242,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorS
 Capture at a mobile viewport size:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=390&height=844" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=390&height=844" \
   -H "x-api-key: sk_live_your_key_here" \
   --output mobile.png
 ```
@@ -252,7 +252,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=
 Wait for a specific element to appear before capturing:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitForSelector=.hero-loaded&delay=500" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&waitForSelector=.hero-loaded&delay=500" \
   -H "x-api-key: sk_live_your_key_here" \
   --output dynamic.png
 ```

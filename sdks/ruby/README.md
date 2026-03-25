@@ -1,6 +1,6 @@
 # screenshotapi
 
-Official Ruby SDK for [ScreenshotAPI](https://screenshotapi.dev) — capture website screenshots with a simple API call.
+Official Ruby SDK for [ScreenshotAPI](https://screenshotapi.to) — capture website screenshots with a simple API call.
 
 ## Installation
 
@@ -35,7 +35,7 @@ puts "Credits remaining: #{metadata.credits_remaining}"
 ```ruby
 client = ScreenshotAPI::Client.new(
   "your-api-key",
-  base_url: "https://screenshotapi.dev", # optional
+  base_url: "https://screenshotapi.to", # optional
   timeout: 60 # optional, seconds
 )
 ```
@@ -78,7 +78,7 @@ metadata = client.save(
 | Parameter  | Type      | Required | Default                     | Description          |
 | ---------- | --------- | -------- | --------------------------- | -------------------- |
 | `api_key`  | `String`  | Yes      | —                           | Your API key         |
-| `base_url` | `String`  | No       | `https://screenshotapi.dev` | API base URL         |
+| `base_url` | `String`  | No       | `https://screenshotapi.to` | API base URL         |
 | `timeout`  | `Integer` | No       | `60`                        | Request timeout (s)  |
 
 ### `client.screenshot(**options)`

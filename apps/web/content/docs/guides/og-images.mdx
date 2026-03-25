@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${screenshotParams}`,
+    `https://screenshotapi.to/api/v1/screenshot?${screenshotParams}`,
     { headers: { 'x-api-key': SCREENSHOTAPI_KEY } }
   )
 

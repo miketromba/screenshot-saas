@@ -161,7 +161,7 @@ function Footer() {
 							</li>
 							<li>
 								<a
-									href="mailto:support@screenshotapi.dev"
+									href="mailto:support@screenshotapi.to"
 									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
 								>
 									Support

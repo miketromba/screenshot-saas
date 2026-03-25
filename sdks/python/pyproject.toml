@@ -26,6 +26,6 @@ classifiers = [
 dependencies = ["httpx>=0.24.0"]
 
 [project.urls]
-Homepage = "https://screenshotapi.dev"
+Homepage = "https://screenshotapi.to"
 Repository = "https://github.com/miketromba/screenshotapi-python"
-Documentation = "https://screenshotapi.dev/docs"
+Documentation = "https://screenshotapi.to/docs"

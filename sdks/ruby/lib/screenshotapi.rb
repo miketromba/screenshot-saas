@@ -3,6 +3,6 @@ require_relative "screenshotapi/errors"
 require_relative "screenshotapi/result"
 
 module ScreenshotAPI
-  DEFAULT_BASE_URL = "https://screenshotapi.dev"
+  DEFAULT_BASE_URL = "https://screenshotapi.to"
   DEFAULT_TIMEOUT = 60
 end

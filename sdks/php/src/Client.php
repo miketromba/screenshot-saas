@@ -14,7 +14,7 @@ use ScreenshotAPI\Exceptions\ScreenshotFailedException;
 
 class Client
 {
-    private const DEFAULT_BASE_URL = 'https://screenshotapi.dev';
+    private const DEFAULT_BASE_URL = 'https://screenshotapi.to';
     private const DEFAULT_TIMEOUT = 60;
 
     private HttpClient $httpClient;

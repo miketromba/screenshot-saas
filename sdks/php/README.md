@@ -1,6 +1,6 @@
 # screenshotapi/sdk
 
-Official PHP SDK for [ScreenshotAPI](https://screenshotapi.dev) — capture website screenshots with a simple API call.
+Official PHP SDK for [ScreenshotAPI](https://screenshotapi.to) — capture website screenshots with a simple API call.
 
 ## Installation
 
@@ -42,7 +42,7 @@ $client = new Client('your-api-key');
 // Custom configuration
 $client = new Client(
     apiKey: 'your-api-key',
-    baseUrl: 'https://screenshotapi.dev', // optional
+    baseUrl: 'https://screenshotapi.to', // optional
     timeout: 60.0, // optional, seconds
 );
 ```
@@ -89,7 +89,7 @@ $metadata = $client->save(
 | Parameter    | Type         | Required | Default                     | Description              |
 | ------------ | ------------ | -------- | --------------------------- | ------------------------ |
 | `apiKey`     | `string`     | Yes      | —                           | Your API key             |
-| `baseUrl`    | `string`     | No       | `https://screenshotapi.dev` | API base URL             |
+| `baseUrl`    | `string`     | No       | `https://screenshotapi.to` | API base URL             |
 | `timeout`    | `float`      | No       | `60`                        | Request timeout (s)      |
 | `httpClient` | `HttpClient` | No       | —                           | Custom Guzzle client     |
 

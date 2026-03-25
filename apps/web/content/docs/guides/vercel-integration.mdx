@@ -37,7 +37,7 @@ Create `app/api/screenshot/route.ts`:
 import { NextResponse, type NextRequest } from 'next/server'
 
 const SCREENSHOTAPI_KEY = process.env.SCREENSHOTAPI_KEY!
-const BASE_URL = 'https://screenshotapi.dev'
+const BASE_URL = 'https://screenshotapi.to'
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
@@ -124,7 +124,7 @@ async function ServerScreenshot({ url }: { url: string }) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     {
       headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
       next: { revalidate: 3600 }
@@ -187,7 +187,7 @@ async function cachedScreenshot(url: string): Promise<{ buffer: ArrayBuffer; con
   }
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?url=${encodeURIComponent(url)}`,
+    `https://screenshotapi.to/api/v1/screenshot?url=${encodeURIComponent(url)}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 
@@ -235,7 +235,7 @@ async function LinkPreviewImage({ url }: { url: string }) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     {
       headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
       next: { revalidate: 86400 }

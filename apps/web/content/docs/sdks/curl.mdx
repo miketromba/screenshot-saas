@@ -20,7 +20,7 @@ export SCREENSHOTAPI_KEY="sk_live_your_key_here"
 ## Basic Screenshot
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png
 ```
@@ -30,7 +30,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
 Capture the entire scrollable page:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output fullpage.png
 ```
@@ -40,7 +40,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPa
 Screenshot at mobile dimensions (iPhone 15 Pro):
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=393&height=852" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=393&height=852" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output mobile.png
 ```
@@ -48,7 +48,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=
 Screenshot at tablet dimensions (iPad):
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=1024&height=1366" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=1024&height=1366" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output tablet.png
 ```
@@ -58,7 +58,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&width=
 ### PNG (default, lossless)
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=png" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&type=png" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png
 ```
@@ -66,7 +66,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=p
 ### JPEG (smaller file size)
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=jpeg&quality=85" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&type=jpeg&quality=85" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.jpg
 ```
@@ -74,7 +74,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=j
 ### WebP (smallest file size)
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=webp&quality=80" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&type=webp&quality=80" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.webp
 ```
@@ -84,7 +84,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&type=w
 Force dark mode on pages that support `prefers-color-scheme`:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&colorScheme=dark" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output dark.png
 ```
@@ -94,7 +94,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorS
 ### Wait for network idle
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitUntil=networkidle0" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&waitUntil=networkidle0" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png
 ```
@@ -102,7 +102,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitUn
 ### Wait for a specific element
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitForSelector=.main-content" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&waitForSelector=.main-content" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png
 ```
@@ -112,7 +112,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&waitFo
 Wait 2 seconds for animations to complete:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&delay=2000" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&delay=2000" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png
 ```
@@ -122,7 +122,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&delay=
 Desktop, dark mode, full-page WebP screenshot with a delay:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?\
+curl "https://screenshotapi.to/api/v1/screenshot?\
 url=https://github.com&\
 width=1440&\
 height=900&\
@@ -141,7 +141,7 @@ delay=500" \
 Use `-v` (verbose) or `-D -` to see response headers including your remaining credits:
 
 ```bash
-curl -v "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+curl -v "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output screenshot.png 2>&1 | grep -i "x-credits\|x-screenshot\|x-duration"
 ```
@@ -157,7 +157,7 @@ Output:
 ## Checking Your Balance
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/credits" \
+curl "https://screenshotapi.to/api/v1/credits" \
   --cookie "session=your_session_cookie"
 ```
 
@@ -177,7 +177,7 @@ while IFS= read -r url; do
   filename=$(echo "$url" | sed 's|https\?://||; s|/|_|g; s|[^a-zA-Z0-9._-]||g')
 
   echo "Capturing: $url"
-  curl -s "https://screenshotapi.dev/api/v1/screenshot?url=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$url', safe=''))")" \
+  curl -s "https://screenshotapi.to/api/v1/screenshot?url=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$url', safe=''))")" \
     -H "x-api-key: $API_KEY" \
     --output "$OUTPUT_DIR/${filename}.png"
 
@@ -212,7 +212,7 @@ Check the HTTP status code to detect errors. Non-200 responses return JSON error
 
 ```bash
 HTTP_CODE=$(curl -s -o response.bin -w "%{http_code}" \
-  "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com" \
+  "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
   -H "x-api-key: $SCREENSHOTAPI_KEY")
 
 if [ "$HTTP_CODE" -eq 200 ]; then

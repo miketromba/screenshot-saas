@@ -19,7 +19,7 @@ export const screenshotRoutes = new Elysia({
 					error: 'Insufficient credits',
 					balance: 0,
 					message:
-						'Purchase more credits at screenshotapi.dev/dashboard/credits'
+						'Purchase more credits at screenshotapi.to/dashboard/credits'
 				}
 			}
 

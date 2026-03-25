@@ -30,7 +30,7 @@ require "uri"
 
 api_key = ENV["SCREENSHOTAPI_KEY"]
 params = URI.encode_www_form(url: "https://example.com")
-uri = URI("https://screenshotapi.dev/api/v1/screenshot?#{params}")
+uri = URI("https://screenshotapi.to/api/v1/screenshot?#{params}")
 
 req = Net::HTTP::Get.new(uri)
 req["x-api-key"] = api_key
@@ -62,7 +62,7 @@ class ScreenshotAPI
   Result = Struct.new(:content, :content_type, :credits_remaining,
                       :screenshot_id, :duration_ms, keyword_init: true)
 
-  def initialize(api_key, base_url: "https://screenshotapi.dev")
+  def initialize(api_key, base_url: "https://screenshotapi.to")
     @api_key = api_key
     @base_url = base_url
   end
@@ -211,7 +211,7 @@ begin
 rescue => e
   case e.message
   when /402/
-    puts "Out of credits — purchase more at screenshotapi.dev"
+    puts "Out of credits — purchase more at screenshotapi.to"
   when /403/
     puts "Invalid API key — check your configuration"
   else

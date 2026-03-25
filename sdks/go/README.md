@@ -1,6 +1,6 @@
 # screenshotapi-go
 
-Official Go SDK for [ScreenshotAPI](https://screenshotapi.dev) — capture website screenshots with a simple API call.
+Official Go SDK for [ScreenshotAPI](https://screenshotapi.to) — capture website screenshots with a simple API call.
 
 ## Installation
 
@@ -109,7 +109,7 @@ result, err := client.Screenshot(ctx, screenshotapi.ScreenshotOptions{
 
 | Option             | Type            | Default                     | Description          |
 | ------------------ | --------------- | --------------------------- | -------------------- |
-| `WithBaseURL`      | `string`        | `https://screenshotapi.dev` | API base URL         |
+| `WithBaseURL`      | `string`        | `https://screenshotapi.to` | API base URL         |
 | `WithTimeout`      | `time.Duration` | `60s`                       | Request timeout      |
 | `WithHTTPClient`   | `*http.Client`  | —                           | Custom HTTP client   |
 

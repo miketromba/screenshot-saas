@@ -18,12 +18,12 @@ Set the `colorScheme` parameter to `"dark"` or `"light"`:
 <Tab value="cURL">
 ```bash
 # Dark mode
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://github.com&colorScheme=dark" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://github.com&colorScheme=dark" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output github-dark.png
 
 # Light mode
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://github.com&colorScheme=light" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://github.com&colorScheme=light" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output github-light.png
 ```
@@ -34,7 +34,7 @@ async function captureWithScheme(url: string, scheme: 'light' | 'dark') {
   const params = new URLSearchParams({ url, colorScheme: scheme })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 
@@ -58,7 +58,7 @@ import os
 
 def capture_with_scheme(url: str, scheme: str) -> bytes:
     response = requests.get(
-        "https://screenshotapi.dev/api/v1/screenshot",
+        "https://screenshotapi.to/api/v1/screenshot",
         params={"url": url, "colorScheme": scheme},
         headers={"x-api-key": os.environ["SCREENSHOTAPI_KEY"]}
     )
@@ -113,7 +113,7 @@ async function captureWithScheme(url: string, scheme: 'light' | 'dark') {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 
@@ -155,7 +155,7 @@ for (const page of pages) {
     })
 
     const response = await fetch(
-      `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+      `https://screenshotapi.to/api/v1/screenshot?${params}`,
       { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
     )
 
@@ -229,7 +229,7 @@ Some pages may have components that don't respond to `prefers-color-scheme` (e.g
 If the site applies dark mode after a brief flash of light mode, add a short `delay`:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&colorScheme=dark&delay=500" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&colorScheme=dark&delay=500" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output dark.png
 ```

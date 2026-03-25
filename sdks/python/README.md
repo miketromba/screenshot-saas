@@ -1,6 +1,6 @@
 # screenshotapi
 
-Official Python SDK for [ScreenshotAPI](https://screenshotapi.dev) — capture website screenshots with a simple API call.
+Official Python SDK for [ScreenshotAPI](https://screenshotapi.to) — capture website screenshots with a simple API call.
 
 ## Installation
 
@@ -29,7 +29,7 @@ from screenshotapi import ScreenshotAPI
 
 client = ScreenshotAPI(
     "your-api-key",
-    base_url="https://screenshotapi.dev",  # optional
+    base_url="https://screenshotapi.to",  # optional
     timeout=60.0,  # optional, seconds
 )
 ```
@@ -97,7 +97,7 @@ asyncio.run(main())
 | Parameter  | Type    | Required | Default                     | Description          |
 | ---------- | ------- | -------- | --------------------------- | -------------------- |
 | `api_key`  | `str`   | Yes      | —                           | Your API key         |
-| `base_url` | `str`   | No       | `https://screenshotapi.dev` | API base URL         |
+| `base_url` | `str`   | No       | `https://screenshotapi.to` | API base URL         |
 | `timeout`  | `float` | No       | `60.0`                      | Request timeout (s)  |
 
 ### `client.screenshot(options)` / `client.async_screenshot(options)`

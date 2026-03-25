@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const DefaultBaseURL = "https://screenshotapi.dev"
+const DefaultBaseURL = "https://screenshotapi.to"
 const DefaultTimeout = 60 * time.Second
 
 type ImageType string

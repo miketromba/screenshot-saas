@@ -58,13 +58,13 @@ describe('constructor', () => {
 		)
 	})
 
-	test('sets default baseUrl to https://screenshotapi.dev', () => {
+	test('sets default baseUrl to https://screenshotapi.to', () => {
 		mockFetch(() => successResponse())
 		const client = new ScreenshotAPI({ apiKey: TEST_KEY })
 		client.screenshot({ url: 'https://example.com' })
 		const calledUrl = (globalThis.fetch as ReturnType<typeof mock>).mock
 			.calls[0][0] as string
-		expect(calledUrl).toStartWith('https://screenshotapi.dev/')
+		expect(calledUrl).toStartWith('https://screenshotapi.to/')
 	})
 
 	test('strips trailing slashes from baseUrl', () => {

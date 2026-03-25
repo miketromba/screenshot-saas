@@ -178,7 +178,7 @@ export default function HomePage() {
 									{'\n  '}
 									<span className="text-cyan-300">
 										{
-											'"https://screenshotapi.dev/api/v1/screenshot'
+											'"https://screenshotapi.to/api/v1/screenshot'
 										}
 									</span>
 									{'\n   '}

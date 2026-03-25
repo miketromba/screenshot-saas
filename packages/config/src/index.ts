@@ -3,7 +3,7 @@ export const PRODUCT_TAGLINE = 'Website screenshots via API, in seconds'
 export const PRODUCT_DESCRIPTION =
 	'A fast, reliable API for generating web page screenshots on demand. Pay per screenshot with simple credit-based pricing.'
 
-export const SUPPORT_EMAIL = 'support@screenshotapi.dev'
+export const SUPPORT_EMAIL = 'support@screenshotapi.to'
 
 export const FREE_CREDITS = 5
 export const DEFAULT_AUTO_TOPUP_THRESHOLD = 10

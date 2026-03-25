@@ -14,7 +14,7 @@ from .errors import (
 )
 from .types import ScreenshotMetadata, ScreenshotOptions, ScreenshotResult
 
-DEFAULT_BASE_URL = "https://screenshotapi.dev"
+DEFAULT_BASE_URL = "https://screenshotapi.to"
 DEFAULT_TIMEOUT = 60.0
 
 

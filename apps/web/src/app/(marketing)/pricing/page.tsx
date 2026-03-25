@@ -58,7 +58,7 @@ const faqs = [
 	},
 	{
 		q: 'Can I get a refund?',
-		a: 'We evaluate refund requests on a case-by-case basis within 30 days of purchase. Contact support@screenshotapi.dev with your request.'
+		a: 'We evaluate refund requests on a case-by-case basis within 30 days of purchase. Contact support@screenshotapi.to with your request.'
 	},
 	{
 		q: 'Is there a free tier?',
@@ -70,7 +70,7 @@ const faqs = [
 	},
 	{
 		q: 'Do you offer enterprise pricing?',
-		a: 'For volume above 10,000 screenshots, contact support@screenshotapi.dev and we can discuss custom pricing.'
+		a: 'For volume above 10,000 screenshots, contact support@screenshotapi.to and we can discuss custom pricing.'
 	}
 ]
 

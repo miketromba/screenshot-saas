@@ -17,7 +17,7 @@ When `fullPage=true` is set, ScreenshotAPI scrolls the entire page and stitches 
 <Tabs items={['cURL', 'JavaScript', 'Python']}>
 <Tab value="cURL">
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output fullpage.png
 ```
@@ -30,7 +30,7 @@ const params = new URLSearchParams({
 })
 
 const response = await fetch(
-  `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+  `https://screenshotapi.to/api/v1/screenshot?${params}`,
   { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
 )
 
@@ -43,7 +43,7 @@ await fs.promises.writeFile('fullpage.png', buffer)
 import requests
 
 response = requests.get(
-    "https://screenshotapi.dev/api/v1/screenshot",
+    "https://screenshotapi.to/api/v1/screenshot",
     params={"url": "https://example.com", "fullPage": "true"},
     headers={"x-api-key": os.environ["SCREENSHOTAPI_KEY"]}
 )
@@ -63,7 +63,7 @@ Full-page screenshots can produce large files, especially for long pages. Use th
 WebP typically produces 30–50% smaller files than PNG with minimal quality loss:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=85" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=85" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output fullpage.webp
 ```
@@ -73,7 +73,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPa
 If the page is mostly photos (not text/UI), JPEG can be even smaller:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&type=jpeg&quality=80" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=jpeg&quality=80" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output fullpage.jpg
 ```
@@ -83,7 +83,7 @@ curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPa
 A narrower viewport produces a proportionally smaller image:
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?url=https://example.com&fullPage=true&width=800&type=webp&quality=85" \
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&width=800&type=webp&quality=85" \
   -H "x-api-key: $SCREENSHOTAPI_KEY" \
   --output fullpage-narrow.webp
 ```
@@ -95,7 +95,7 @@ Many modern websites lazy-load images and content as the user scrolls. Screensho
 ### Wait for network idle
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?\
+curl "https://screenshotapi.to/api/v1/screenshot?\
 url=https://example.com&\
 fullPage=true&\
 waitUntil=networkidle0" \
@@ -106,7 +106,7 @@ waitUntil=networkidle0" \
 ### Add a delay for animations
 
 ```bash
-curl "https://screenshotapi.dev/api/v1/screenshot?\
+curl "https://screenshotapi.to/api/v1/screenshot?\
 url=https://example.com&\
 fullPage=true&\
 waitUntil=networkidle2&\
@@ -131,7 +131,7 @@ async function archivePage(url: string, archiveDir: string) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 
@@ -161,7 +161,7 @@ async function captureBaseline(url: string, name: string) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 
@@ -191,7 +191,7 @@ async function screenshotToPdf(url: string, outputPath: string) {
   })
 
   const response = await fetch(
-    `https://screenshotapi.dev/api/v1/screenshot?${params}`,
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
     { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
   )
 

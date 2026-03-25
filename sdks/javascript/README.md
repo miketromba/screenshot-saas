@@ -1,6 +1,6 @@
 # @screenshotapi/sdk
 
-Official JavaScript/TypeScript SDK for [ScreenshotAPI](https://screenshotapi.dev) — capture website screenshots with a simple API call.
+Official JavaScript/TypeScript SDK for [ScreenshotAPI](https://screenshotapi.to) — capture website screenshots with a simple API call.
 
 ## Installation
 
@@ -45,7 +45,7 @@ import { ScreenshotAPI } from '@screenshotapi/sdk'
 
 const client = new ScreenshotAPI({
   apiKey: 'your-api-key',
-  baseUrl: 'https://screenshotapi.dev', // optional, default shown
+  baseUrl: 'https://screenshotapi.to', // optional, default shown
   timeout: 60000 // optional, ms, default 60s
 })
 ```
@@ -88,7 +88,7 @@ const metadata = await client.save({
 | Parameter   | Type     | Required | Default                      | Description          |
 | ----------- | -------- | -------- | ---------------------------- | -------------------- |
 | `apiKey`    | `string` | Yes      | —                            | Your API key         |
-| `baseUrl`   | `string` | No       | `https://screenshotapi.dev`  | API base URL         |
+| `baseUrl`   | `string` | No       | `https://screenshotapi.to`  | API base URL         |
 | `timeout`   | `number` | No       | `60000`                      | Request timeout (ms) |
 
 ### `client.screenshot(options)`

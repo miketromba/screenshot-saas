@@ -34,7 +34,7 @@ $params = http_build_query(['url' => 'https://example.com']);
 
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL            => "https://screenshotapi.dev/api/v1/screenshot?{$params}",
+    CURLOPT_URL            => "https://screenshotapi.to/api/v1/screenshot?{$params}",
     CURLOPT_HTTPHEADER     => ["x-api-key: {$apiKey}"],
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HEADER         => true,
@@ -75,7 +75,7 @@ class ScreenshotAPI
     private string $apiKey;
     private string $baseUrl;
 
-    public function __construct(string $apiKey, string $baseUrl = 'https://screenshotapi.dev')
+    public function __construct(string $apiKey, string $baseUrl = 'https://screenshotapi.to')
     {
         $this->apiKey = $apiKey;
         $this->baseUrl = $baseUrl;
@@ -246,7 +246,7 @@ try {
     $result = $api->capture('https://example.com');
 } catch (\RuntimeException $e) {
     if (str_contains($e->getMessage(), '402')) {
-        echo "Out of credits — purchase more at screenshotapi.dev\n";
+        echo "Out of credits — purchase more at screenshotapi.to\n";
     } elseif (str_contains($e->getMessage(), '403')) {
         echo "Invalid API key — check your configuration\n";
     } else {

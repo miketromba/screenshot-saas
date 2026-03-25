@@ -21,8 +21,8 @@ export default function PrivacyPage() {
 				<p>
 					ScreenshotAPI (&quot;we,&quot; &quot;us,&quot; or
 					&quot;our&quot;) operates the website at{' '}
-					<a href="https://screenshotapi.dev">
-						https://screenshotapi.dev
+					<a href="https://screenshotapi.to">
+						https://screenshotapi.to
 					</a>{' '}
 					and the ScreenshotAPI application programming interface
 					(collectively, the &quot;Service&quot;). This Privacy Policy
@@ -475,8 +475,8 @@ export default function PrivacyPage() {
 						<strong>Deletion:</strong> You can request deletion of
 						your account and associated personal data by contacting
 						us at{' '}
-						<a href="mailto:support@screenshotapi.dev">
-							support@screenshotapi.dev
+						<a href="mailto:support@screenshotapi.to">
+							support@screenshotapi.to
 						</a>
 						. We will process your request within 30 days, subject
 						to any legal retention obligations.
@@ -533,8 +533,8 @@ export default function PrivacyPage() {
 				</ul>
 				<p>
 					To exercise any of these rights, please contact us at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					. We will respond to your request within 30 days (or sooner
 					if required by applicable law).
@@ -583,8 +583,8 @@ export default function PrivacyPage() {
 				</p>
 				<p>
 					To exercise your CCPA rights, contact us at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					. We will verify your identity before processing your
 					request.
@@ -628,8 +628,8 @@ export default function PrivacyPage() {
 					steps to promptly delete such information. If you believe we
 					have inadvertently collected information from a child under
 					18, please contact us at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					.
 				</p>
@@ -669,13 +669,13 @@ export default function PrivacyPage() {
 					ScreenshotAPI
 					<br />
 					Email:{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					<br />
 					Website:{' '}
-					<a href="https://screenshotapi.dev">
-						https://screenshotapi.dev
+					<a href="https://screenshotapi.to">
+						https://screenshotapi.to
 					</a>
 				</p>
 				<p>

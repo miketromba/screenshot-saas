@@ -12,7 +12,7 @@ import type {
 	ScreenshotResult
 } from './types'
 
-const DEFAULT_BASE_URL = 'https://screenshotapi.dev'
+const DEFAULT_BASE_URL = 'https://screenshotapi.to'
 const DEFAULT_TIMEOUT = 60_000
 
 export class ScreenshotAPI {

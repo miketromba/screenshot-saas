@@ -26,8 +26,8 @@ export default function TermsPage() {
 					&quot;us,&quot; or &quot;our&quot;), operated by an
 					individual developer, governing your access to and use of
 					the ScreenshotAPI website located at{' '}
-					<a href="https://screenshotapi.dev">
-						https://screenshotapi.dev
+					<a href="https://screenshotapi.to">
+						https://screenshotapi.to
 					</a>{' '}
 					and the ScreenshotAPI application programming interface
 					(collectively, the &quot;Service&quot;).
@@ -116,8 +116,8 @@ export default function TermsPage() {
 					any third party. You are responsible for all activities that
 					occur under your account, whether or not authorized by you.
 					You must notify us immediately at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>{' '}
 					if you become aware of any unauthorized use of your account
 					or API Keys.
@@ -225,8 +225,8 @@ export default function TermsPage() {
 					case-by-case basis. If you believe you are entitled to a
 					refund due to a technical issue with the Service, please
 					contact us at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>{' '}
 					within 30 days of the purchase.
 				</p>
@@ -420,8 +420,8 @@ export default function TermsPage() {
 				<p>
 					You may terminate your account at any time by contacting us
 					at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					. Termination of your account does not entitle you to a
 					refund of any purchased but unused Credits.
@@ -455,8 +455,8 @@ export default function TermsPage() {
 				<p>
 					Before initiating any formal proceeding, you agree to first
 					contact us at{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>{' '}
 					and attempt to resolve any dispute informally for at least
 					30 days.
@@ -567,8 +567,8 @@ export default function TermsPage() {
 				<p>
 					Notices to you may be made via the email address associated
 					with your account. Notices to us should be sent to{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					.
 				</p>
@@ -582,13 +582,13 @@ export default function TermsPage() {
 					ScreenshotAPI
 					<br />
 					Email:{' '}
-					<a href="mailto:support@screenshotapi.dev">
-						support@screenshotapi.dev
+					<a href="mailto:support@screenshotapi.to">
+						support@screenshotapi.to
 					</a>
 					<br />
 					Website:{' '}
-					<a href="https://screenshotapi.dev">
-						https://screenshotapi.dev
+					<a href="https://screenshotapi.to">
+						https://screenshotapi.to
 					</a>
 				</p>
 
