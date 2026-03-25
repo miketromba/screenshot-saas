@@ -1,17 +1,9 @@
 'use client'
 
-import {
-	AlertTriangle,
-	Check,
-	Copy,
-	ImageIcon,
-	Key,
-	Loader2,
-	Play,
-	Plus
-} from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, ImageIcon, Loader2, Play } from 'lucide-react'
 import { useState } from 'react'
-import { useApiKeys, useCreateApiKey } from '@/hooks/use-queries'
+import { useCredits } from '@/hooks/use-queries'
 
 interface ScreenshotResult {
 	imageUrl: string
@@ -21,11 +13,8 @@ interface ScreenshotResult {
 }
 
 export default function PlaygroundPage() {
-	const { data: apiKeys, isLoading: keysLoading } = useApiKeys()
-	const createKeyMutation = useCreateApiKey()
-
-	const [apiKey, setApiKey] = useState('')
-	const [justCreatedKey, setJustCreatedKey] = useState<string | null>(null)
+	const { data: credits } = useCredits()
+	const queryClient = useQueryClient()
 
 	const [url, setUrl] = useState('')
 	const [width, setWidth] = useState('1280')
@@ -41,21 +30,9 @@ export default function PlaygroundPage() {
 	const [loading, setLoading] = useState(false)
 	const [result, setResult] = useState<ScreenshotResult | null>(null)
 	const [error, setError] = useState<string | null>(null)
-	const [copied, setCopied] = useState(false)
-
-	const activeKey = apiKey || justCreatedKey || ''
-	const hasKeys = apiKeys && apiKeys.length > 0
-
-	async function handleCreateKey() {
-		const result = await createKeyMutation.mutateAsync('Playground')
-		setJustCreatedKey(result.key)
-		setApiKey(result.key)
-	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
-		if (!activeKey) return
-
 		setLoading(true)
 		setError(null)
 		setResult(null)
@@ -73,8 +50,7 @@ export default function PlaygroundPage() {
 
 		try {
 			const response = await fetch(
-				`/api/v1/screenshot?${params.toString()}`,
-				{ headers: { 'x-api-key': activeKey } }
+				`/api/v1/playground/screenshot?${params.toString()}`
 			)
 
 			if (!response.ok) {
@@ -95,17 +71,14 @@ export default function PlaygroundPage() {
 				screenshotId: response.headers.get('x-screenshot-id'),
 				durationMs: response.headers.get('x-duration-ms')
 			})
+
+			queryClient.invalidateQueries({ queryKey: ['credits'] })
+			queryClient.invalidateQueries({ queryKey: ['user'] })
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Screenshot failed')
 		} finally {
 			setLoading(false)
 		}
-	}
-
-	async function copyToClipboard(text: string) {
-		await navigator.clipboard.writeText(text)
-		setCopied(true)
-		setTimeout(() => setCopied(false), 2000)
 	}
 
 	const inputClass =
@@ -116,79 +89,22 @@ export default function PlaygroundPage() {
 
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-			<div className="mb-8">
-				<h1 className="text-2xl font-bold tracking-tight">
-					Playground
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Test the Screenshot API interactively
-				</p>
-			</div>
-
-			<div className="mb-6 rounded-xl border border-border bg-card p-4">
-				<div className="mb-3 flex items-center gap-2">
-					<Key className="h-4 w-4 text-muted-foreground" />
-					<p className="text-sm font-medium">API Key</p>
+			<div className="mb-8 flex items-center justify-between">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Playground
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Test the Screenshot API using your session — no API key
+						needed
+					</p>
 				</div>
-				{keysLoading ? (
-					<div className="h-10 animate-pulse rounded-lg bg-muted" />
-				) : !hasKeys && !justCreatedKey ? (
-					<div className="flex items-center gap-3">
-						<p className="text-sm text-muted-foreground">
-							No API keys found.
-						</p>
-						<button
-							type="button"
-							onClick={handleCreateKey}
-							disabled={createKeyMutation.isPending}
-							className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-						>
-							{createKeyMutation.isPending ? (
-								<>
-									<Loader2 className="h-3 w-3 animate-spin" />{' '}
-									Creating...
-								</>
-							) : (
-								<>
-									<Plus className="h-3 w-3" /> Create API Key
-								</>
-							)}
-						</button>
-					</div>
-				) : (
-					<div>
-						<div className="flex items-center gap-2">
-							<input
-								type="password"
-								value={activeKey}
-								onChange={e => setApiKey(e.target.value)}
-								placeholder="Enter your API key (ss_live_...)"
-								className="flex-1 rounded-lg border border-input bg-background px-3 py-2 font-(family-name:--font-geist-mono) text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-							/>
-							{activeKey && (
-								<button
-									type="button"
-									onClick={() => copyToClipboard(activeKey)}
-									className="cursor-pointer rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-								>
-									{copied ? (
-										<Check className="h-4 w-4 text-chart-2" />
-									) : (
-										<Copy className="h-4 w-4" />
-									)}
-								</button>
-							)}
-						</div>
-						{hasKeys && !activeKey && (
-							<p className="mt-2 text-xs text-muted-foreground">
-								You have {apiKeys.length} key
-								{apiKeys.length !== 1 ? 's' : ''} (
-								{apiKeys
-									.map(k => `${k.keyPrefix}...`)
-									.join(', ')}
-								). Enter the full key above to test.
-							</p>
-						)}
+				{credits && (
+					<div className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+						<span className="text-muted-foreground">Credits: </span>
+						<span className="font-semibold tabular-nums">
+							{credits.balance}
+						</span>
 					</div>
 				)}
 			</div>
@@ -360,12 +276,17 @@ export default function PlaygroundPage() {
 								onChange={e => setWaitUntil(e.target.value)}
 								className={selectClass}
 							>
-								<option value="">Default (load)</option>
+								<option value="">Default (networkidle2)</option>
 								<option value="load">load</option>
 								<option value="domcontentloaded">
 									domcontentloaded
 								</option>
-								<option value="networkidle">networkidle</option>
+								<option value="networkidle0">
+									networkidle0
+								</option>
+								<option value="networkidle2">
+									networkidle2
+								</option>
 							</select>
 						</div>
 
@@ -407,7 +328,7 @@ export default function PlaygroundPage() {
 
 					<button
 						type="submit"
-						disabled={loading || !activeKey || !url}
+						disabled={loading || !url}
 						className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{loading ? (

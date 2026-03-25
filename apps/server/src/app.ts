@@ -3,6 +3,7 @@ import { Elysia } from 'elysia'
 import { apiKeyRoutes } from './routes/api-keys'
 import { autoTopupRoutes } from './routes/auto-topup'
 import { creditRoutes } from './routes/credits'
+import { playgroundRoutes } from './routes/playground'
 import { screenshotRoutes } from './routes/screenshot'
 import { usageRoutes } from './routes/usage'
 import { userRoutes } from './routes/user'
@@ -22,6 +23,7 @@ export const app = new Elysia({ prefix: '/api' })
 			.use(usageRoutes)
 			.use(userRoutes)
 			.use(autoTopupRoutes)
+			.use(playgroundRoutes)
 	)
 	.use(webhookRoutes)
 
