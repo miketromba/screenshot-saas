@@ -24,7 +24,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
 					pre({ children }) {
 						return (
 							<div className="not-wysiwyg overflow-hidden rounded-xl border border-border bg-[oklch(0.17_0_0)]">
-								<pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+								<pre className="overflow-x-auto text-sm leading-relaxed">
 									{children}
 								</pre>
 							</div>
@@ -50,6 +50,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
 										</span>
 									</div>
 									<code
+										className="block p-4"
 										dangerouslySetInnerHTML={{
 											__html: html
 										}}
