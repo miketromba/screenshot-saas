@@ -1,0 +1,269 @@
+---
+title: "How to Take Screenshots with cURL: Command-Line Screenshot API"
+description: "Capture website screenshots from the command line using cURL and ScreenshotAPI. One-liner examples for scripting, CI/CD, and automation."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Blog
+    href: /blog
+  - label: How to Take Screenshots with cURL
+faq:
+  - question: "Can I take website screenshots from the command line?"
+    answer: "Yes. Using cURL with a screenshot API, you can capture any website as a PNG, JPEG, or WebP image with a single command. No browser installation required."
+  - question: "How do I use a screenshot API with cURL?"
+    answer: "Send a GET request to the API endpoint with your URL and parameters as query strings, include your API key in the x-api-key header, and pipe the output to a file with --output."
+  - question: "Can I use cURL screenshots in CI/CD pipelines?"
+    answer: "Yes. cURL is pre-installed on virtually every CI/CD environment (GitHub Actions, GitLab CI, Jenkins, CircleCI). You can capture screenshots as build artifacts without installing any dependencies."
+  - question: "What image formats does the cURL screenshot API support?"
+    answer: "ScreenshotAPI supports PNG, JPEG, and WebP output formats. Specify the format using the type query parameter."
+relatedPages:
+  - title: "How to Automate Website Screenshots"
+    description: "Batch capture and scheduled screenshot workflows."
+    href: "/blog/how-to-automate-website-screenshots"
+  - title: "API Documentation"
+    description: "Complete reference for all API parameters."
+    href: "/docs"
+  - title: "How to Take Screenshots with Python"
+    description: "Python-based screenshot capture for scripting."
+    href: "/blog/how-to-take-screenshots-with-python"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "How to Take Screenshots with cURL: Command-Line Screenshot API"
+  description: "Capture website screenshots from the command line using cURL and ScreenshotAPI. One-liner examples for scripting, CI/CD, and automation."
+  dateModified: "2026-03-25"
+---
+
+cURL is the fastest way to test and use a screenshot API. It is pre-installed on macOS, Linux, and Windows (via WSL or Git Bash), making it ideal for quick captures, shell scripts, and CI/CD pipelines. This guide shows how to capture website screenshots from the command line using cURL and [ScreenshotAPI](/).
+
+## Basic Screenshot
+
+Capture a website as a PNG with a single command:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=1440" \
+  -d "height=900" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output screenshot.png
+```
+
+The `-G` flag sends the `-d` parameters as query strings instead of POST body data.
+
+## Full-Page Screenshot
+
+Capture the entire scrollable page:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=1440" \
+  -d "fullPage=true" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output full_page.png
+```
+
+## Dark Mode
+
+Force the page to render in dark mode:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=1440" \
+  -d "height=900" \
+  -d "colorScheme=dark" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output dark_mode.png
+```
+
+## WebP with Quality Setting
+
+Use WebP for smaller file sizes:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=1440" \
+  -d "height=900" \
+  -d "type=webp" \
+  -d "quality=85" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output screenshot.webp
+```
+
+## Wait for JavaScript Content
+
+Wait for a specific element before capturing:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "waitUntil=networkidle" \
+  -d "waitForSelector=#main-content" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output screenshot.png
+```
+
+Add a delay if the page has animations:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "delay=2000" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output screenshot.png
+```
+
+## Mobile Screenshot
+
+Capture at mobile viewport dimensions:
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=375" \
+  -d "height=812" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output mobile.png
+```
+
+## Batch Capture with a Shell Script
+
+Capture multiple URLs in a loop:
+
+```bash
+#!/bin/bash
+API_KEY="sk_live_your_api_key"
+URLS=(
+  "https://github.com"
+  "https://stripe.com"
+  "https://linear.app"
+  "https://vercel.com"
+)
+
+for url in "${URLS[@]}"; do
+  domain=$(echo "$url" | sed 's|https://||' | sed 's|/|_|g')
+  echo "Capturing $url..."
+
+  curl -s -G "https://screenshotapi.to/api/v1/screenshot" \
+    -d "url=$url" \
+    -d "width=1440" \
+    -d "height=900" \
+    -d "type=png" \
+    -H "x-api-key: $API_KEY" \
+    --output "${domain}.png"
+
+  echo "Saved ${domain}.png"
+done
+```
+
+## Parallel Capture with xargs
+
+Capture URLs concurrently using `xargs`:
+
+```bash
+cat urls.txt | xargs -P 4 -I {} bash -c '
+  domain=$(echo "{}" | sed "s|https://||" | sed "s|/|_|g")
+  curl -s -G "https://screenshotapi.to/api/v1/screenshot" \
+    -d "url={}" \
+    -d "width=1440" \
+    -d "height=900" \
+    -d "type=png" \
+    -H "x-api-key: sk_live_your_api_key" \
+    --output "${domain}.png"
+'
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+- name: Capture screenshot
+  run: |
+    curl -G "https://screenshotapi.to/api/v1/screenshot" \
+      -d "url=${{ env.DEPLOY_URL }}" \
+      -d "width=1440" \
+      -d "height=900" \
+      -d "type=png" \
+      -H "x-api-key: ${{ secrets.SCREENSHOT_API_KEY }}" \
+      --output screenshot.png
+
+- name: Upload artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: deployment-screenshot
+    path: screenshot.png
+```
+
+### GitLab CI
+
+```yaml
+screenshot:
+  stage: test
+  script:
+    - curl -G "https://screenshotapi.to/api/v1/screenshot"
+        -d "url=$DEPLOY_URL"
+        -d "width=1440"
+        -d "height=900"
+        -d "type=png"
+        -H "x-api-key: $SCREENSHOT_API_KEY"
+        --output screenshot.png
+  artifacts:
+    paths:
+      - screenshot.png
+```
+
+## Compare Both Sides: Light and Dark
+
+Capture both color schemes for comparison:
+
+```bash
+#!/bin/bash
+API_KEY="sk_live_your_api_key"
+URL="https://example.com"
+
+for scheme in light dark; do
+  curl -s -G "https://screenshotapi.to/api/v1/screenshot" \
+    -d "url=$URL" \
+    -d "width=1440" \
+    -d "height=900" \
+    -d "colorScheme=$scheme" \
+    -d "type=png" \
+    -H "x-api-key: $API_KEY" \
+    --output "${scheme}.png"
+done
+
+echo "Saved light.png and dark.png"
+```
+
+## Available Parameters
+
+| Parameter | Description | Example |
+|---|---|---|
+| `url` | Target URL to capture | `https://example.com` |
+| `width` | Viewport width in pixels | `1440` |
+| `height` | Viewport height in pixels | `900` |
+| `fullPage` | Capture entire scrollable page | `true` |
+| `type` | Output format | `png`, `jpeg`, `webp` |
+| `quality` | Image quality (JPEG/WebP) | `85` |
+| `colorScheme` | Force color scheme | `light`, `dark` |
+| `waitUntil` | Page load strategy | `networkidle`, `load` |
+| `waitForSelector` | Wait for CSS selector | `#content` |
+| `delay` | Additional delay in ms | `2000` |
+
+## Next Steps
+
+- Read the full [API documentation](/docs) for advanced parameters
+- Learn about [automating website screenshots](/blog/how-to-automate-website-screenshots) at scale
+- See the [JavaScript](/blog/how-to-take-screenshots-with-javascript) or [Python](/blog/how-to-take-screenshots-with-python) guides for SDK-based approaches
+- Check [pricing](/pricing) for credit-based plans starting at $20 for 500 screenshots

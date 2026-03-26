@@ -1,0 +1,335 @@
+---
+title: "Website Screenshot Monitoring"
+description: "Monitor any website for visual changes with automated screenshots. Get alerts when pages change unexpectedly."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Use Cases
+    href: /use-cases
+  - label: Website Monitoring
+faq:
+  - question: "How often should I capture monitoring screenshots?"
+    answer: "It depends on how critical the page is. For production homepages and checkout flows, hourly captures are common. For content pages and landing pages, daily or weekly is usually sufficient. ScreenshotAPI credits are consumed per capture, so adjust frequency to balance coverage and cost."
+  - question: "Can I monitor competitor websites?"
+    answer: "Yes. ScreenshotAPI captures any publicly accessible URL. Many teams use it for competitor monitoring alongside their own site monitoring. See our dedicated competitor monitoring use case for implementation details."
+  - question: "How do I detect changes between screenshots?"
+    answer: "After capturing two screenshots at different times, use a pixel-diff library like pixelmatch (JavaScript) or Pillow (Python) to compare them. If the difference exceeds your threshold, trigger an alert via email, Slack, or webhook."
+  - question: "Does ScreenshotAPI support full-page captures for monitoring?"
+    answer: "Yes. Use the fullPage parameter to capture the entire scrollable page, not just the viewport. This is useful for monitoring landing pages and content-heavy sites where changes might happen below the fold."
+relatedPages:
+  - title: "Visual Regression Testing"
+    description: "Automate visual regression testing in your CI/CD pipeline."
+    href: "/use-cases/visual-regression-testing"
+  - title: "Competitor Monitoring"
+    description: "Track competitor website changes with automated screenshots."
+    href: "/use-cases/competitor-monitoring"
+  - title: "Archiving"
+    description: "Archive website snapshots for compliance and historical records."
+    href: "/use-cases/archiving"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "Website Screenshot Monitoring"
+  description: "Monitor any website for visual changes with automated screenshots. Get alerts when pages change unexpectedly."
+  dateModified: "2026-03-25"
+---
+
+## Why Website Screenshot Monitoring Matters
+
+Websites break in ways that uptime monitors cannot detect. Your server returns a 200 OK, your health check passes, but the hero section is blank because a CDN-hosted image 404'd. Or a third-party script injected an overlay that covers your call-to-action. Or a CSS deployment shifted your navigation off-screen on mobile.
+
+Traditional monitoring tools check whether a server responds. **Website screenshot monitoring** checks whether the page actually looks correct. It is the difference between "the site is up" and "the site works."
+
+Tools like Visualping and ChangeTower have proven the value of visual monitoring, but they are designed for non-technical users who monitor a handful of pages. Developers and platform teams need something they can integrate into their own infrastructure: an API they can call from cron jobs, GitHub Actions, or custom monitoring dashboards.
+
+## How ScreenshotAPI Powers Visual Monitoring
+
+ScreenshotAPI provides the screenshot capture layer for your monitoring pipeline. You control the scheduling, comparison logic, and alerting, while ScreenshotAPI handles the browser rendering.
+
+A basic monitoring setup has four components:
+
+1. **Scheduler**: A cron job, GitHub Actions schedule, or cloud function that triggers at your desired interval.
+2. **Capture**: Call ScreenshotAPI to take a screenshot of the target URL.
+3. **Compare**: Diff the new screenshot against the previous one using pixel comparison.
+4. **Alert**: If the difference exceeds your threshold, send a notification.
+
+This architecture gives you full control over what you monitor, how sensitive the detection is, and where alerts go.
+
+## Implementation Guide
+
+### Simple Cron-Based Monitor
+
+#### JavaScript
+
+```javascript
+const axios = require("axios");
+const fs = require("fs");
+const { PNG } = require("pngjs");
+const pixelmatch = require("pixelmatch");
+const path = require("path");
+
+const API_KEY = process.env.SCREENSHOT_API_KEY;
+const SLACK_WEBHOOK = process.env.SLACK_WEBHOOK_URL;
+const SNAPSHOTS_DIR = "./snapshots";
+
+async function captureScreenshot(url) {
+  const response = await axios.get("https://screenshotapi.to/api/v1/screenshot", {
+    params: {
+      url,
+      width: 1440,
+      height: 900,
+      type: "png",
+      waitUntil: "networkidle",
+    },
+    headers: { "x-api-key": API_KEY },
+    responseType: "arraybuffer",
+  });
+  return Buffer.from(response.data);
+}
+
+function getSnapshotPath(url) {
+  const slug = url.replace(/[^a-zA-Z0-9]/g, "_");
+  return path.join(SNAPSHOTS_DIR, `${slug}.png`);
+}
+
+async function monitorUrl(url, threshold = 1.0) {
+  const snapshotPath = getSnapshotPath(url);
+  const newScreenshot = await captureScreenshot(url);
+
+  if (!fs.existsSync(snapshotPath)) {
+    fs.mkdirSync(SNAPSHOTS_DIR, { recursive: true });
+    fs.writeFileSync(snapshotPath, newScreenshot);
+    console.log(`Baseline saved for ${url}`);
+    return;
+  }
+
+  const baseline = PNG.sync.read(fs.readFileSync(snapshotPath));
+  const current = PNG.sync.read(newScreenshot);
+  const { width, height } = baseline;
+  const diff = new PNG({ width, height });
+
+  const mismatchedPixels = pixelmatch(
+    baseline.data,
+    current.data,
+    diff.data,
+    width,
+    height,
+    { threshold: 0.1 }
+  );
+
+  const diffPercent = (mismatchedPixels / (width * height)) * 100;
+
+  if (diffPercent > threshold) {
+    fs.writeFileSync(snapshotPath.replace(".png", "-diff.png"), PNG.sync.write(diff));
+    await sendSlackAlert(url, diffPercent);
+    console.log(`CHANGE DETECTED on ${url}: ${diffPercent.toFixed(2)}%`);
+  } else {
+    console.log(`No significant change on ${url}: ${diffPercent.toFixed(2)}%`);
+  }
+
+  fs.writeFileSync(snapshotPath, newScreenshot);
+}
+
+async function sendSlackAlert(url, diffPercent) {
+  await axios.post(SLACK_WEBHOOK, {
+    text: `Visual change detected on ${url}\nDifference: ${diffPercent.toFixed(2)}%\nReview the diff image for details.`,
+  });
+}
+
+const URLS_TO_MONITOR = [
+  "https://yourapp.com",
+  "https://yourapp.com/pricing",
+  "https://yourapp.com/checkout",
+];
+
+async function runMonitor() {
+  for (const url of URLS_TO_MONITOR) {
+    await monitorUrl(url);
+  }
+}
+
+runMonitor();
+```
+
+#### Python
+
+```python
+import os
+import io
+import hashlib
+from pathlib import Path
+import httpx
+from PIL import Image, ImageChops
+import numpy as np
+
+API_KEY = os.environ["SCREENSHOT_API_KEY"]
+SNAPSHOTS_DIR = Path("./snapshots")
+SNAPSHOTS_DIR.mkdir(exist_ok=True)
+
+def capture_screenshot(url: str) -> bytes:
+    response = httpx.get(
+        "https://screenshotapi.to/api/v1/screenshot",
+        params={
+            "url": url,
+            "width": 1440,
+            "height": 900,
+            "type": "png",
+            "waitUntil": "networkidle",
+        },
+        headers={"x-api-key": API_KEY},
+    )
+    response.raise_for_status()
+    return response.content
+
+def get_snapshot_path(url: str) -> Path:
+    slug = hashlib.md5(url.encode()).hexdigest()[:12]
+    return SNAPSHOTS_DIR / f"{slug}.png"
+
+def compare_screenshots(baseline_bytes: bytes, current_bytes: bytes) -> float:
+    baseline = Image.open(io.BytesIO(baseline_bytes)).convert("RGB")
+    current = Image.open(io.BytesIO(current_bytes)).convert("RGB")
+    diff = ImageChops.difference(baseline, current)
+    diff_array = np.array(diff)
+    changed = np.count_nonzero(diff_array.sum(axis=2))
+    total = diff_array.shape[0] * diff_array.shape[1]
+    return (changed / total) * 100
+
+def send_alert(url: str, diff_percent: float):
+    webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+    if webhook_url:
+        httpx.post(webhook_url, json={
+            "text": f"Visual change detected on {url}\nDifference: {diff_percent:.2f}%"
+        })
+
+def monitor_url(url: str, threshold: float = 1.0):
+    snapshot_path = get_snapshot_path(url)
+    current = capture_screenshot(url)
+
+    if not snapshot_path.exists():
+        snapshot_path.write_bytes(current)
+        print(f"Baseline saved for {url}")
+        return
+
+    baseline = snapshot_path.read_bytes()
+    diff_percent = compare_screenshots(baseline, current)
+
+    if diff_percent > threshold:
+        send_alert(url, diff_percent)
+        print(f"CHANGE DETECTED on {url}: {diff_percent:.2f}%")
+    else:
+        print(f"No change on {url}: {diff_percent:.2f}%")
+
+    snapshot_path.write_bytes(current)
+
+URLS = [
+    "https://yourapp.com",
+    "https://yourapp.com/pricing",
+    "https://yourapp.com/checkout",
+]
+
+for url in URLS:
+    monitor_url(url)
+```
+
+### Scheduled Monitoring with GitHub Actions
+
+Run your monitor on a schedule without managing any infrastructure:
+
+```yaml
+name: Website Visual Monitor
+on:
+  schedule:
+    - cron: "0 */6 * * *" # Every 6 hours
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore previous snapshots
+        uses: actions/cache@v4
+        with:
+          path: ./snapshots
+          key: visual-monitor-snapshots
+
+      - name: Run visual monitor
+        env:
+          SCREENSHOT_API_KEY: ${{ secrets.SCREENSHOT_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          pip install httpx pillow numpy
+          python monitor.py
+```
+
+## Monitoring Strategies
+
+### Threshold Tuning
+
+Different page types warrant different sensitivity levels:
+
+- **Critical flows** (checkout, login): 0.1% threshold. Any visual change should trigger an alert.
+- **Marketing pages** (homepage, landing pages): 1-2% threshold. Small copy changes are expected.
+- **Content pages** (blog, docs): 5% threshold. Content updates are frequent and intentional.
+
+### Mobile and Desktop
+
+Monitor both device types by capturing at different viewports:
+
+```javascript
+const viewports = [
+  { name: "desktop", width: 1440, height: 900 },
+  { name: "mobile", width: 375, height: 812 },
+];
+```
+
+### Dark Mode Monitoring
+
+If your site supports dark mode, monitor both variants to catch theme-specific regressions:
+
+```javascript
+const colorSchemes = ["light", "dark"];
+
+for (const scheme of colorSchemes) {
+  await captureScreenshot(url, { colorScheme: scheme });
+}
+```
+
+## Pricing Estimate
+
+Monitoring costs scale with the number of URLs and capture frequency:
+
+| Scenario | URLs | Frequency | Credits/Month | Recommended Plan |
+|---|---|---|---|---|
+| Small site (5 URLs, daily) | 5 | 30/month each | 150 | Starter (500 credits, $20) |
+| Medium site (20 URLs, every 6 hours) | 20 | 120/month each | 2,400 | Growth (2,000 credits, $60) |
+| Large site (50 URLs, hourly) | 50 | 720/month each | 36,000 | Scale (50,000 credits, $750) |
+
+Credits never expire, so if you need fewer captures some months, the unused credits carry over. See the [pricing page](/pricing) for all plan details.
+
+## Website Screenshot Monitoring vs. Dedicated Tools
+
+| Feature | Visualping / ChangeTower | ScreenshotAPI + Custom Code |
+|---|---|---|
+| Setup | No code | Requires development |
+| Customization | Limited | Full control |
+| Alert channels | Email, Slack | Any (you build it) |
+| Pricing | Per-page subscription | Per-screenshot credit |
+| API integration | Webhooks only | Full REST API |
+| Multi-viewport | Some plans | Always available |
+
+For teams that want full control over their **website screenshot monitoring** pipeline, ScreenshotAPI provides the capture layer while you own the logic. For teams that prefer a turnkey solution, dedicated tools like Visualping are a good choice, but come with per-page pricing that scales poorly.
+
+Check our [visual regression testing guide](/use-cases/visual-regression-testing) for a related CI/CD integration pattern, or explore the [competitor monitoring use case](/use-cases/competitor-monitoring) for tracking external sites.
+
+## Getting Started
+
+1. [Sign up](https://screenshotapi.to) for 5 free credits.
+2. Pick your critical URLs and capture frequency.
+3. Set up a scheduler (cron, GitHub Actions, or cloud function).
+4. Integrate pixel-diff comparison and alerting.
+5. Tune your thresholds over a week of baseline data.
+
+Read the [API documentation](/docs) for the full parameter reference.

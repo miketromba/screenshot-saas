@@ -1,0 +1,211 @@
+---
+title: "ScreenshotAPI vs ScrapingBee: Dedicated Screenshots vs Scraping Platform"
+description: "Compare ScreenshotAPI with ScrapingBee's screenshot feature. See how a focused screenshot API differs from a scraping platform that also takes screenshots."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Compare
+    href: /compare
+  - label: ScreenshotAPI vs ScrapingBee
+faq:
+  - question: "Does ScrapingBee have a screenshot API?"
+    answer: "Yes. ScrapingBee includes screenshot capture as a feature of its web scraping API. You add screenshot=true to your scraping request to receive an image instead of HTML."
+  - question: "Is ScreenshotAPI cheaper than ScrapingBee for screenshots?"
+    answer: "Yes, significantly. ScrapingBee bundles screenshots with its scraping service at $99/month for 10,000 requests. ScreenshotAPI offers 10,000 credits for $200 one-time with no monthly subscription, and smaller plans start at $20."
+  - question: "Should I use ScrapingBee or ScreenshotAPI?"
+    answer: "Use ScrapingBee if you need both web scraping and screenshots from the same service. Use ScreenshotAPI if you only need screenshots and want simpler, more affordable pricing."
+  - question: "Can ScrapingBee do things ScreenshotAPI cannot?"
+    answer: "Yes. ScrapingBee offers residential proxies, JavaScript rendering for scraping, Google search result extraction, and rotating IP addresses. These are scraping features that a screenshot API does not need."
+relatedPages:
+  - title: "Best Screenshot API"
+    description: "Complete comparison of the top screenshot APIs"
+    href: "/compare/best-screenshot-api"
+  - title: "ScreenshotAPI vs Browserless"
+    description: "Compare with another multi-purpose browser platform"
+    href: "/compare/screenshotapi-vs-browserless"
+  - title: "Free Screenshot API"
+    description: "Free screenshot API options for developers"
+    href: "/compare/free-screenshot-api"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "ScreenshotAPI vs ScrapingBee: Dedicated Screenshots vs Scraping Platform"
+  description: "Compare ScreenshotAPI with ScrapingBee's screenshot feature. See how a focused screenshot API differs from a scraping platform that also takes screenshots."
+  dateModified: "2026-03-25"
+---
+
+ScrapingBee is a web scraping platform that includes screenshot capture as one of its features. ScreenshotAPI is a dedicated screenshot service. If you are evaluating ScrapingBee's screenshot capabilities against a purpose-built screenshot API, this comparison explains the trade-offs in pricing, features, and developer experience.
+
+## Different Products, Different Goals
+
+The fundamental difference: ScrapingBee is a scraping service that happens to take screenshots. ScreenshotAPI is a screenshot service, full stop.
+
+| Aspect | ScreenshotAPI | ScrapingBee |
+|---|---|---|
+| Primary purpose | Screenshot capture | Web scraping |
+| Screenshot support | Core product | Secondary feature |
+| Proxy network | Not needed | ✓ (residential proxies) |
+| Data extraction | ✗ | ✓ |
+| Google SERP scraping | ✗ | ✓ |
+| Anti-bot bypass | ✗ | ✓ |
+| Screenshot API depth | Full (multiple formats, dark mode, wait strategies) | Basic (PNG, full-page, selectors) |
+
+## Feature Comparison for Screenshots
+
+| Feature | ScreenshotAPI | ScrapingBee |
+|---|---|---|
+| PNG output | ✓ | ✓ |
+| JPEG output | ✓ | ✓ |
+| WebP output | ✓ | ✗ |
+| Full-page capture | ✓ | ✓ |
+| Custom viewport | ✓ | ✓ |
+| Dark mode | ✓ | ✗ |
+| Wait for network idle | ✓ | ✓ |
+| Wait for CSS selector | ✓ | ✓ |
+| Custom delay | ✓ | ✓ |
+| Element screenshot | ✗ | ✓ (via CSS selector) |
+| Custom headers | ✗ | ✓ |
+| Custom cookies | ✗ | ✓ |
+| JavaScript execution | ✗ | ✓ |
+| Proxy rotation | ✗ | ✓ |
+
+ScrapingBee's screenshot feature benefits from its scraping infrastructure: proxies help capture sites that block data centers, and custom JavaScript execution can dismiss popups or trigger content loading. ScreenshotAPI offers more screenshot-specific features like WebP output and dark mode.
+
+## Code Comparison
+
+### ScreenshotAPI
+
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.to/api/v1/screenshot",
+    params={
+        "url": "https://example.com",
+        "width": 1440,
+        "height": 900,
+        "type": "webp",
+        "colorScheme": "dark"
+    },
+    headers={"x-api-key": "sk_live_xxxxx"}
+)
+
+with open("screenshot.webp", "wb") as f:
+    f.write(response.content)
+```
+
+### ScrapingBee
+
+```python
+import requests
+
+response = requests.get(
+    "https://app.scrapingbee.com/api/v1/",
+    params={
+        "api_key": "YOUR_API_KEY",
+        "url": "https://example.com",
+        "screenshot": True,
+        "window_width": 1440,
+        "window_height": 900
+    }
+)
+
+with open("screenshot.png", "wb") as f:
+    f.write(response.content)
+```
+
+Both are simple REST calls. The main API design differences: ScreenshotAPI uses header-based auth (more secure), while ScrapingBee passes the API key as a query parameter. ScreenshotAPI offers format selection and dark mode; ScrapingBee defaults to PNG.
+
+## Pricing Comparison
+
+This is where the difference becomes stark.
+
+### ScreenshotAPI
+
+| Plan | Credits | Price | Per Credit |
+|---|---|---|---|
+| Free | 5 | $0 | Free |
+| Starter | 500 | $20 | $0.040 |
+| Growth | 2,000 | $60 | $0.030 |
+| Pro | 10,000 | $200 | $0.020 |
+| Scale | 50,000 | $750 | $0.015 |
+
+No subscription. Credits never expire.
+
+### ScrapingBee
+
+| Plan | Credits/month | Price/month | Per Screenshot |
+|---|---|---|---|
+| Freelance | 1,000 | $49 | ~$0.049 |
+| Startup | 10,000 | $99 | ~$0.0099 |
+| Business | 50,000 | $249 | ~$0.00498 |
+| Business+ | 200,000 | $599 | ~$0.003 |
+
+Monthly subscription. Screenshot credits are part of your overall scraping credit pool.
+
+### Pricing Analysis
+
+ScrapingBee's per-unit cost is competitive at higher volumes, but you are paying for a full scraping platform even if you only need screenshots. At the Startup tier ($99/month for 10,000 credits), you are paying roughly the same as ScreenshotAPI's Pro plan ($200 for 10,000 credits), but with a monthly commitment versus a one-time purchase.
+
+For teams that only need screenshots, paying for ScrapingBee's proxy network, SERP extraction, and anti-bot features is unnecessary overhead.
+
+Check the [ScreenshotAPI pricing page](/pricing) for current rates.
+
+## When ScrapingBee Makes Sense
+
+**You already use ScrapingBee for scraping.** If your team uses ScrapingBee to extract data from websites, adding screenshots to existing requests is convenient. You avoid managing a second service.
+
+**You need proxy rotation for screenshots.** Some websites block requests from data center IP addresses. ScrapingBee's residential proxy network can bypass these blocks, capturing screenshots that standard APIs might fail on.
+
+**You need data and screenshots together.** If your workflow extracts page content and captures a screenshot in the same operation, ScrapingBee can return both HTML content and a screenshot from a single API call.
+
+**You scrape behind authentication.** ScrapingBee's JavaScript execution and custom cookie support make it possible to capture screenshots of authenticated pages without building complex session management.
+
+## When ScreenshotAPI Makes Sense
+
+**You only need screenshots.** If your use case is capturing website images for [link previews](/use-cases/link-previews), [OG images](/use-cases/og-image-generation), or [website monitoring](/use-cases/website-monitoring), a dedicated screenshot API is the right tool.
+
+**You want flexible pricing.** No monthly subscription means no wasted credits. Buy what you need, use it when you need it.
+
+**You need modern output formats.** WebP output produces files 25-35% smaller than PNG. For user-facing thumbnails in [directory listings](/use-cases/directory-thumbnails) or social previews, smaller files mean faster page loads.
+
+**You need dark mode capture.** ScreenshotAPI's `colorScheme=dark` parameter captures websites in dark mode natively, which ScrapingBee does not support.
+
+## Use Case Recommendations
+
+### Link previews and thumbnails
+
+**ScreenshotAPI.** Simple URL-to-image capture without paying for scraping infrastructure. See [link previews](/use-cases/link-previews).
+
+### Scraping with screenshots
+
+**ScrapingBee.** If you need both data and images from the same sites, using one service simplifies your stack.
+
+### Website monitoring
+
+**ScreenshotAPI.** Periodic screenshots of known URLs do not need proxies or anti-bot features. ScreenshotAPI's simpler pricing is better for [monitoring workflows](/use-cases/website-monitoring).
+
+### Capturing blocked or protected sites
+
+**ScrapingBee.** Residential proxies and stealth features increase success rates on sites that actively block automated access.
+
+## Integrating with Your Stack
+
+ScreenshotAPI works with any HTTP-capable environment. For framework-specific integration guides:
+
+- [Next.js integration](/integrations/nextjs) for server-side screenshot generation in React
+- [Django integration](/integrations/django) for Python web applications
+- [Express integration](/integrations/express) for Node.js backends
+- [Laravel integration](/integrations/laravel) for PHP projects
+- [Rails integration](/integrations/rails) for Ruby on Rails applications
+
+For language-level SDK examples, see the [JavaScript guide](/blog/how-to-take-screenshots-with-javascript), [Python guide](/blog/how-to-take-screenshots-with-python), or [cURL examples](/docs) in the documentation.
+
+## Verdict
+
+**Choose ScrapingBee** if you need web scraping alongside screenshots, require proxy rotation to access blocked sites, or already use ScrapingBee for other purposes.
+
+**Choose ScreenshotAPI** if you need a focused, affordable screenshot API without the overhead of a full scraping platform. It does one thing well, and its pricing reflects that focus.
+
+For more comparisons, check the [best screenshot API guide](/compare/best-screenshot-api) or browse [all comparison pages](/compare).
