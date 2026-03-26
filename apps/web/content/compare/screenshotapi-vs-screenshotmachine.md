@@ -206,7 +206,7 @@ These options make ScreenshotAPI more reliable for JavaScript-heavy pages.
 | `format=png` | `type=png` |
 | `delay=2000` | `delay=2000` |
 
-For more details, check the [API documentation](/docs) for all available parameters.
+For more details, check the [Screenshot Machine migration guide](/blog/migrate-from-screenshotmachine) for a step-by-step walkthrough.
 
 ## Integrating with Your Stack
 

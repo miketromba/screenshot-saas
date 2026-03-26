@@ -213,7 +213,7 @@ Switching from ApiFlash to any alternative follows the same pattern. Here is the
 | `quality` | `quality` |
 | `wait_until=network_idle` | `waitUntil=networkidle` |
 
-See the [API documentation](/docs) for a step-by-step walkthrough.
+See the [ApiFlash migration guide](/blog/migrate-from-apiflash) for a step-by-step walkthrough.
 
 ## Verdict
 

@@ -208,4 +208,4 @@ For language-level SDK examples, see the [JavaScript guide](/blog/how-to-take-sc
 
 **Choose ScreenshotAPI** if you need a focused, affordable screenshot API without the overhead of a full scraping platform. It does one thing well, and its pricing reflects that focus.
 
-For more comparisons, check the [best screenshot API guide](/compare/best-screenshot-api) or browse [all comparison pages](/compare).
+Ready to switch? See the [ScrapingBee migration guide](/blog/migrate-from-scrapingbee) for parameter mapping and code examples. For more comparisons, check the [best screenshot API guide](/compare/best-screenshot-api) or browse [all comparison pages](/compare).

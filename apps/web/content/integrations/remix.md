@@ -1,0 +1,402 @@
+---
+title: "Screenshot API for Remix"
+description: "Add website screenshot capture to Remix with ScreenshotAPI. Loader functions, resource routes, and production-ready patterns."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Remix
+faq:
+  - question: "Can I use ScreenshotAPI in a Remix loader function?"
+    answer: "Yes. Remix loaders run on the server, making them a safe place to call ScreenshotAPI with your API key. Return the screenshot data or a URL to it and access it in your component with useLoaderData."
+  - question: "How do I return a screenshot image from a Remix resource route?"
+    answer: "Create a resource route (a route file without a default export) that calls ScreenshotAPI in its loader and returns a new Response with the image buffer and the correct Content-Type header."
+  - question: "Do I need Puppeteer for screenshots in Remix?"
+    answer: "No. ScreenshotAPI handles browser rendering remotely. Your Remix app makes a standard HTTP request and gets image bytes back. No Chromium binary required."
+  - question: "What is the best way to generate OG images with Remix and ScreenshotAPI?"
+    answer: "Create a resource route that builds a template URL, sends it to ScreenshotAPI, and returns the captured image. Reference the resource route URL in your meta function's og:image tag."
+relatedPages:
+  - title: "Next.js Integration"
+    description: "Screenshot patterns for Next.js applications"
+    href: "/integrations/nextjs"
+  - title: "Vercel Integration"
+    description: "Deploy Remix screenshot workflows on Vercel"
+    href: "/integrations/vercel"
+  - title: "OG Image Generation"
+    description: "Generate dynamic Open Graph images at scale"
+    href: "/use-cases/og-image-generation"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Screenshot API for Remix"
+  description: "Add website screenshot capture to Remix with ScreenshotAPI. Loader functions, resource routes, and production-ready patterns."
+  dateModified: "2026-03-25"
+---
+
+## Capture Website Screenshots in Remix with ScreenshotAPI
+
+Remix's server-first architecture makes it a natural fit for integrating external APIs. Loader functions run on the server before the page renders, so your API keys stay hidden and data is ready by the time HTML reaches the browser. Adding screenshot functionality the traditional way means bundling Puppeteer or Playwright, which bloats deployments and adds cold start latency on serverless platforms.
+
+ScreenshotAPI gives your **Remix screenshot API** integration a lighter path. One HTTP request returns a pixel-perfect PNG, JPEG, or WebP. No headless browser, no binary management, no special infrastructure.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and copy your API key. **5 free credits** are included to get started.
+2. Add the API key to your `.env` file.
+3. Create a resource route that proxies screenshot requests.
+
+## Installation
+
+No additional packages are needed beyond what Remix provides. Install the SDK if you want typed helpers:
+
+```bash
+npm install screenshotapi
+```
+
+Add your API key to `.env`:
+
+```bash
+SCREENSHOTAPI_KEY=sk_live_xxxxx
+```
+
+## Resource Route for Screenshots
+
+Resource routes in Remix are route files that export a loader but no default component. They are perfect for serving binary content like images:
+
+```typescript
+// app/routes/api.screenshot.ts
+import type { LoaderFunctionArgs } from '@remix-run/node'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url)
+  const targetUrl = url.searchParams.get('url')
+
+  if (!targetUrl) {
+    return new Response(JSON.stringify({ error: 'url parameter is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const params = new URLSearchParams({
+    url: targetUrl,
+    width: url.searchParams.get('width') ?? '1440',
+    height: url.searchParams.get('height') ?? '900',
+    type: url.searchParams.get('type') ?? 'webp',
+    quality: url.searchParams.get('quality') ?? '80',
+  })
+
+  const fullPage = url.searchParams.get('fullPage')
+  if (fullPage) params.set('fullPage', fullPage)
+
+  const colorScheme = url.searchParams.get('colorScheme')
+  if (colorScheme) params.set('colorScheme', colorScheme)
+
+  const response = await fetch(`${API_BASE}?${params}`, {
+    headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+  })
+
+  if (!response.ok) {
+    return new Response(JSON.stringify({ error: 'Screenshot capture failed' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const imageType = url.searchParams.get('type') ?? 'webp'
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': `image/${imageType}`,
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
+  })
+}
+```
+
+Test it directly in the browser:
+
+```
+/api/screenshot?url=https://example.com&type=png
+```
+
+## Screenshot Capture Component
+
+Build a page that lets users enter a URL and see the screenshot:
+
+```typescript
+// app/routes/capture.tsx
+import { useState } from 'react'
+
+export default function CapturePage() {
+  const [targetUrl, setTargetUrl] = useState('')
+  const [screenshotSrc, setScreenshotSrc] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function capture() {
+    if (!targetUrl) return
+
+    setLoading(true)
+    setError(null)
+    setScreenshotSrc(null)
+
+    try {
+      const params = new URLSearchParams({
+        url: targetUrl,
+        width: '1440',
+        height: '900',
+        type: 'webp',
+      })
+
+      const response = await fetch(`/api/screenshot?${params}`)
+
+      if (!response.ok) {
+        throw new Error(`Capture failed: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      setScreenshotSrc(URL.createObjectURL(blob))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="screenshot-tool">
+      <div className="input-row">
+        <input
+          type="url"
+          value={targetUrl}
+          onChange={(e) => setTargetUrl(e.target.value)}
+          placeholder="https://example.com"
+          onKeyDown={(e) => e.key === 'Enter' && capture()}
+        />
+        <button disabled={loading || !targetUrl} onClick={capture}>
+          {loading ? 'Capturing...' : 'Capture'}
+        </button>
+      </div>
+
+      {error && <p className="error">{error}</p>}
+      {loading && <div className="skeleton" />}
+      {screenshotSrc && (
+        <img src={screenshotSrc} alt="Website screenshot" className="preview" />
+      )}
+    </div>
+  )
+}
+```
+
+## Loader-Based Screenshot Previews
+
+For pages that need screenshots at render time, fetch them in the loader and pass base64 data to the component:
+
+```typescript
+// app/routes/showcase.tsx
+import type { LoaderFunctionArgs } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+const showcaseSites = [
+  { name: 'GitHub', url: 'https://github.com' },
+  { name: 'Linear', url: 'https://linear.app' },
+  { name: 'Vercel', url: 'https://vercel.com' },
+]
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const previews = await Promise.all(
+    showcaseSites.map(async (site) => {
+      const params = new URLSearchParams({
+        url: site.url,
+        width: '1440',
+        height: '900',
+        type: 'webp',
+        quality: '75',
+      })
+
+      try {
+        const response = await fetch(`${API_BASE}?${params}`, {
+          headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+        })
+
+        if (!response.ok) return { ...site, image: null }
+
+        const buffer = Buffer.from(await response.arrayBuffer())
+        return {
+          ...site,
+          image: `data:image/webp;base64,${buffer.toString('base64')}`,
+        }
+      } catch {
+        return { ...site, image: null }
+      }
+    })
+  )
+
+  return { previews }
+}
+
+export default function ShowcasePage() {
+  const { previews } = useLoaderData<typeof loader>()
+
+  return (
+    <div className="grid">
+      {previews.map((preview) => (
+        <div key={preview.url} className="card">
+          <h3>{preview.name}</h3>
+          {preview.image ? (
+            <img src={preview.image} alt={`Preview of ${preview.name}`} />
+          ) : (
+            <div className="placeholder">Failed to load</div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+## Dynamic OG Image Generation
+
+Create a resource route that generates OG images by screenshotting a template page:
+
+```typescript
+// app/routes/og.$slug.ts
+import type { LoaderFunctionArgs } from '@remix-run/node'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  const slug = params.slug
+  const origin = new URL(request.url).origin
+
+  const templateUrl = `${origin}/og-template/${slug}`
+
+  const screenshotParams = new URLSearchParams({
+    url: templateUrl,
+    width: '1200',
+    height: '630',
+    type: 'png',
+    waitUntil: 'networkidle',
+  })
+
+  const response = await fetch(`${API_BASE}?${screenshotParams}`, {
+    headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+  })
+
+  if (!response.ok) {
+    return new Response('OG generation failed', { status: 502 })
+  }
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
+  })
+}
+```
+
+Reference it in your route's meta function:
+
+```typescript
+export function meta({ params }: MetaArgs) {
+  return [
+    { property: 'og:image', content: `/og/${params.slug}` },
+  ]
+}
+```
+
+Read more about this approach in the [OG image generation use case](/use-cases/og-image-generation) guide.
+
+## Screenshot Utility Module
+
+Extract shared logic into a utility for use across loaders:
+
+```typescript
+// app/lib/screenshot.server.ts
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+interface CaptureOptions {
+  url: string
+  width?: number
+  height?: number
+  type?: 'png' | 'jpeg' | 'webp'
+  quality?: number
+  fullPage?: boolean
+  colorScheme?: 'light' | 'dark'
+  waitUntil?: string
+}
+
+export async function captureScreenshot(
+  options: CaptureOptions,
+  retries = 2
+): Promise<Buffer> {
+  const params = new URLSearchParams({
+    url: options.url,
+    width: String(options.width ?? 1440),
+    height: String(options.height ?? 900),
+    type: options.type ?? 'webp',
+  })
+
+  if (options.quality) params.set('quality', String(options.quality))
+  if (options.fullPage) params.set('fullPage', 'true')
+  if (options.colorScheme) params.set('colorScheme', options.colorScheme)
+  if (options.waitUntil) params.set('waitUntil', options.waitUntil)
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE}?${params}`, {
+        headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+        signal: AbortSignal.timeout(30_000),
+      })
+
+      if (!response.ok) throw new Error(`API returned ${response.status}`)
+
+      return Buffer.from(await response.arrayBuffer())
+    } catch (err) {
+      if (attempt === retries) throw err
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+    }
+  }
+
+  throw new Error('Screenshot capture failed after retries')
+}
+```
+
+## Production Tips
+
+### URL Validation
+
+Always validate user-provided URLs before forwarding them:
+
+```typescript
+function isValidUrl(input: string): boolean {
+  try {
+    const parsed = new URL(input)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+```
+
+### Rate Limiting
+
+Protect your resource routes with rate limiting middleware. Remix does not include built-in rate limiting, so use a library or implement a simple in-memory counter in your server entry.
+
+### Caching
+
+Set `Cache-Control` headers on screenshot responses to reduce repeat API calls. For high-traffic pages, consider ISR-style patterns where you regenerate screenshots on a schedule. Visit the [pricing page](/pricing) to find the credit tier that matches your usage.
+
+## Further Reading
+
+- [How to Take Screenshots with JavaScript](/blog/how-to-take-screenshots-with-javascript) covers the fundamentals of browser screenshot capture.
+- The [JavaScript SDK documentation](/docs/sdks/javascript) has the complete parameter reference.
+- See the [Next.js integration](/integrations/nextjs) for comparison with another React-based framework.

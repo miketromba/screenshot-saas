@@ -224,4 +224,4 @@ ScreenshotAPI focuses on fresh captures. Every request generates a new screensho
 
 **Choose ScreenshotAPI** if you want a focused screenshot API with simple pricing, direct image responses, and WebP output. It is the right tool when screenshots are your only requirement and you prefer pay-as-you-go over subscriptions.
 
-For a broader market overview, see the [best screenshot API comparison](/compare/best-screenshot-api).
+Ready to switch? See the [Microlink migration guide](/blog/migrate-from-microlink) for parameter mapping and code examples. For a broader market overview, see the [best screenshot API comparison](/compare/best-screenshot-api).

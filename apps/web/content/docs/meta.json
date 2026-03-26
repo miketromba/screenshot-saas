@@ -5,10 +5,10 @@
 		"authentication",
 		"credits",
 		"---API Reference---",
-		"api",
+		"...api",
 		"---SDKs---",
-		"sdks",
+		"...sdks",
 		"---Guides---",
-		"guides"
+		"...guides"
 	]
 }

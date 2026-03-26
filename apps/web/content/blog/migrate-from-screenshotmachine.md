@@ -1,0 +1,289 @@
+---
+title: "Migrate from Screenshot Machine to ScreenshotAPI"
+description: "Complete guide to migrating from Screenshot Machine to ScreenshotAPI. Includes parameter mapping, code examples, and pricing comparison."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Blog
+    href: /blog
+  - label: Migrate from Screenshot Machine
+faq:
+  - question: "How does Screenshot Machine's dimension format translate to ScreenshotAPI?"
+    answer: "Screenshot Machine combines width and height into a single dimension parameter like '1366x768'. ScreenshotAPI uses separate width and height parameters, so '1366x768' becomes width=1366&height=768."
+  - question: "Does ScreenshotAPI support full-page captures like Screenshot Machine's 'xfull' format?"
+    answer: "Yes. Screenshot Machine uses dimension='1366xfull' for full-page screenshots. ScreenshotAPI uses fullPage=true alongside a width parameter, which is more explicit and easier to read in code."
+  - question: "Is ScreenshotAPI cheaper than Screenshot Machine?"
+    answer: "For most usage patterns, yes. Screenshot Machine starts at €9/month for 2,500 screenshots with unused quota expiring monthly. ScreenshotAPI credits are purchased once and never expire, so you only pay for what you actually use."
+  - question: "Can I use ScreenshotAPI with the same languages Screenshot Machine supports?"
+    answer: "Yes. ScreenshotAPI is a standard REST API that works with any HTTP client in any language. The documentation includes examples for JavaScript, Python, PHP, Ruby, Go, Java, C#, and cURL."
+relatedPages:
+  - title: "ScreenshotAPI vs Screenshot Machine"
+    description: "Detailed feature and pricing comparison."
+    href: "/compare/screenshotapi-vs-screenshotmachine"
+  - title: "Best Screenshot APIs"
+    description: "Full comparison of screenshot API services."
+    href: "/blog/best-screenshot-apis"
+  - title: "API Documentation"
+    description: "Complete ScreenshotAPI parameter reference."
+    href: "/docs"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "Migrate from Screenshot Machine to ScreenshotAPI"
+  description: "Complete guide to migrating from Screenshot Machine to ScreenshotAPI. Includes parameter mapping, code examples, and pricing comparison."
+  dateModified: "2026-03-25"
+---
+
+Screenshot Machine has been around for years and offers a straightforward screenshot API. However, its monthly subscription model, Euro-based pricing, and some quirks like the combined dimension parameter can feel dated compared to newer alternatives. [ScreenshotAPI](/) provides a modern REST API with credit-based pricing, standard parameter conventions, and credits that never expire. This guide walks you through the full migration.
+
+## Why Switch from Screenshot Machine
+
+Screenshot Machine's pricing starts at €9/month for 2,500 fresh screenshots. Unused screenshots reset each month. If you capture 800 screenshots one month and 4,000 the next, you are paying for capacity you did not use in the slow month while potentially hitting limits in the busy one.
+
+ScreenshotAPI solves this with one-time credit purchases. Buy credits when you need them, use them at your own pace, and they never expire. No monthly invoices, no wasted capacity, no surprise overages at €0.003-0.004 per extra screenshot.
+
+There are also developer experience improvements. Screenshot Machine packs width and height into a single `dimension` parameter (e.g., `1366x768` or `1366xfull`), which requires string formatting on every request. ScreenshotAPI uses separate `width` and `height` parameters and a boolean `fullPage` flag, matching how most developers think about viewport configuration. Authentication moves from a query-string `key` to a standard `x-api-key` header, keeping credentials out of server logs and URLs.
+
+## Pricing Comparison
+
+Screenshot Machine charges in Euros with monthly subscriptions. ScreenshotAPI charges in USD with one-time credit purchases that never expire.
+
+| Monthly Volume | Screenshot Machine Cost | ScreenshotAPI Cost | Annual Savings |
+|---|---|---|---|
+| 100/month | Free (100 limit) | $5 one-time | N/A |
+| 2,500/month | €9/month (~$10, $120/year) | $50 one-time | ~$70/year |
+| 10,000/month | €59/month (~$64, $768/year) | $200 one-time | ~$568/year |
+| 20,000/month | €59/month (~$64, $768/year) | $400 one-time | ~$368/year |
+| 50,000/month | €99/month (~$108, $1,296/year) | $750 one-time | ~$546/year |
+
+All ScreenshotAPI credits carry forward indefinitely. See the [pricing page](/pricing) for current packages.
+
+## Parameter Mapping
+
+Screenshot Machine and ScreenshotAPI share similar capabilities, but the parameter names and formats differ.
+
+| Screenshot Machine | ScreenshotAPI | Notes |
+|---|---|---|
+| `key=CUSTOMER_KEY` | `x-api-key: KEY` (header) | Moved to header |
+| `url` | `url` | Same |
+| `dimension=1366x768` | `width=1366&height=768` | Split into two params |
+| `dimension=1366xfull` | `width=1366&fullPage=true` | Separate fullPage boolean |
+| `format=png` | `type=png` | Renamed |
+| `delay=2000` | `delay=2000` | Same (milliseconds) |
+| `device=desktop` | N/A | Desktop is the default |
+| `device=tablet` | `width=768&height=1024` | Set dimensions manually |
+| `device=phone` | `width=375&height=812` | Set dimensions manually |
+| `zoom=100` | N/A | Standard zoom by default |
+| `cacheLimit=0` | N/A | Always fresh capture |
+| `hash=MD5_HASH` | N/A | Header auth replaces hash security |
+| N/A | `quality=80` | JPEG/WebP quality control |
+| N/A | `colorScheme=dark` | Dark mode capture |
+| N/A | `waitUntil=networkidle` | Page load strategy |
+| N/A | `waitForSelector=.el` | Wait for CSS selector |
+
+## Authentication Change
+
+Screenshot Machine authenticates via a `key` query parameter with an optional `hash` for added security. ScreenshotAPI uses a standard `x-api-key` HTTP header.
+
+### Screenshot Machine
+
+```javascript
+// Key visible in URL, optional MD5 hash for security
+const url = `https://api.screenshotmachine.com?key=${CUSTOMER_KEY}&url=https://example.com&dimension=1440x900`;
+const response = await fetch(url);
+```
+
+### ScreenshotAPI
+
+```javascript
+// Key in header, never exposed in URLs or logs
+const response = await fetch(
+  'https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=1440&height=900&type=png',
+  { headers: { 'x-api-key': 'sk_live_your_api_key' } }
+);
+```
+
+## Before and After: JavaScript
+
+### Screenshot Machine (Before)
+
+```javascript
+async function takeScreenshot(targetUrl, options = {}) {
+  const {
+    width = 1440,
+    height = 900,
+    fullPage = false,
+    format = 'png',
+    delay = 0,
+  } = options;
+
+  const dimension = fullPage ? `${width}xfull` : `${width}x${height}`;
+
+  const params = new URLSearchParams({
+    key: process.env.SCREENSHOT_MACHINE_KEY,
+    url: targetUrl,
+    dimension,
+    format,
+    delay: String(delay),
+    cacheLimit: '0',
+  });
+
+  const response = await fetch(
+    `https://api.screenshotmachine.com?${params}`
+  );
+  return Buffer.from(await response.arrayBuffer());
+}
+```
+
+### ScreenshotAPI (After)
+
+```javascript
+async function takeScreenshot(targetUrl, options = {}) {
+  const {
+    width = 1440,
+    height = 900,
+    fullPage = false,
+    type = 'png',
+    delay = 0,
+  } = options;
+
+  const params = new URLSearchParams({
+    url: targetUrl,
+    width: String(width),
+    height: String(height),
+    type,
+    delay: String(delay),
+  });
+
+  if (fullPage) params.set('fullPage', 'true');
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOT_API_KEY } }
+  );
+
+  if (!response.ok) throw new Error(`Screenshot failed: ${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+```
+
+The dimension string-building logic is gone. Width, height, and fullPage are separate parameters that map directly to function arguments without string concatenation.
+
+## Before and After: Python
+
+### Screenshot Machine (Before)
+
+```python
+import requests
+
+def take_screenshot(url, width=1440, height=900, full_page=False):
+    dimension = f"{width}xfull" if full_page else f"{width}x{height}"
+
+    response = requests.get(
+        "https://api.screenshotmachine.com",
+        params={
+            "key": SCREENSHOT_MACHINE_KEY,
+            "url": url,
+            "dimension": dimension,
+            "format": "png",
+            "cacheLimit": 0,
+        },
+    )
+    return response.content
+```
+
+### ScreenshotAPI (After)
+
+```python
+import requests
+import os
+
+def take_screenshot(url, width=1440, height=900, full_page=False):
+    params = {
+        "url": url,
+        "width": width,
+        "height": height,
+        "type": "png",
+    }
+
+    if full_page:
+        params["fullPage"] = "true"
+
+    response = requests.get(
+        "https://screenshotapi.to/api/v1/screenshot",
+        params=params,
+        headers={"x-api-key": os.environ["SCREENSHOT_API_KEY"]},
+    )
+    response.raise_for_status()
+    return response.content
+```
+
+For complete language-specific guides, see the [Python guide](/blog/how-to-take-screenshots-with-python) and [JavaScript guide](/blog/how-to-take-screenshots-with-javascript).
+
+## Before and After: cURL
+
+### Screenshot Machine (Before)
+
+```bash
+curl "https://api.screenshotmachine.com?key=YOUR_KEY&url=https://example.com&dimension=1440x900&format=png&cacheLimit=0" \
+  --output screenshot.png
+```
+
+### ScreenshotAPI (After)
+
+```bash
+curl -G "https://screenshotapi.to/api/v1/screenshot" \
+  -d "url=https://example.com" \
+  -d "width=1440" \
+  -d "height=900" \
+  -d "type=png" \
+  -H "x-api-key: sk_live_your_api_key" \
+  --output screenshot.png
+```
+
+## What You Can Simplify
+
+Migrating to ScreenshotAPI lets you clean up several patterns that Screenshot Machine requires.
+
+**No more dimension string building.** The `WIDTHxHEIGHT` and `WIDTHxfull` format means every call needs string concatenation or template literals. With separate `width`, `height`, and `fullPage` parameters, you pass values directly without formatting.
+
+**No more device parameter mapping.** Screenshot Machine uses `device=phone`, `device=tablet`, and `device=desktop` to set viewport presets. ScreenshotAPI lets you set exact dimensions, giving you precise control over any viewport size without guessing what "tablet" means in their system.
+
+**No more cache management.** Screenshot Machine caches results by default, and you need `cacheLimit=0` to force fresh captures. ScreenshotAPI always renders a new screenshot, so there is no stale data to worry about.
+
+**No more hash-based request signing.** If you used Screenshot Machine's `hash` parameter for security, you can drop that logic entirely. Header-based authentication with `x-api-key` is simpler and more secure than MD5-based request signing.
+
+## Features You Gain
+
+ScreenshotAPI includes capabilities that Screenshot Machine does not offer:
+
+**Dark mode screenshots.** Use `colorScheme=dark` to capture websites in dark mode without injecting custom CSS or JavaScript. This is useful for [dark mode screenshot workflows](/blog/how-to-capture-dark-mode-screenshots).
+
+**Wait for selector.** The `waitForSelector` parameter lets you wait for a specific DOM element to appear before capturing. This is critical for single-page applications where content loads asynchronously. Screenshot Machine only offers a fixed `delay` parameter for this.
+
+**Page load strategies.** The `waitUntil` parameter supports values like `networkidle`, `domcontentloaded`, and `load`, giving you fine-grained control over when the screenshot fires. This is especially helpful for pages with lazy-loaded images or API-driven content.
+
+**WebP output.** ScreenshotAPI supports `type=webp` for smaller file sizes. Screenshot Machine is limited to PNG and JPEG.
+
+## Migration Checklist
+
+1. **Create an account** at [screenshotapi.to](/) and purchase credits
+2. **Store your API key** in environment variables as `SCREENSHOT_API_KEY`
+3. **Update the endpoint** from `api.screenshotmachine.com` to `screenshotapi.to/api/v1/screenshot`
+4. **Move authentication** from `key` query parameter to `x-api-key` header
+5. **Split the dimension parameter** into separate `width` and `height` values
+6. **Replace `dimension=WIDTHxfull`** with `width=WIDTH&fullPage=true`
+7. **Rename `format`** to `type`
+8. **Remove `cacheLimit=0`** (always fresh)
+9. **Remove `device` parameter**, set explicit width/height values instead
+10. **Remove hash generation code** if you used the `hash` security feature
+11. **Test side-by-side**: capture the same URLs with both APIs and compare output
+12. **Deactivate your Screenshot Machine subscription** once migration is verified
+
+## Next Steps
+
+- Read the full [Screenshot Machine vs ScreenshotAPI comparison](/compare/screenshotapi-vs-screenshotmachine) for a feature breakdown
+- Browse the [API documentation](/docs) for the complete parameter reference
+- Learn how to [capture full-page screenshots](/blog/how-to-take-full-page-screenshots) with ScreenshotAPI
+- See the [best screenshot APIs comparison](/compare/best-screenshot-api) to understand where each service fits

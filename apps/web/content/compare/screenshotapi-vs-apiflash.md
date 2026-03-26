@@ -183,7 +183,7 @@ See the [full pricing details](/pricing) for ScreenshotAPI plans.
 | `wait_until=network_idle` | `waitUntil=networkidle` |
 | `delay` (ms) | `delay` (ms) |
 
-For step-by-step instructions, see the [API documentation](/docs).
+For step-by-step instructions, see the [ApiFlash migration guide](/blog/migrate-from-apiflash).
 
 ## Integrating with Your Stack
 

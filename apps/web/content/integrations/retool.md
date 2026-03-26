@@ -1,0 +1,298 @@
+---
+title: "Screenshot API for Retool"
+description: "Add website screenshot capture to Retool internal tools with ScreenshotAPI. REST API resources, queries, and component patterns."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Retool
+faq:
+  - question: "How do I connect ScreenshotAPI to Retool?"
+    answer: "Create a REST API resource in Retool with the base URL set to the ScreenshotAPI endpoint and the x-api-key header configured with your API key. Then create queries that call this resource."
+  - question: "Can I display screenshots inline in Retool?"
+    answer: "Yes. Use the Image component with the source set to the screenshot API URL. Retool renders the image directly from the API response."
+  - question: "Does Retool support binary responses from ScreenshotAPI?"
+    answer: "Yes. When you configure a query that returns an image, you can use the response as a data URL in Image components or download it using JavaScript queries."
+  - question: "Can I let users enter URLs and capture screenshots in Retool?"
+    answer: "Yes. Use a Text Input component for the URL, connect it to a query that calls ScreenshotAPI with the input value, and display the result in an Image component."
+relatedPages:
+  - title: "Zapier Integration"
+    description: "No-code screenshot automation"
+    href: "/integrations/zapier"
+  - title: "Express Integration"
+    description: "Build a screenshot proxy backend"
+    href: "/integrations/express"
+  - title: "React Integration"
+    description: "Screenshot capture in React apps"
+    href: "/integrations/react"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Screenshot API for Retool"
+  description: "Add website screenshot capture to Retool internal tools with ScreenshotAPI. REST API resources, queries, and component patterns."
+  dateModified: "2026-03-25"
+---
+
+## Add Website Screenshots to Retool with ScreenshotAPI
+
+Retool makes it easy to build internal tools with a drag-and-drop interface. Adding screenshot functionality lets your team capture website previews, monitor page changes, generate visual reports, and build site management dashboards. Instead of setting up a separate screenshot service with Puppeteer, you can call ScreenshotAPI directly from Retool queries.
+
+A **Retool screenshot** integration with ScreenshotAPI gives your internal tools pixel-perfect website captures through a simple REST API call. No server infrastructure, no headless browser, no DevOps overhead.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and copy your API key. **5 free credits** are included.
+2. Create a REST API resource in Retool for ScreenshotAPI.
+3. Build queries and components that use the resource.
+
+## Setting Up the REST API Resource
+
+Navigate to **Resources** in your Retool instance and create a new REST API resource:
+
+- **Name**: ScreenshotAPI
+- **Base URL**: `https://screenshotapi.to/api/v1`
+- **Headers**:
+  - `x-api-key`: `sk_live_xxxxx`
+
+Save the resource. All queries using this resource automatically include the API key header.
+
+## Basic Screenshot Query
+
+Create a new query in your Retool app:
+
+- **Resource**: ScreenshotAPI
+- **Action Type**: GET
+- **URL Path**: `/screenshot`
+- **URL Parameters**:
+  - `url`: `{{ textInput1.value }}`
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `png`
+- **Response Type**: Binary
+
+Name it `captureScreenshot` and configure it to run manually (not on page load).
+
+## Screenshot Capture Tool
+
+Build an internal screenshot tool with these components:
+
+### Layout
+
+1. **Text Input** (`textInput1`): URL entry field
+   - Placeholder: `https://example.com`
+2. **Button** (`captureBtn`): Trigger screenshot capture
+   - Label: `Capture Screenshot`
+   - On Click: `captureScreenshot.trigger()`
+3. **Image** (`screenshotImage`): Display the captured screenshot
+   - Source: `{{ captureScreenshot.data }}`
+4. **Text** (`statusText`): Show loading/error state
+   - Value: `{{ captureScreenshot.isLoading ? 'Capturing...' : '' }}`
+
+### Advanced Query Configuration
+
+For more control, use a JavaScript query instead:
+
+```javascript
+// captureScreenshot query (JavaScript)
+const url = textInput1.value;
+if (!url) {
+  throw new Error('Please enter a URL');
+}
+
+const params = new URLSearchParams({
+  url,
+  width: widthInput.value || '1440',
+  height: heightInput.value || '900',
+  type: formatSelect.value || 'png',
+  quality: qualitySlider.value?.toString() || '80',
+});
+
+const response = await fetch(
+  `https://screenshotapi.to/api/v1/screenshot?${params}`,
+  {
+    headers: { 'x-api-key': '{{ SCREENSHOTAPI_KEY }}' },
+  }
+);
+
+if (!response.ok) {
+  throw new Error(`Screenshot failed: ${response.status}`);
+}
+
+const blob = await response.blob();
+return URL.createObjectURL(blob);
+```
+
+## Site Monitoring Dashboard
+
+Build a dashboard that displays screenshots of your key pages:
+
+### Data Source: Table of Sites
+
+Create a Retool Database table or connect to your existing database with columns:
+- `id`: Primary key
+- `name`: Site name
+- `url`: Site URL
+- `last_screenshot`: Timestamp
+- `screenshot_url`: Stored screenshot URL
+
+### Monitoring Query
+
+Create a JavaScript query that captures screenshots for all sites:
+
+```javascript
+// monitorSites query
+const sites = sitesTable.data;
+
+const results = [];
+for (const site of sites) {
+  try {
+    const params = new URLSearchParams({
+      url: site.url,
+      width: '1440',
+      height: '900',
+      type: 'webp',
+      quality: '80',
+    });
+
+    const response = await fetch(
+      `https://screenshotapi.to/api/v1/screenshot?${params}`,
+      {
+        headers: { 'x-api-key': '{{ SCREENSHOTAPI_KEY }}' },
+      }
+    );
+
+    results.push({
+      id: site.id,
+      success: response.ok,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    results.push({
+      id: site.id,
+      success: false,
+      error: err.message,
+    });
+  }
+}
+
+return results;
+```
+
+### Display Components
+
+- **Table**: List all monitored sites with status
+- **Image Grid**: Show the latest screenshot for each site using a List View component
+- **Button**: Trigger a manual refresh of all screenshots
+
+## Comparison View
+
+Build a side-by-side comparison tool for light and dark mode:
+
+```javascript
+// compareModes query
+const url = textInput1.value;
+
+const [lightRes, darkRes] = await Promise.all([
+  fetch(
+    `https://screenshotapi.to/api/v1/screenshot?url=${encodeURIComponent(url)}&width=1440&height=900&type=webp&colorScheme=light`,
+    { headers: { 'x-api-key': '{{ SCREENSHOTAPI_KEY }}' } }
+  ),
+  fetch(
+    `https://screenshotapi.to/api/v1/screenshot?url=${encodeURIComponent(url)}&width=1440&height=900&type=webp&colorScheme=dark`,
+    { headers: { 'x-api-key': '{{ SCREENSHOTAPI_KEY }}' } }
+  ),
+]);
+
+const lightBlob = await lightRes.blob();
+const darkBlob = await darkRes.blob();
+
+return {
+  light: URL.createObjectURL(lightBlob),
+  dark: URL.createObjectURL(darkBlob),
+};
+```
+
+Display in two side-by-side Image components:
+- **Light**: `{{ compareModes.data.light }}`
+- **Dark**: `{{ compareModes.data.dark }}`
+
+## Viewport Selector
+
+Add a Select component to let users choose viewport sizes:
+
+- **Options**:
+  - Desktop (1440x900)
+  - Tablet (768x1024)
+  - Mobile (390x844)
+  - Full HD (1920x1080)
+
+Map the selected width and height to your screenshot query parameters.
+
+## Bulk Screenshot Tool
+
+Build a tool that captures screenshots from a CSV upload:
+
+1. **File Input**: Accept CSV with URL column
+2. **Table**: Display parsed CSV data
+3. **Button**: Trigger bulk capture
+4. **Progress Bar**: Show completion percentage
+5. **Table**: Display results with status
+
+```javascript
+// bulkCapture query
+const urls = table1.data.map(row => row.url);
+const results = [];
+
+for (let i = 0; i < urls.length; i++) {
+  try {
+    const params = new URLSearchParams({
+      url: urls[i],
+      width: '1440',
+      height: '900',
+      type: 'webp',
+      quality: '80',
+    });
+
+    const response = await fetch(
+      `https://screenshotapi.to/api/v1/screenshot?${params}`,
+      { headers: { 'x-api-key': '{{ SCREENSHOTAPI_KEY }}' } }
+    );
+
+    results.push({
+      url: urls[i],
+      success: response.ok,
+      size: response.ok ? (await response.blob()).size : 0,
+    });
+  } catch (err) {
+    results.push({ url: urls[i], success: false, error: err.message });
+  }
+}
+
+return results;
+```
+
+## Production Tips
+
+### Environment Variables
+
+Store the API key in Retool's environment variables (Settings > Environment). Reference it as `{{ SCREENSHOTAPI_KEY }}` in queries. This keeps the key out of the app configuration.
+
+### Error States
+
+Always handle error states in your components. Use conditional visibility to show error messages when queries fail, and disable buttons while queries are loading.
+
+### Rate Limiting
+
+If multiple team members use the tool simultaneously, their requests share your API key. Monitor usage on the ScreenshotAPI dashboard and set appropriate expectations with your team.
+
+### Credit Management
+
+Track credit usage by logging each screenshot request to a database table. This helps you forecast credit needs and identify heavy usage patterns. Visit the [pricing page](/pricing) for credit tier options.
+
+## Further Reading
+
+- The [React integration](/integrations/react) covers building custom screenshot UIs.
+- See the [Zapier integration](/integrations/zapier) for automating screenshots outside of Retool.
+- The [API documentation](/docs) has the full parameter reference for all endpoints.
