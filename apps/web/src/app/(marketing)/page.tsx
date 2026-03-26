@@ -136,9 +136,9 @@ export default function HomePage() {
 							</span>
 						</h1>
 						<p className="mt-6 text-lg text-muted-foreground md:text-xl">
-							A fast, reliable screenshot API powered by headless
-							Chromium. One GET request, one screenshot, one
-							credit. SDKs for every major platform.
+							A fast, reliable screenshot API. One GET request,
+							one screenshot, one credit. SDKs for every major
+							platform.
 						</p>
 						<div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
 							<Link
