@@ -2,6 +2,18 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { highlight } from 'sugar-high'
+
+function extractText(node: unknown): string {
+	if (typeof node === 'string') return node
+	if (Array.isArray(node)) return node.map(extractText).join('')
+	if (node && typeof node === 'object' && 'props' in node) {
+		return extractText(
+			(node as { props: { children: unknown } }).props.children
+		)
+	}
+	return String(node ?? '')
+}
 
 export function MarkdownRenderer({ content }: { content: string }) {
 	return (
@@ -22,6 +34,11 @@ export function MarkdownRenderer({ content }: { content: string }) {
 						const isBlock = className?.startsWith('language-')
 						if (isBlock) {
 							const lang = className?.replace('language-', '')
+							const code = extractText(children).replace(
+								/\n$/,
+								''
+							)
+							const html = highlight(code)
 							return (
 								<>
 									<div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
@@ -32,9 +49,11 @@ export function MarkdownRenderer({ content }: { content: string }) {
 											{lang}
 										</span>
 									</div>
-									<code className="text-gray-300">
-										{children}
-									</code>
+									<code
+										dangerouslySetInnerHTML={{
+											__html: html
+										}}
+									/>
 								</>
 							)
 						}

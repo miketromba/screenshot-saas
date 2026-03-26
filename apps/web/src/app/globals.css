@@ -82,6 +82,15 @@
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
 	--font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--sh-class: #8be9fd;
+	--sh-identifier: #e2e8f0;
+	--sh-sign: #8996a5;
+	--sh-property: #bd93f9;
+	--sh-entity: #50fa7b;
+	--sh-jsxliterals: #6272a4;
+	--sh-string: #a5d6a7;
+	--sh-keyword: #ff79c6;
+	--sh-comment: #6272a4;
 }
 
 .dark {
