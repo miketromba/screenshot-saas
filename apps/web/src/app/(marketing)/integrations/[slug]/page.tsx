@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { IntegrationIcon } from '@/components/marketing/integration-icon'
 import { ContentPageView } from '@/components/seo/content-page'
 import { getAllSlugs, getContentPage } from '@/lib/content'
 
@@ -36,5 +37,10 @@ export default async function IntegrationPage({
 	const page = getContentPage(SECTION, slug)
 	if (!page) notFound()
 
-	return <ContentPageView page={page} />
+	return (
+		<ContentPageView
+			page={page}
+			icon={<IntegrationIcon slug={slug} size="lg" />}
+		/>
+	)
 }
