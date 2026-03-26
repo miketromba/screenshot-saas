@@ -1,5 +1,23 @@
 # screenshot-saas
 
+## ⚠️ MANDATORY: Verify Everything Before Declaring Done
+
+**No task is complete until you have comprehensively verified it works.** This is non-negotiable.
+
+Before you tell the user something is "done", you MUST:
+
+1. **Run the linter and type checker** — zero errors allowed. Run `bun check` or the relevant Biome/TypeScript commands and confirm a clean output.
+2. **Run automated tests** — if tests exist for the area you touched, run them and confirm they pass. If you added new logic, write tests for it and run them.
+3. **Manually verify in a real environment** — spin up the dev server, use `agent-browser` (see `.agents/skills/agent-browser/SKILL.md`) to test UI changes in a real browser, hit the API endpoint, query the database — whatever it takes to confirm the feature actually works end-to-end in a running application. Reading the code and "it looks right" is NOT verification.
+4. **Test edge cases and error states** — don't just test the happy path. Confirm error handling, empty states, invalid inputs, and boundary conditions behave correctly.
+5. **Confirm you haven't broken anything else** — run the full test suite, not just the files you touched. Check that related features still work.
+
+**If you cannot verify something (e.g., missing credentials, blocked port), explicitly tell the user what you were unable to verify and why.** Do NOT silently skip verification and claim the task is done.
+
+**Use the QA Testing skill** (`.agents/skills/qa-testing/SKILL.md`) for structured, thorough verification of any feature or fix. It provides a complete workflow for autonomous QA using browser automation.
+
+**The bar is: you would bet money that it works.** If you're not that confident, keep testing until you are or flag what's uncertain. Half-done work that "should work" wastes more time than doing it right the first time.
+
 ## Stack
 
 - **Monorepo:** Turborepo + Bun workspaces
@@ -21,7 +39,7 @@
 - Always show hover, loading, and error states
 - When adding/removing env vars, update `.env.example` to match
 - Never hardcode colors — use design tokens from the theme
-- Verify changes work before claiming they're done
+- Verify changes work before claiming they're done — see **MANDATORY: Verify Everything Before Declaring Done** above
 
 ## Database
 
