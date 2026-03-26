@@ -27,6 +27,9 @@ relatedPages:
   - title: "Vercel Integration"
     description: "Serverless screenshots on Vercel"
     href: "/integrations/vercel"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

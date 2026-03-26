@@ -1,0 +1,155 @@
+---
+title: Backend Frameworks
+description: Integrate ScreenshotAPI with Django, Flask, Rails, Laravel, Express, FastAPI, Spring Boot, .NET, Go, and more.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+Backend integrations call ScreenshotAPI directly from your server. The API key stays safe, and you have full control over caching, storage, and background processing. Every backend framework follows the same pattern: make an HTTP request to the screenshot endpoint, receive image bytes, and return or store them.
+
+## Python Frameworks
+
+### Django
+
+Create views or DRF endpoints that proxy screenshot requests. Use Celery for background processing and Django's storage backends for persistence.
+
+```python
+import requests
+from django.conf import settings
+from django.http import HttpResponse
+
+def screenshot_view(request):
+    url = request.GET.get('url')
+    response = requests.get(
+        'https://screenshotapi.to/api/v1/screenshot',
+        params={'url': url, 'width': 1440, 'height': 900, 'type': 'png'},
+        headers={'x-api-key': settings.SCREENSHOTAPI_KEY},
+        timeout=30,
+    )
+    return HttpResponse(response.content, content_type='image/png')
+```
+
+Full walkthrough: [Django integration guide](/integrations/django)
+
+### Flask
+
+Lightweight screenshot endpoints with Flask's routing and optional caching.
+
+Full walkthrough: [Flask integration guide](/integrations/flask)
+
+### FastAPI
+
+Async screenshot capture with Pydantic validation and background tasks.
+
+Full walkthrough: [FastAPI integration guide](/integrations/fastapi)
+
+**Python SDK:** [Python SDK reference](/docs/sdks/python)
+
+## Ruby Frameworks
+
+### Rails
+
+Controllers, Active Storage integration, and Sidekiq background jobs for screenshot processing.
+
+Full walkthrough: [Rails integration guide](/integrations/rails)
+
+### Sinatra
+
+Minimal Ruby screenshot endpoints for lightweight applications.
+
+Full walkthrough: [Sinatra integration guide](/integrations/sinatra)
+
+**Ruby SDK:** [Ruby SDK reference](/docs/sdks/ruby)
+
+## PHP Frameworks
+
+### Laravel
+
+Controllers, queued jobs with Laravel Horizon, and Storage facade for saving screenshots.
+
+Full walkthrough: [Laravel integration guide](/integrations/laravel)
+
+### WordPress
+
+Shortcodes, REST API endpoints, and WP-Cron jobs for scheduled captures.
+
+Full walkthrough: [WordPress integration guide](/integrations/wordpress)
+
+**PHP SDK:** [PHP SDK reference](/docs/sdks/php)
+
+## JavaScript / TypeScript Frameworks
+
+### Express
+
+Middleware-based proxy routes with streaming support and response caching.
+
+```typescript
+import express from 'express'
+
+const app = express()
+
+app.get('/api/screenshot', async (req, res) => {
+  const { url, width = '1440', height = '900', type = 'png' } = req.query
+  const params = new URLSearchParams({
+    url: String(url), width: String(width),
+    height: String(height), type: String(type),
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+  res.set('Content-Type', `image/${type}`)
+  res.set('Cache-Control', 'public, max-age=86400')
+  res.send(buffer)
+})
+```
+
+Full walkthrough: [Express integration guide](/integrations/express)
+
+### Deno
+
+Deno.serve, Fresh routes, and Deno Deploy. Uses the built-in `fetch` API with no extra dependencies.
+
+Full walkthrough: [Deno integration guide](/integrations/deno)
+
+**JavaScript SDK:** [JavaScript / TypeScript SDK reference](/docs/sdks/javascript)
+
+## Go Frameworks
+
+### Gin
+
+Go handlers with goroutines for concurrent screenshot captures.
+
+Full walkthrough: [Gin integration guide](/integrations/gin)
+
+**Go SDK:** [Go SDK reference](/docs/sdks/go)
+
+## Java Frameworks
+
+### Spring Boot
+
+RestTemplate/WebClient for HTTP calls and `@Scheduled` tasks for automated captures.
+
+Full walkthrough: [Spring Boot integration guide](/integrations/spring-boot)
+
+**API access:** Use the [Screenshot API](/docs/api/screenshot) directly with any Java HTTP client, or use [cURL](/docs/sdks/curl) for quick testing.
+
+## .NET
+
+HttpClient, ASP.NET controller endpoints, and hosted background services for batch processing.
+
+Full walkthrough: [.NET integration guide](/integrations/dotnet)
+
+**API access:** Use the [Screenshot API](/docs/api/screenshot) directly with `HttpClient`, or use [cURL](/docs/sdks/curl) for quick testing.
+
+## Further Reading
+
+- [Screenshot API reference](/docs/api/screenshot) — all available parameters
+- [Authentication](/docs/authentication) — API key management
+- [Credits](/docs/credits) — pricing and credit packs

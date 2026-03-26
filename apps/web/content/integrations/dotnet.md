@@ -27,6 +27,9 @@ relatedPages:
   - title: "Docker Integration"
     description: "Containerize .NET screenshot workflows"
     href: "/integrations/docker"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

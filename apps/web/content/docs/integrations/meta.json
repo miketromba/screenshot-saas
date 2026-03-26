@@ -1,0 +1,4 @@
+{
+	"title": "Integrations",
+	"pages": ["index", "frontend-frameworks", "backend-frameworks", "serverless-platforms", "automation", "ci-cd"]
+}

@@ -27,6 +27,9 @@ relatedPages:
   - title: "Visual Regression Testing"
     description: "Catch UI bugs with automated comparisons"
     href: "/use-cases/visual-regression-testing"
+  - title: "cURL Reference"
+    description: "Command-line screenshot capture examples"
+    href: "/docs/sdks/curl"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

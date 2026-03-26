@@ -368,6 +368,19 @@ export default function HomePage() {
 							</Link>
 						))}
 					</div>
+					<div className="mx-auto mt-8 max-w-2xl text-center">
+						<p className="text-sm text-muted-foreground">
+							Plus integration guides for 30+ frameworks and
+							platforms including Next.js, React, Vue, Django,
+							Rails, Laravel, AWS Lambda, and more.
+						</p>
+						<Link
+							href="/integrations"
+							className="mt-3 inline-block cursor-pointer text-sm font-medium text-primary transition-colors hover:text-primary/80"
+						>
+							Browse all integrations &rarr;
+						</Link>
+					</div>
 				</div>
 			</section>
 

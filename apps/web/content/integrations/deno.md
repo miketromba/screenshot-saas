@@ -27,6 +27,9 @@ relatedPages:
   - title: "Express Integration"
     description: "Node.js screenshot proxy comparison"
     href: "/integrations/express"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

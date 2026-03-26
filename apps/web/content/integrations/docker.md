@@ -27,6 +27,9 @@ relatedPages:
   - title: "Spring Boot Integration"
     description: "Java screenshot service in containers"
     href: "/integrations/spring-boot"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

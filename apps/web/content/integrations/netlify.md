@@ -27,6 +27,9 @@ relatedPages:
   - title: "GitHub Actions Integration"
     description: "CI/CD screenshot automation"
     href: "/integrations/github-actions"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

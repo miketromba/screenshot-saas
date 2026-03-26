@@ -1,0 +1,103 @@
+---
+title: Integrations Overview
+description: ScreenshotAPI integrates with 30+ frameworks, platforms, and tools. Find guides for your stack.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card'
+
+## Works With Your Stack
+
+ScreenshotAPI is a simple REST API, so it works everywhere HTTP requests do. We provide [official SDKs](/docs/sdks/javascript) for the most popular languages and detailed integration guides for 30+ frameworks, platforms, and automation tools.
+
+Browse the categories below to find your stack, or jump straight to the [SDK docs](/docs/sdks/javascript) if you just need the API client.
+
+## Frontend Frameworks
+
+Build screenshot features into your client-side apps. All frontend integrations use a backend proxy to keep your API key secure.
+
+<Cards>
+  <Card title="Next.js" href="/integrations/nextjs" description="App Router, Server Components, API routes, and Vercel deployment" />
+  <Card title="React" href="/integrations/react" description="Vite, CRA, Remix — any React setup with a backend proxy" />
+  <Card title="Vue" href="/integrations/vue" description="Vue 3, Nuxt, and Composition API patterns" />
+  <Card title="Angular" href="/integrations/angular" description="Services, HttpClient, and dependency injection" />
+  <Card title="Svelte" href="/integrations/svelte" description="SvelteKit server routes and Svelte components" />
+  <Card title="Remix" href="/integrations/remix" description="Loader functions and resource routes" />
+  <Card title="Astro" href="/integrations/astro" description="API endpoints and server-side rendering" />
+</Cards>
+
+**Relevant SDK:** [JavaScript / TypeScript SDK](/docs/sdks/javascript)
+
+## Backend Frameworks
+
+Integrate screenshots into your server-side applications. Each guide includes production-ready code with error handling, caching, and background processing patterns.
+
+<Cards>
+  <Card title="Django" href="/integrations/django" description="Views, DRF endpoints, Celery tasks, model storage" />
+  <Card title="Flask" href="/integrations/flask" description="Lightweight routes, caching, and deployment" />
+  <Card title="FastAPI" href="/integrations/fastapi" description="Async endpoints, Pydantic validation, background tasks" />
+  <Card title="Rails" href="/integrations/rails" description="Controllers, Active Storage, Sidekiq jobs" />
+  <Card title="Sinatra" href="/integrations/sinatra" description="Minimal Ruby screenshot endpoints" />
+  <Card title="Laravel" href="/integrations/laravel" description="Controllers, queued jobs, Storage facade" />
+  <Card title="WordPress" href="/integrations/wordpress" description="Shortcodes, REST API endpoints, and cron jobs" />
+  <Card title="Express" href="/integrations/express" description="Middleware, proxy routes, and streaming" />
+  <Card title="Spring Boot" href="/integrations/spring-boot" description="RestTemplate, WebClient, and scheduled tasks" />
+  <Card title=".NET" href="/integrations/dotnet" description="HttpClient, ASP.NET controllers, and background services" />
+  <Card title="Gin" href="/integrations/gin" description="Go handlers, goroutines, and concurrent captures" />
+  <Card title="Deno" href="/integrations/deno" description="Deno.serve, Fresh routes, and Deploy" />
+</Cards>
+
+**Relevant SDKs:** [Python](/docs/sdks/python) · [Ruby](/docs/sdks/ruby) · [PHP](/docs/sdks/php) · [Go](/docs/sdks/go) · [JavaScript](/docs/sdks/javascript)
+
+## Serverless & Hosting Platforms
+
+Deploy screenshot functionality on serverless platforms and edge networks with zero infrastructure to manage.
+
+<Cards>
+  <Card title="Vercel" href="/integrations/vercel" description="Edge and serverless functions, ISR caching" />
+  <Card title="AWS Lambda" href="/integrations/aws-lambda" description="API Gateway, S3 storage, SQS batch processing, CDK" />
+  <Card title="Cloudflare Workers" href="/integrations/cloudflare-workers" description="Edge screenshot capture with R2 storage" />
+  <Card title="Google Cloud Functions" href="/integrations/google-cloud-functions" description="HTTP triggers, Cloud Storage, Pub/Sub" />
+  <Card title="Azure Functions" href="/integrations/azure-functions" description="HTTP triggers, Blob Storage, Queue triggers" />
+  <Card title="Netlify" href="/integrations/netlify" description="Netlify Functions and edge handlers" />
+  <Card title="Supabase Edge Functions" href="/integrations/supabase-edge-functions" description="Deno-based edge functions with Supabase Storage" />
+  <Card title="Docker" href="/integrations/docker" description="Containerized screenshot services with any language" />
+</Cards>
+
+**Relevant SDKs:** [JavaScript](/docs/sdks/javascript) · [Python](/docs/sdks/python) · [cURL](/docs/sdks/curl)
+
+## Automation & No-Code
+
+Capture screenshots without writing code using popular automation platforms.
+
+<Cards>
+  <Card title="Zapier" href="/integrations/zapier" description="Webhook actions, scheduled Zaps, multi-step workflows" />
+  <Card title="n8n" href="/integrations/n8n" description="HTTP Request nodes, batch processing, self-hosted workflows" />
+  <Card title="Make" href="/integrations/make" description="HTTP modules, scenarios, and data store integration" />
+  <Card title="Retool" href="/integrations/retool" description="REST API queries, workflows, and internal tool builders" />
+</Cards>
+
+**Relevant docs:** [Screenshot API Reference](/docs/api/screenshot) · [cURL examples](/docs/sdks/curl)
+
+## CI/CD
+
+Automate screenshots in your continuous integration pipelines for visual regression testing and deployment monitoring.
+
+<Cards>
+  <Card title="GitHub Actions" href="/integrations/github-actions" description="Workflow steps, visual regression testing, PR previews" />
+  <Card title="GitLab CI" href="/integrations/gitlab-ci" description="Pipeline jobs, artifacts, and merge request screenshots" />
+  <Card title="Bitbucket Pipelines" href="/integrations/bitbucket-pipelines" description="Pipeline steps, artifacts, and PR screenshots" />
+</Cards>
+
+**Relevant docs:** [cURL](/docs/sdks/curl) · [JavaScript SDK](/docs/sdks/javascript)
+
+## Using the REST API Directly
+
+Every integration above ultimately calls the same REST API. If your stack isn't listed, you can use ScreenshotAPI from any language or tool that can make HTTP requests:
+
+```bash
+curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
+  -H "x-api-key: sk_live_your_key_here" \
+  --output screenshot.png
+```
+
+See the [Screenshot API reference](/docs/api/screenshot) for the complete parameter list, or pick an [SDK](/docs/sdks/javascript) for typed, ergonomic access.

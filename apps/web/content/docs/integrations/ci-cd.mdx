@@ -1,0 +1,72 @@
+---
+title: CI/CD Integrations
+description: Automate screenshots in GitHub Actions, GitLab CI, and Bitbucket Pipelines for visual regression testing and deployment monitoring.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+ScreenshotAPI integrates into any CI/CD pipeline that can run `curl` or a script. Common use cases include visual regression testing on pull requests, capturing deployment screenshots for audit trails, and monitoring production pages on a schedule.
+
+Since ScreenshotAPI handles browser rendering remotely, your CI runners don't need Chromium, Playwright, or any browser dependencies — saving minutes of build time and hundreds of megabytes of disk space.
+
+## General Pattern
+
+Every CI/CD integration follows this flow:
+
+1. Store your API key as a **CI secret** (never hardcode it in pipeline files).
+2. Run a `curl` command or script that calls the ScreenshotAPI endpoint.
+3. Save the screenshot as a **build artifact** or upload to storage.
+4. Optionally compare against baseline images for visual regression.
+
+```bash
+curl -s -o screenshot.png \
+  -H "x-api-key: $SCREENSHOTAPI_KEY" \
+  "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=1440&height=900&type=png"
+```
+
+## GitHub Actions
+
+Add your API key as a repository secret, then use `curl` in workflow steps. Supports matrix strategies for multi-viewport captures, artifact uploads, and PR comment previews.
+
+```yaml
+- name: Capture screenshot
+  run: |
+    curl -s -o screenshot.png \
+      -H "x-api-key: ${{ secrets.SCREENSHOTAPI_KEY }}" \
+      "https://screenshotapi.to/api/v1/screenshot?url=https://yoursite.com&width=1440&height=900&type=png"
+```
+
+Full walkthrough: [GitHub Actions integration guide](/integrations/github-actions)
+
+## GitLab CI
+
+Store the API key as a CI/CD variable, then call the API in pipeline jobs. Screenshots can be saved as GitLab artifacts with configurable retention.
+
+Full walkthrough: [GitLab CI integration guide](/integrations/gitlab-ci)
+
+## Bitbucket Pipelines
+
+Add the API key as a repository variable, use `curl` in pipeline steps, and store screenshots as Bitbucket artifacts.
+
+Full walkthrough: [Bitbucket Pipelines integration guide](/integrations/bitbucket-pipelines)
+
+## Visual Regression Testing
+
+A common CI workflow captures screenshots on every PR and compares them against baseline images:
+
+1. **Capture** — Take screenshots of key pages on the PR's preview deployment.
+2. **Compare** — Diff current screenshots against committed baselines (pixel comparison or perceptual hash).
+3. **Report** — Fail the build or post a comment if visual changes exceed a threshold.
+4. **Update** — If the changes are intentional, commit new baselines.
+
+<Callout type="info">
+Store baseline images in your repository so they version alongside your code. CI artifacts are ephemeral — baselines need to persist across runs.
+</Callout>
+
+## Further Reading
+
+- [cURL reference](/docs/sdks/curl) — the foundation for all CI integrations
+- [JavaScript SDK](/docs/sdks/javascript) — for more complex capture scripts
+- [Screenshot API reference](/docs/api/screenshot) — all available parameters

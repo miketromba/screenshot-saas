@@ -27,6 +27,9 @@ relatedPages:
   - title: "Google Cloud Functions"
     description: "Serverless screenshots on GCP"
     href: "/integrations/google-cloud-functions"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

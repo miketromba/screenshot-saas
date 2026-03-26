@@ -27,6 +27,9 @@ relatedPages:
   - title: "Express Integration"
     description: "Node.js screenshot proxy with Express"
     href: "/integrations/express"
+  - title: "Ruby SDK"
+    description: "Full reference for the ScreenshotAPI Ruby SDK"
+    href: "/docs/sdks/ruby"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

@@ -27,6 +27,9 @@ relatedPages:
   - title: "Cloudflare Workers Integration"
     description: "Edge screenshot capture for Astro on Cloudflare"
     href: "/integrations/cloudflare-workers"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

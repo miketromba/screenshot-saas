@@ -27,6 +27,9 @@ relatedPages:
   - title: "React Integration"
     description: "Screenshot capture in React apps"
     href: "/integrations/react"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

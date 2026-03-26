@@ -27,6 +27,9 @@ relatedPages:
   - title: "GitHub Actions Integration"
     description: "CI/CD screenshot automation"
     href: "/integrations/github-actions"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

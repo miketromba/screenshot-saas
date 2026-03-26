@@ -27,6 +27,9 @@ relatedPages:
   - title: "Retool Integration"
     description: "Internal tools with screenshot capture"
     href: "/integrations/retool"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

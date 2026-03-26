@@ -27,6 +27,9 @@ relatedPages:
   - title: "Docker Integration"
     description: "Containerize Go screenshot services"
     href: "/integrations/docker"
+  - title: "Go SDK"
+    description: "Full reference for the ScreenshotAPI Go SDK"
+    href: "/docs/sdks/go"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

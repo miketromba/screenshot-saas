@@ -1,0 +1,59 @@
+---
+title: Automation & No-Code
+description: Automate website screenshots with Zapier, n8n, Make, and Retool — no coding required.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+ScreenshotAPI works with any automation platform that can make HTTP requests. No SDKs or code needed — configure the API URL, pass your API key as a header, and start capturing screenshots in your workflows.
+
+## How It Works
+
+Every automation platform integration follows the same pattern:
+
+1. **Trigger** — A form submission, schedule, webhook, or event starts the workflow.
+2. **HTTP Request** — The platform makes a `GET` request to the ScreenshotAPI endpoint with your URL and parameters.
+3. **Process** — Store the screenshot in cloud storage, send via email/Slack, or pass to the next step.
+
+The request always looks like this:
+
+```
+GET https://screenshotapi.to/api/v1/screenshot?url=https://example.com&width=1440&height=900&type=png
+Header: x-api-key: sk_live_your_key_here
+```
+
+## Zapier
+
+Use the **Webhooks by Zapier** action (Custom Request) to call ScreenshotAPI. Set the method to `GET`, add your API key as an `x-api-key` header, and map query parameters from your trigger data. Chain with Google Drive, Slack, email, or any Zapier action to store or share results.
+
+Full walkthrough: [Zapier integration guide](/integrations/zapier)
+
+## n8n
+
+Use the **HTTP Request** node with `GET` method. n8n supports binary data handling, so you can pipe the screenshot response directly into file storage or messaging nodes. Self-hosted n8n gives you unlimited executions.
+
+Full walkthrough: [n8n integration guide](/integrations/n8n)
+
+## Make (Integromat)
+
+Use the **HTTP > Make a request** module. Configure the URL, method, and headers. Make's binary handling lets you route screenshots to Google Drive, Dropbox, Airtable, or any connected app.
+
+Full walkthrough: [Make integration guide](/integrations/make)
+
+## Retool
+
+Use a **REST API resource** pointed at the ScreenshotAPI endpoint. Build internal tools with screenshot previews, bulk capture workflows, and admin dashboards. Retool Workflows support scheduled screenshot jobs.
+
+Full walkthrough: [Retool integration guide](/integrations/retool)
+
+<Callout type="info">
+Each screenshot uses **1 credit**. A workflow that captures 5 pages daily uses ~150 credits/month. Check the [pricing page](/pricing) for credit packs.
+</Callout>
+
+## Further Reading
+
+- [Screenshot API reference](/docs/api/screenshot) — all available parameters
+- [cURL reference](/docs/sdks/curl) — test API calls from the command line before building workflows
+- [Authentication](/docs/authentication) — API key management

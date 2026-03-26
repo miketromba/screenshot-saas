@@ -1,0 +1,96 @@
+---
+title: Serverless & Hosting Platforms
+description: Deploy ScreenshotAPI on Vercel, AWS Lambda, Cloudflare Workers, Google Cloud Functions, Azure Functions, Netlify, Supabase Edge Functions, and Docker.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+ScreenshotAPI is a perfect fit for serverless deployments. Traditional screenshot solutions require a Chromium binary (50–100 MB), long cold starts, and high memory. ScreenshotAPI eliminates all of that — your function makes one HTTP request and receives the image bytes.
+
+| Approach | Cold Start | Package Size | Memory Needed |
+|----------|-----------|-------------|--------------|
+| ScreenshotAPI | ~50 ms | < 1 MB | 128–256 MB |
+| Puppeteer/chrome-aws-lambda | 3–8 s | ~50 MB | 1600+ MB |
+| Playwright | 5–12 s | ~80 MB | 1600+ MB |
+
+## Vercel
+
+Serverless and edge functions with ISR caching. The [Vercel / Next.js guide](/docs/guides/vercel-integration) covers API routes, Server Components, and edge caching in depth.
+
+Full walkthrough: [Vercel integration guide](/integrations/vercel)
+
+## AWS Lambda
+
+Node.js and Python handlers, API Gateway, S3 storage, SQS batch processing, and CDK infrastructure-as-code. No Lambda layers or Chromium binaries needed.
+
+```typescript
+export async function handler(event: { queryStringParameters?: Record<string, string> }) {
+  const url = event.queryStringParameters?.url
+  const params = new URLSearchParams({ url: url!, width: '1440', height: '900', type: 'png' })
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'image/png' },
+    body: buffer.toString('base64'),
+    isBase64Encoded: true,
+  }
+}
+```
+
+Full walkthrough: [AWS Lambda integration guide](/integrations/aws-lambda)
+
+## Cloudflare Workers
+
+Edge screenshot capture with R2 storage and global distribution. Workers have a lightweight runtime that pairs well with ScreenshotAPI's HTTP-only approach.
+
+Full walkthrough: [Cloudflare Workers integration guide](/integrations/cloudflare-workers)
+
+## Google Cloud Functions
+
+HTTP-triggered functions with Cloud Storage for persistence and Pub/Sub for event-driven workflows.
+
+Full walkthrough: [Google Cloud Functions integration guide](/integrations/google-cloud-functions)
+
+## Azure Functions
+
+HTTP triggers, Blob Storage for screenshot persistence, and Queue triggers for batch processing.
+
+Full walkthrough: [Azure Functions integration guide](/integrations/azure-functions)
+
+## Netlify
+
+Netlify Functions (AWS Lambda under the hood) and edge handlers for screenshot endpoints deployed alongside your Netlify site.
+
+Full walkthrough: [Netlify integration guide](/integrations/netlify)
+
+## Supabase Edge Functions
+
+Deno-based edge functions with Supabase Storage integration for persistent screenshot archives.
+
+Full walkthrough: [Supabase Edge Functions integration guide](/integrations/supabase-edge-functions)
+
+## Docker
+
+Containerize a screenshot service in any language. Since ScreenshotAPI handles browser rendering remotely, your Docker image stays small — no Chromium, no system dependencies.
+
+Full walkthrough: [Docker integration guide](/integrations/docker)
+
+<Callout type="info">
+All serverless guides use the same [Screenshot API](/docs/api/screenshot). The only difference is how you store credentials and return the response in each platform's conventions.
+</Callout>
+
+## Further Reading
+
+- [JavaScript / TypeScript SDK](/docs/sdks/javascript)
+- [Python SDK](/docs/sdks/python)
+- [cURL reference](/docs/sdks/curl)
+- [Screenshot API reference](/docs/api/screenshot)

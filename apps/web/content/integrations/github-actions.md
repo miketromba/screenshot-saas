@@ -29,6 +29,9 @@ relatedPages:
   - title: "Cloudflare Workers Integration"
     description: "Edge screenshot capture for CDN workflows"
     href: "/integrations/cloudflare-workers"
+  - title: "cURL Reference"
+    description: "Command-line screenshot capture examples"
+    href: "/docs/sdks/curl"
 jsonLd:
   "@context": "https://schema.org"
   "@type": "TechArticle"

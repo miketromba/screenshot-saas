@@ -8,6 +8,8 @@
 		"...api",
 		"---SDKs---",
 		"...sdks",
+		"---Integrations---",
+		"...integrations",
 		"---Guides---",
 		"...guides"
 	]
