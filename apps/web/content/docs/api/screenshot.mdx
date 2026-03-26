@@ -88,7 +88,7 @@ For single-page applications (SPAs) that load content dynamically, combine `wait
 
 ### Basic Screenshot
 
-<Tabs items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
@@ -180,7 +180,7 @@ file_put_contents("screenshot.png", $image);
 
 Capture the entire scrollable page as a single tall image:
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90" \
@@ -223,6 +223,53 @@ response = requests.get(
 
 with open("fullpage.webp", "wb") as f:
     f.write(response.content)
+```
+</Tab>
+<Tab value="Go">
+```go
+req, _ := http.NewRequest("GET",
+    "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90", nil)
+req.Header.Set("x-api-key", "sk_live_your_key_here")
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+file, _ := os.Create("fullpage.webp")
+defer file.Close()
+io.Copy(file, resp.Body)
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "uri"
+
+uri = URI("https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90")
+req = Net::HTTP::Get.new(uri)
+req["x-api-key"] = "sk_live_your_key_here"
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+File.binwrite("fullpage.webp", response.body)
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/screenshot?url=https://example.com&fullPage=true&type=webp&quality=90",
+    CURLOPT_HTTPHEADER => ["x-api-key: sk_live_your_key_here"],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$image = curl_exec($ch);
+curl_close($ch);
+file_put_contents("fullpage.webp", $image);
 ```
 </Tab>
 </Tabs>

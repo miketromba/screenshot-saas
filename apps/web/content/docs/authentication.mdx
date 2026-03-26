@@ -49,7 +49,7 @@ You must be signed in to manage API keys. API key management endpoints use sessi
 
 You can also manage keys programmatically:
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 # Create a new API key
@@ -84,6 +84,59 @@ response = requests.post(
 
 data = response.json()
 # data["key"] = "sk_live_abc123..." — save this, it won't be shown again
+```
+</Tab>
+<Tab value="Go">
+```go
+body := strings.NewReader(`{"name": "Production"}`)
+req, _ := http.NewRequest("POST", "https://screenshotapi.to/api/v1/api-keys", body)
+req.Header.Set("Content-Type", "application/json")
+req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+var result map[string]string
+json.NewDecoder(resp.Body).Decode(&result)
+// result["key"] = "sk_live_abc123..." — save this, it won't be shown again
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/api-keys")
+req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+req["Cookie"] = "session=your_session_cookie"
+req.body = { name: "Production" }.to_json
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+data = JSON.parse(response.body)
+# data["key"] = "sk_live_abc123..." — save this, it won't be shown again
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/api-keys",
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_POSTFIELDS => json_encode(["name" => "Production"]),
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// $response["key"] = "sk_live_abc123..." — save this, it won't be shown again
 ```
 </Tab>
 </Tabs>

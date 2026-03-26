@@ -24,7 +24,7 @@ Returns the current credit balance for the authenticated user. Requires session 
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/credits" \
@@ -51,6 +51,62 @@ response = requests.get(
 )
 
 print(f"Credits remaining: {response.json()['balance']}")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/credits", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Balance int `json:"balance"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		panic(err)
+	}
+	fmt.Printf("Credits remaining: %d\n", result.Balance)
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+data = JSON.parse(response.body)
+puts "Credits remaining: #{data['balance']}"
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+echo "Credits remaining: " . $response["balance"] . "\n";
 ```
 </Tab>
 </Tabs>
@@ -116,7 +172,7 @@ Returns all available credit packs with pricing. This endpoint is **public** —
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/credits/packs"
@@ -142,6 +198,76 @@ response = requests.get("https://screenshotapi.to/api/v1/credits/packs")
 for pack in response.json():
     price = pack["priceCents"] / 100
     print(f"{pack['name']}: {pack['credits']} credits for ${price:.2f}")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/credits/packs", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	var packs []struct {
+		Name       string `json:"name"`
+		Credits    int    `json:"credits"`
+		PriceCents int    `json:"priceCents"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&packs); err != nil {
+		panic(err)
+	}
+	for _, pack := range packs {
+		price := float64(pack.PriceCents) / 100
+		fmt.Printf("%s: %d credits for $%.2f\n", pack.Name, pack.Credits, price)
+	}
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits/packs")
+req = Net::HTTP::Get.new(uri)
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+packs = JSON.parse(response.body)
+
+packs.each do |pack|
+  price = pack["priceCents"] / 100.0
+  puts "#{pack['name']}: #{pack['credits']} credits for $#{format('%.2f', price)}"
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits/packs",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$packs = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+foreach ($packs as $pack) {
+    $price = $pack["priceCents"] / 100;
+    printf(
+        "%s: %d credits for $%.2f\n",
+        $pack["name"],
+        $pack["credits"],
+        $price
+    );
+}
 ```
 </Tab>
 </Tabs>
@@ -179,7 +305,7 @@ Initiates a credit purchase by creating a Polar Checkout session. Returns a URL 
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl -X POST "https://screenshotapi.to/api/v1/credits/purchase" \
@@ -215,6 +341,70 @@ response = requests.post(
 
 checkout_url = response.json()["checkoutUrl"]
 print(f"Complete payment at: {checkout_url}")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	body := bytes.NewBufferString(`{"packId":"pack_pro"}`)
+	req, _ := http.NewRequest("POST", "https://screenshotapi.to/api/v1/credits/purchase", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		CheckoutURL string `json:"checkoutUrl"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		panic(err)
+	}
+	fmt.Printf("Complete payment at: %s\n", result.CheckoutURL)
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits/purchase")
+req = Net::HTTP::Post.new(uri)
+req["Content-Type"] = "application/json"
+req["Cookie"] = "session=your_session_cookie"
+req.body = { packId: "pack_pro" }.to_json
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+data = JSON.parse(response.body)
+puts "Complete payment at: #{data['checkoutUrl']}"
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits/purchase",
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+    CURLOPT_POSTFIELDS => json_encode(["packId" => "pack_pro"]),
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+echo "Complete payment at: " . $response["checkoutUrl"] . "\n";
 ```
 </Tab>
 </Tabs>
@@ -289,7 +479,7 @@ Returns an array of transactions ordered by creation date (newest first).
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/credits/transactions?limit=20&offset=0" \
@@ -325,6 +515,77 @@ response = requests.get(
 for txn in response.json():
     sign = "+" if txn["amount"] > 0 else ""
     print(f"{txn['type']}: {sign}{txn['amount']} — {txn['description']}")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/credits/transactions?limit=20&offset=0", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	var transactions []struct {
+		Type        string `json:"type"`
+		Amount      int    `json:"amount"`
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&transactions); err != nil {
+		panic(err)
+	}
+	for _, txn := range transactions {
+		sign := ""
+		if txn.Amount > 0 {
+			sign = "+"
+		}
+		fmt.Printf("%s: %s%d — %s\n", txn.Type, sign, txn.Amount, txn.Description)
+	}
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits/transactions?limit=20&offset=0")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+transactions = JSON.parse(response.body)
+
+transactions.each do |txn|
+  sign = txn["amount"].positive? ? "+" : ""
+  puts "#{txn['type']}: #{sign}#{txn['amount']} — #{txn['description']}"
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits/transactions?limit=20&offset=0",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$transactions = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+foreach ($transactions as $txn) {
+    $sign = $txn["amount"] > 0 ? "+" : "";
+    echo "{$txn['type']}: {$sign}{$txn['amount']} — {$txn['description']}\n";
+}
 ```
 </Tab>
 </Tabs>

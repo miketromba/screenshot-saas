@@ -20,7 +20,7 @@ This means you only pay for what you use — no monthly subscriptions, no overag
 
 ## Checking Your Balance
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/credits" \
@@ -48,6 +48,53 @@ response = requests.get(
 
 balance = response.json()["balance"]
 print(f"Remaining credits: {balance}")
+```
+</Tab>
+<Tab value="Go">
+```go
+req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/credits", nil)
+req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+var result struct{ Balance int }
+json.NewDecoder(resp.Body).Decode(&result)
+fmt.Printf("Remaining credits: %d\n", result.Balance)
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+balance = JSON.parse(response.body)["balance"]
+puts "Remaining credits: #{balance}"
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+echo "Remaining credits: " . $response["balance"];
 ```
 </Tab>
 </Tabs>
@@ -101,7 +148,7 @@ The `/credits/packs` endpoint is public and does not require authentication.
 
 To purchase a credit pack, send the pack ID. You'll receive a Polar checkout URL:
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl -X POST "https://screenshotapi.to/api/v1/credits/purchase" \
@@ -136,6 +183,59 @@ response = requests.post(
 
 checkout_url = response.json()["checkoutUrl"]
 # Redirect user to checkout_url to complete payment
+```
+</Tab>
+<Tab value="Go">
+```go
+body := strings.NewReader(`{"packId": "pack_pro"}`)
+req, _ := http.NewRequest("POST", "https://screenshotapi.to/api/v1/credits/purchase", body)
+req.Header.Set("Content-Type", "application/json")
+req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+var result struct{ CheckoutURL string `json:"checkoutUrl"` }
+json.NewDecoder(resp.Body).Decode(&result)
+// Redirect user to result.CheckoutURL to complete payment
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/credits/purchase")
+req = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+req["Cookie"] = "session=your_session_cookie"
+req.body = { packId: "pack_pro" }.to_json
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+checkout_url = JSON.parse(response.body)["checkoutUrl"]
+# Redirect user to checkout_url to complete payment
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/credits/purchase",
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_POSTFIELDS => json_encode(["packId" => "pack_pro"]),
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// Redirect user to $response["checkoutUrl"] to complete payment
 ```
 </Tab>
 </Tabs>

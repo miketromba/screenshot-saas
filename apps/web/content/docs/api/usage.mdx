@@ -56,7 +56,7 @@ Returns the screenshot request history for the authenticated user. Includes both
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/usage?limit=20&offset=0" \
@@ -94,6 +94,77 @@ for entry in response.json():
     print(f"{status} {entry['url']} ({entry['durationMs']}ms)")
 ```
 </Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/usage?limit=20&offset=0", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var logs []struct {
+		Status     string `json:"status"`
+		URL        string `json:"url"`
+		DurationMs int    `json:"durationMs"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&logs); err != nil {
+		log.Fatal(err)
+	}
+	for _, entry := range logs {
+		status := "✗"
+		if entry.Status == "completed" {
+			status = "✓"
+		}
+		fmt.Printf("%s %s (%dms)\n", status, entry.URL, entry.DurationMs)
+	}
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/usage?limit=20&offset=0")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+logs = JSON.parse(response.body)
+logs.each do |entry|
+  status = entry["status"] == "completed" ? "✓" : "✗"
+  puts "#{status} #{entry['url']} (#{entry['durationMs']}ms)"
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/usage?limit=20&offset=0",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$logs = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+foreach ($logs as $entry) {
+    $status = $entry['status'] === 'completed' ? '✓' : '✗';
+    echo "{$status} {$entry['url']} ({$entry['durationMs']}ms)\n";
+}
+```
+</Tab>
 </Tabs>
 
 ---
@@ -128,7 +199,7 @@ Returns aggregate usage statistics for the authenticated user. Requires session 
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/usage/stats" \
@@ -162,6 +233,75 @@ print(f"Total: {stats['totalScreenshots']}")
 print(f"Last 30 days: {stats['last30Days']}")
 print(f"Failed: {stats['failedScreenshots']}")
 print(f"Avg duration: {stats['avgDurationMs']}ms")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/usage/stats", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	var stats struct {
+		TotalScreenshots  int `json:"totalScreenshots"`
+		Last30Days        int `json:"last30Days"`
+		FailedScreenshots int `json:"failedScreenshots"`
+		AvgDurationMs     int `json:"avgDurationMs"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&stats); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Total: %d\n", stats.TotalScreenshots)
+	fmt.Printf("Last 30 days: %d\n", stats.Last30Days)
+	fmt.Printf("Failed: %d\n", stats.FailedScreenshots)
+	fmt.Printf("Avg duration: %dms\n", stats.AvgDurationMs)
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/usage/stats")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+stats = JSON.parse(response.body)
+puts "Total: #{stats['totalScreenshots']}"
+puts "Last 30 days: #{stats['last30Days']}"
+puts "Failed: #{stats['failedScreenshots']}"
+puts "Avg duration: #{stats['avgDurationMs']}ms"
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/usage/stats",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$stats = json_decode(curl_exec($ch), true);
+curl_close($ch);
+
+echo "Total: {$stats['totalScreenshots']}\n";
+echo "Last 30 days: {$stats['last30Days']}\n";
+echo "Failed: {$stats['failedScreenshots']}\n";
+echo "Avg duration: {$stats['avgDurationMs']}ms\n";
 ```
 </Tab>
 </Tabs>

@@ -45,7 +45,7 @@ Navigate to your [dashboard](https://screenshotapi.to/dashboard) and create a ne
 
 ### Take your first screenshot
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/screenshot?url=https://example.com" \
@@ -77,6 +77,53 @@ response = requests.get(
 
 with open("screenshot.png", "wb") as f:
     f.write(response.content)
+```
+</Tab>
+<Tab value="Go">
+```go
+req, _ := http.NewRequest("GET",
+    "https://screenshotapi.to/api/v1/screenshot?url=https://example.com", nil)
+req.Header.Set("x-api-key", "sk_live_your_key_here")
+
+resp, err := http.DefaultClient.Do(req)
+if err != nil {
+    log.Fatal(err)
+}
+defer resp.Body.Close()
+
+file, _ := os.Create("screenshot.png")
+defer file.Close()
+io.Copy(file, resp.Body)
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "uri"
+
+uri = URI("https://screenshotapi.to/api/v1/screenshot?url=https://example.com")
+req = Net::HTTP::Get.new(uri)
+req["x-api-key"] = "sk_live_your_key_here"
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+  http.request(req)
+}
+
+File.binwrite("screenshot.png", response.body)
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/screenshot?url=https://example.com",
+    CURLOPT_HTTPHEADER => ["x-api-key: sk_live_your_key_here"],
+    CURLOPT_RETURNTRANSFER => true,
+]);
+
+$image = curl_exec($ch);
+curl_close($ch);
+file_put_contents("screenshot.png", $image);
 ```
 </Tab>
 </Tabs>

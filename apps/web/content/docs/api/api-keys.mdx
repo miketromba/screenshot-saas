@@ -41,7 +41,7 @@ Returns all active (non-revoked) API keys for the authenticated user, ordered by
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl "https://screenshotapi.to/api/v1/api-keys" \
@@ -71,6 +71,64 @@ response = requests.get(
 
 for key in response.json():
     print(f"{key['name']}: {key['keyPrefix']}...")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+)
+
+func main() {
+	req, _ := http.NewRequest("GET", "https://screenshotapi.to/api/v1/api-keys", nil)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	var keys []map[string]any
+	json.Unmarshal(body, &keys)
+	for _, key := range keys {
+		fmt.Printf("%s: %s...\n", key["name"], key["keyPrefix"])
+	}
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/api-keys")
+req = Net::HTTP::Get.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+keys = JSON.parse(response.body)
+keys.each do |key|
+  puts "#{key['name']}: #{key['keyPrefix']}..."
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/api-keys",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+foreach ($response as $key) {
+    echo "{$key['name']}: {$key['keyPrefix']}...\n";
+}
 ```
 </Tab>
 </Tabs>
@@ -109,7 +167,7 @@ The `key` field contains the full API key. **Copy it immediately.** It cannot be
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl -X POST "https://screenshotapi.to/api/v1/api-keys" \
@@ -147,6 +205,71 @@ data = response.json()
 print(f"New API key: {data['key']}")
 ```
 </Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	payload, _ := json.Marshal(map[string]string{"name": "Production"})
+	req, _ := http.NewRequest(
+		"POST",
+		"https://screenshotapi.to/api/v1/api-keys",
+		bytes.NewReader(payload),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	var data map[string]any
+	json.NewDecoder(resp.Body).Decode(&data)
+	// Store this key securely — it won't be shown again
+	fmt.Printf("New API key: %s\n", data["key"])
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "json"
+
+uri = URI("https://screenshotapi.to/api/v1/api-keys")
+req = Net::HTTP::Post.new(uri)
+req["Content-Type"] = "application/json"
+req["Cookie"] = "session=your_session_cookie"
+req.body = { name: "Production" }.to_json
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+data = JSON.parse(response.body)
+# Store this key securely — it won't be shown again
+puts "New API key: #{data['key']}"
+```
+</Tab>
+<Tab value="PHP">
+```php
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/api-keys",
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode(["name" => "Production"]),
+    CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+$data = json_decode(curl_exec($ch), true);
+curl_close($ch);
+// Store this key securely — it won't be shown again
+echo "New API key: {$data['key']}\n";
+```
+</Tab>
 </Tabs>
 
 ---
@@ -181,7 +304,7 @@ Revokes an API key. The key stops working immediately. Revoked keys are soft-del
 
 ### Example
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 curl -X DELETE "https://screenshotapi.to/api/v1/api-keys/clx1abc2d3e4f5g6h7i8j9k0" \
@@ -218,6 +341,66 @@ response = requests.delete(
 
 if response.ok:
     print("API key revoked successfully")
+```
+</Tab>
+<Tab value="Go">
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	keyID := "clx1abc2d3e4f5g6h7i8j9k0"
+	req, _ := http.NewRequest(
+		"DELETE",
+		"https://screenshotapi.to/api/v1/api-keys/"+keyID,
+		nil,
+	)
+	req.AddCookie(&http.Cookie{Name: "session", Value: "your_session_cookie"})
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("API key revoked successfully")
+	}
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+
+key_id = "clx1abc2d3e4f5g6h7i8j9k0"
+uri = URI("https://screenshotapi.to/api/v1/api-keys/#{key_id}")
+req = Net::HTTP::Delete.new(uri)
+req["Cookie"] = "session=your_session_cookie"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+if response.code == "200"
+  puts "API key revoked successfully"
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+$keyId = "clx1abc2d3e4f5g6h7i8j9k0";
+$ch = curl_init();
+curl_setopt_array($ch, [
+    CURLOPT_URL => "https://screenshotapi.to/api/v1/api-keys/" . $keyId,
+    CURLOPT_CUSTOMREQUEST => "DELETE",
+    CURLOPT_COOKIE => "session=your_session_cookie",
+    CURLOPT_RETURNTRANSFER => true,
+]);
+curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+if ($httpCode === 200) {
+    echo "API key revoked successfully\n";
+}
 ```
 </Tab>
 </Tabs>

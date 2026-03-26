@@ -14,7 +14,7 @@ Many websites support dark mode through the `prefers-color-scheme` CSS media fea
 
 Set the `colorScheme` parameter to `"dark"` or `"light"`:
 
-<Tabs items={['cURL', 'JavaScript', 'Python']}>
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python', 'Go', 'Ruby', 'PHP']}>
 <Tab value="cURL">
 ```bash
 # Dark mode
@@ -70,6 +70,62 @@ for scheme in ["light", "dark"]:
     content = capture_with_scheme("https://github.com", scheme)
     with open(f"github-{scheme}.png", "wb") as f:
         f.write(content)
+```
+</Tab>
+<Tab value="Go">
+```go
+schemes := []string{"light", "dark"}
+
+for _, scheme := range schemes {
+    url := fmt.Sprintf(
+        "https://screenshotapi.to/api/v1/screenshot?url=https://github.com&colorScheme=%s", scheme)
+    req, _ := http.NewRequest("GET", url, nil)
+    req.Header.Set("x-api-key", os.Getenv("SCREENSHOTAPI_KEY"))
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    file, _ := os.Create(fmt.Sprintf("github-%s.png", scheme))
+    io.Copy(file, resp.Body)
+    file.Close()
+    resp.Body.Close()
+}
+```
+</Tab>
+<Tab value="Ruby">
+```ruby
+require "net/http"
+require "uri"
+
+%w[light dark].each do |scheme|
+  uri = URI("https://screenshotapi.to/api/v1/screenshot?url=https://github.com&colorScheme=#{scheme}")
+  req = Net::HTTP::Get.new(uri)
+  req["x-api-key"] = ENV["SCREENSHOTAPI_KEY"]
+
+  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+    http.request(req)
+  }
+
+  File.binwrite("github-#{scheme}.png", response.body)
+end
+```
+</Tab>
+<Tab value="PHP">
+```php
+foreach (["light", "dark"] as $scheme) {
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => "https://screenshotapi.to/api/v1/screenshot?url=https://github.com&colorScheme=$scheme",
+        CURLOPT_HTTPHEADER => ["x-api-key: " . getenv("SCREENSHOTAPI_KEY")],
+        CURLOPT_RETURNTRANSFER => true,
+    ]);
+
+    $image = curl_exec($ch);
+    curl_close($ch);
+    file_put_contents("github-$scheme.png", $image);
+}
 ```
 </Tab>
 </Tabs>
