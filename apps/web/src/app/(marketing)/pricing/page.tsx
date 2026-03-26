@@ -50,11 +50,7 @@ const faqs = [
 	},
 	{
 		q: 'What happens when I run out of credits?',
-		a: 'The API will return a 402 status code. You can purchase more credits at any time, or enable auto top-up to automatically buy more when your balance gets low.'
-	},
-	{
-		q: 'What is auto top-up?',
-		a: 'Auto top-up automatically purchases a credit pack when your balance drops below a threshold you set. You choose which pack to buy and the minimum balance that triggers a purchase.'
+		a: 'The API will return a 402 status code. You can purchase more credits from your dashboard at any time.'
 	},
 	{
 		q: 'Can I get a refund?',
@@ -70,7 +66,7 @@ const faqs = [
 	},
 	{
 		q: 'Do you offer enterprise pricing?',
-		a: 'For volume above 10,000 screenshots, contact support@screenshotapi.to and we can discuss custom pricing.'
+		a: 'For volume above 50,000 screenshots, contact support@screenshotapi.to and we can discuss custom pricing.'
 	}
 ]
 
