@@ -39,10 +39,22 @@ function Header() {
 					<Logo />
 					<nav className="hidden items-center gap-6 md:flex">
 						<Link
-							href="/#features"
+							href="/use-cases"
 							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
 						>
-							Features
+							Use Cases
+						</Link>
+						<Link
+							href="/compare"
+							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+						>
+							Compare
+						</Link>
+						<Link
+							href="/integrations"
+							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+						>
+							Integrations
 						</Link>
 						<Link
 							href="/pricing"
@@ -81,7 +93,7 @@ function Footer() {
 	return (
 		<footer className="border-t border-border bg-muted/30">
 			<div className="mx-auto max-w-6xl px-6 py-12">
-				<div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+				<div className="grid grid-cols-2 gap-8 md:grid-cols-5">
 					<div className="col-span-2 md:col-span-1">
 						<Logo />
 						<p className="mt-3 text-sm text-muted-foreground">
@@ -121,6 +133,43 @@ function Footer() {
 									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
 								>
 									API Reference
+								</Link>
+							</li>
+						</ul>
+					</div>
+					<div>
+						<h3 className="text-sm font-semibold">Solutions</h3>
+						<ul className="mt-3 space-y-2">
+							<li>
+								<Link
+									href="/use-cases"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Use Cases
+								</Link>
+							</li>
+							<li>
+								<Link
+									href="/compare"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Compare
+								</Link>
+							</li>
+							<li>
+								<Link
+									href="/integrations"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Integrations
+								</Link>
+							</li>
+							<li>
+								<Link
+									href="/blog"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Blog
 								</Link>
 							</li>
 						</ul>
