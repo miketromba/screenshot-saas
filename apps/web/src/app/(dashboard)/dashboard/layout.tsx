@@ -2,8 +2,8 @@
 
 import {
 	BarChart3,
-	Camera,
 	Coins,
+	CreditCard,
 	Key,
 	LayoutDashboard,
 	LogOut,
@@ -15,12 +15,14 @@ import {
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { LogoIcon } from '@/components/logo'
 import { useUser } from '@/hooks/use-queries'
 import { createClient } from '@/lib/supabase/client'
 
 const navigation = [
 	{ name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
 	{ name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
+	{ name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
 	{ name: 'Credits', href: '/dashboard/credits', icon: Coins },
 	{ name: 'Usage', href: '/dashboard/usage', icon: BarChart3 },
 	{ name: 'Playground', href: '/dashboard/playground', icon: Play },
@@ -53,12 +55,10 @@ export default function DashboardLayout({
 	const sidebarContent = (
 		<>
 			<div className="flex h-14 items-center gap-2.5 border-b border-sidebar-border px-5">
-				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-					<Camera className="h-4 w-4 text-primary-foreground" />
+				<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-gray-950 text-white">
+					<LogoIcon className="h-4 w-4" />
 				</div>
-				<span className="text-sm font-semibold tracking-tight">
-					ScreenshotAPI
-				</span>
+				<span className="text-sm font-medium">ScreenshotAPI</span>
 			</div>
 
 			<nav className="flex-1 space-y-1 px-3 py-4">
@@ -146,10 +146,10 @@ export default function DashboardLayout({
 						<Menu className="h-5 w-5" />
 					</button>
 					<div className="flex items-center gap-2">
-						<div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-							<Camera className="h-3.5 w-3.5 text-primary-foreground" />
+						<div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-gray-950 text-white">
+							<LogoIcon className="h-3.5 w-3.5" />
 						</div>
-						<span className="text-sm font-semibold">
+						<span className="text-sm font-medium">
 							ScreenshotAPI
 						</span>
 					</div>
