@@ -12,7 +12,8 @@ export function ArticleLayout({
 	children,
 	relatedPages,
 	faq,
-	jsonLd
+	jsonLd,
+	icon
 }: {
 	breadcrumbs: { label: string; href?: string }[]
 	title: string
@@ -22,6 +23,7 @@ export function ArticleLayout({
 	relatedPages?: { title: string; description: string; href: string }[]
 	faq?: { question: string; answer: string }[]
 	jsonLd?: Record<string, unknown>
+	icon?: ReactNode
 }) {
 	return (
 		<article className="py-12 md:py-16">
@@ -38,6 +40,7 @@ export function ArticleLayout({
 				<Breadcrumbs items={breadcrumbs} />
 
 				<header className="mt-6">
+					{icon && <div className="mb-4">{icon}</div>}
 					<h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
 						{title}
 					</h1>
@@ -49,7 +52,9 @@ export function ArticleLayout({
 					</p>
 				</header>
 
-				<CTABlock variant="compact" />
+				<div className="mt-8">
+					<CTABlock variant="compact" />
+				</div>
 
 				<div className="mt-12 space-y-12">{children}</div>
 
