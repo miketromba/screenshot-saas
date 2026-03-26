@@ -179,35 +179,6 @@ export function useUsageStats() {
 	})
 }
 
-export function useAutoTopup() {
-	return useQuery({
-		queryKey: ['auto-topup'],
-		queryFn: async () =>
-			unwrap<{
-				enabled: boolean
-				threshold: number
-				packId: string | null
-				hasPaymentMethod: boolean
-			}>(await api.v1['auto-topup'].get())
-	})
-}
-
-export function useUpdateAutoTopup() {
-	const queryClient = useQueryClient()
-	return useMutation({
-		mutationFn: async (body: {
-			enabled: boolean
-			threshold?: number
-			packId?: string
-		}) =>
-			unwrap<{ success: boolean }>(await api.v1['auto-topup'].put(body)),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['auto-topup'] })
-			queryClient.invalidateQueries({ queryKey: ['user'] })
-		}
-	})
-}
-
 export function useInitializeCredits() {
 	const queryClient = useQueryClient()
 	return useMutation({
