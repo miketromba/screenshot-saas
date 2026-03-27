@@ -1,0 +1,331 @@
+---
+title: "Web Archiving Screenshots"
+description: "Archive visual snapshots of any website for compliance, legal evidence, and historical records. Automated web archiving via API."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Use Cases
+    href: /use-cases
+  - label: Archiving
+faq:
+  - question: "What is the difference between web archiving and website monitoring?"
+    answer: "Web archiving focuses on preserving historical snapshots for long-term storage, compliance, or legal evidence. Website monitoring focuses on detecting changes in near-real-time and triggering alerts. Both use screenshots, but archiving emphasizes storage and retrieval while monitoring emphasizes comparison and alerting."
+  - question: "How long should I store archived screenshots?"
+    answer: "It depends on your compliance requirements. Financial regulations often require 5-7 years of records. Legal holds may require indefinite retention. For general archiving, 1-3 years is common. Store images in S3 or similar object storage with appropriate lifecycle policies."
+  - question: "Can I capture the full page including below-the-fold content?"
+    answer: "Yes. Use the fullPage parameter to capture the entire scrollable page. This is especially important for archiving because you want a complete record of the page state, not just the viewport."
+  - question: "Is a screenshot legally admissible as evidence?"
+    answer: "Screenshots are commonly accepted as evidence, but their admissibility depends on jurisdiction and the ability to prove authenticity. Pairing screenshots with timestamps, URL metadata, and cryptographic hashes strengthens their evidentiary value. Consult legal counsel for your specific requirements."
+  - question: "Can I archive password-protected pages?"
+    answer: "ScreenshotAPI captures publicly accessible URLs. For internal pages, consider creating a snapshot of the rendered HTML and capturing that, or using a temporary public URL with a short expiration."
+relatedPages:
+  - title: "Website Monitoring"
+    description: "Monitor websites for visual changes with automated screenshots."
+    href: "/use-cases/website-monitoring"
+  - title: "Competitor Monitoring"
+    description: "Track competitor website changes over time."
+    href: "/use-cases/competitor-monitoring"
+  - title: "PDF Generation"
+    description: "Convert web pages to PDF for document archiving."
+    href: "/use-cases/pdf-generation"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "Web Archiving Screenshots"
+  description: "Archive visual snapshots of any website for compliance, legal evidence, and historical records. Automated web archiving via API."
+  dateModified: "2026-03-25"
+---
+
+## Why Web Archiving Matters
+
+Web pages are ephemeral. Content changes without notice, pages get redesigned, and entire sites disappear. For businesses, this impermanence creates real problems:
+
+- **Compliance**: Financial services, healthcare, and government organizations must retain records of published content, advertisements, and disclosures.
+- **Legal evidence**: Screenshots serve as evidence of terms of service, pricing claims, defamation, trademark infringement, and contractual obligations.
+- **Historical records**: Tracking how a brand, product, or competitor has evolved over months and years requires systematic snapshots.
+- **Content recovery**: When pages are accidentally deleted or overwritten, archived snapshots provide a visual record of what was there.
+
+The Wayback Machine archives a fraction of the web, and you cannot control what it captures or when. For reliable **web archiving screenshots**, you need a system you control.
+
+## How ScreenshotAPI Powers Web Archiving
+
+ScreenshotAPI captures pixel-perfect, full-page screenshots of any publicly accessible URL. For archiving, the workflow is:
+
+1. Define the URLs and capture schedule (daily, weekly, monthly).
+2. Call ScreenshotAPI with `fullPage: true` to capture the complete page.
+3. Store the screenshot in durable object storage (S3, R2, GCS) with metadata.
+4. Index the archives for search and retrieval.
+
+Every **website snapshot archive** entry includes the URL, capture timestamp, viewport dimensions, and the screenshot itself. This gives you a complete, searchable visual history.
+
+### Why screenshots for archiving?
+
+- **Visual accuracy**: A screenshot captures exactly what a visitor sees, including layout, images, and styling. HTML-only archives miss rendered state.
+- **Tamper evidence**: Combined with checksums or digital signatures, screenshots provide strong evidence that the content existed at a specific time.
+- **Universal format**: PNG images are viewable everywhere, with no special software required. They can be embedded in legal documents, compliance reports, and presentations.
+- **JavaScript rendering**: Modern pages built with React, Vue, or Angular render correctly because ScreenshotAPI uses a full browser.
+
+## Implementation Guide
+
+### Basic Archiving Script
+
+#### JavaScript
+
+```javascript
+const axios = require("axios");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+
+const API_KEY = process.env.SCREENSHOT_API_KEY;
+const s3 = new S3Client({ region: "us-east-1" });
+
+async function archiveUrl(url) {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+  const response = await axios.get("https://screenshotapi.to/api/v1/screenshot", {
+    params: {
+      url,
+      width: 1440,
+      fullPage: true,
+      type: "png",
+      waitUntil: "networkidle",
+    },
+    headers: { "x-api-key": API_KEY },
+    responseType: "arraybuffer",
+  });
+
+  const imageBuffer = Buffer.from(response.data);
+  const checksum = crypto.createHash("sha256").update(imageBuffer).digest("hex");
+
+  const key = `archives/${encodeURIComponent(url)}/${timestamp}.png`;
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: "your-archive-bucket",
+      Key: key,
+      Body: imageBuffer,
+      ContentType: "image/png",
+      Metadata: {
+        url: url,
+        capturedAt: new Date().toISOString(),
+        sha256: checksum,
+        viewport: "1440xfull",
+      },
+    })
+  );
+
+  return {
+    url,
+    capturedAt: new Date().toISOString(),
+    storagePath: key,
+    checksum,
+  };
+}
+```
+
+#### Python
+
+```python
+import os
+import hashlib
+from datetime import datetime
+from urllib.parse import quote
+import httpx
+import boto3
+
+API_KEY = os.environ["SCREENSHOT_API_KEY"]
+s3 = boto3.client("s3")
+
+def archive_url(url: str) -> dict:
+    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%S")
+
+    response = httpx.get(
+        "https://screenshotapi.to/api/v1/screenshot",
+        params={
+            "url": url,
+            "width": 1440,
+            "fullPage": True,
+            "type": "png",
+            "waitUntil": "networkidle",
+        },
+        headers={"x-api-key": API_KEY},
+    )
+    response.raise_for_status()
+
+    checksum = hashlib.sha256(response.content).hexdigest()
+    key = f"archives/{quote(url, safe='')}/{timestamp}.png"
+
+    s3.put_object(
+        Bucket="your-archive-bucket",
+        Key=key,
+        Body=response.content,
+        ContentType="image/png",
+        Metadata={
+            "url": url,
+            "captured_at": datetime.utcnow().isoformat(),
+            "sha256": checksum,
+            "viewport": "1440xfull",
+        },
+    )
+
+    return {
+        "url": url,
+        "captured_at": datetime.utcnow().isoformat(),
+        "storage_path": key,
+        "checksum": checksum,
+    }
+```
+
+### Scheduled Archiving with Database Index
+
+For a production archiving system, store metadata in a database for fast search and retrieval:
+
+```javascript
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+
+async function archiveAndIndex(url) {
+  const archive = await archiveUrl(url);
+
+  await prisma.archive.create({
+    data: {
+      url: archive.url,
+      capturedAt: new Date(archive.capturedAt),
+      storagePath: archive.storagePath,
+      checksum: archive.checksum,
+    },
+  });
+
+  return archive;
+}
+
+async function getArchiveHistory(url) {
+  return prisma.archive.findMany({
+    where: { url },
+    orderBy: { capturedAt: "desc" },
+  });
+}
+
+async function getArchiveByDate(url, date) {
+  return prisma.archive.findFirst({
+    where: {
+      url,
+      capturedAt: { lte: date },
+    },
+    orderBy: { capturedAt: "desc" },
+  });
+}
+```
+
+### Bulk Archiving Pipeline
+
+For organizations archiving hundreds or thousands of URLs:
+
+```javascript
+const { Queue, Worker } = require("bullmq");
+
+const archiveQueue = new Queue("archiving", {
+  connection: { host: "localhost", port: 6379 },
+});
+
+async function scheduleArchiveRun(urls) {
+  for (const url of urls) {
+    await archiveQueue.add("capture", { url }, {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 5000 },
+    });
+  }
+}
+
+const worker = new Worker(
+  "archiving",
+  async (job) => {
+    const { url } = job.data;
+    await archiveAndIndex(url);
+  },
+  {
+    connection: { host: "localhost", port: 6379 },
+    concurrency: 10,
+  }
+);
+```
+
+## Archiving Best Practices
+
+### Metadata and Chain of Custody
+
+For archives that may be used as legal evidence, capture comprehensive metadata:
+
+- **URL**: The exact URL that was captured.
+- **Timestamp**: UTC timestamp of capture, ideally from a trusted time source.
+- **SHA-256 checksum**: A cryptographic hash of the image file for tamper detection.
+- **Viewport**: The dimensions used for capture.
+- **HTTP status**: The response code from the target URL.
+
+### Storage and Retention
+
+Choose storage with the durability and lifecycle management your use case requires:
+
+| Storage Tier | Use Case | Durability | Cost |
+|---|---|---|---|
+| S3 Standard | Active archives (< 1 year) | 99.999999999% | $0.023/GB/month |
+| S3 Infrequent Access | Older archives (1-3 years) | 99.999999999% | $0.0125/GB/month |
+| S3 Glacier | Long-term compliance (3+ years) | 99.999999999% | $0.004/GB/month |
+| Cloudflare R2 | Cost-optimized active storage | 99.999999999% | $0.015/GB/month |
+
+### Full-Page vs. Viewport Captures
+
+For archiving, always use `fullPage: true` to capture the complete page. A viewport-only capture might miss disclaimers, terms, or content below the fold that is critical for compliance or legal purposes.
+
+```javascript
+params: {
+  url: targetUrl,
+  fullPage: true,
+  width: 1440,
+  type: "png",
+  waitUntil: "networkidle",
+}
+```
+
+## Use Cases by Industry
+
+### Financial Services
+
+Banks, investment firms, and fintech companies archive advertisements, disclosures, rate pages, and account interfaces to comply with SEC, FINRA, and other regulatory requirements.
+
+### Legal and Intellectual Property
+
+Law firms capture websites as evidence of trademark use, copyright infringement, defamation, or contractual claims. Timestamped screenshots with checksums provide a verifiable record.
+
+### E-commerce
+
+Retailers archive product pages, pricing, and promotional offers to resolve customer disputes, track pricing history, and maintain compliance with advertising regulations.
+
+### Government and Public Sector
+
+Government agencies archive public-facing web content for records retention, FOIA compliance, and historical documentation.
+
+## Pricing Estimate
+
+<CreditPackTable />
+
+Each capture uses one credit regardless of page length. Credits never expire. See the [pricing page](/pricing) for details.
+
+## Web Archiving vs. Wayback Machine
+
+| Feature | Wayback Machine | ScreenshotAPI Archives |
+|---|---|---|
+| Control over timing | None | Full (you schedule) |
+| Coverage | Partial, unpredictable | Every URL you specify |
+| Capture format | HTML + assets | PNG screenshot |
+| Metadata | Timestamp only | Custom (hash, viewport, etc.) |
+| Storage | Archive.org | Your infrastructure |
+| Legal admissibility | Limited | Stronger with checksums |
+| Cost | Free | Per credit |
+
+For teams that need reliable, scheduled **web archiving screenshots** with full control over what is captured and when, ScreenshotAPI provides the capture layer while you manage storage and retention. See the [website monitoring use case](/use-cases/website-monitoring) for a related real-time change detection pattern, or explore [competitor monitoring](/use-cases/competitor-monitoring) for tracking external sites.
+
+## Getting Started
+
+<FreeTierBanner />

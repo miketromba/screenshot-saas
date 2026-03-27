@@ -6,6 +6,16 @@ function unwrap<T>(res: { data: unknown; error: unknown }): T {
 	return res.data as T
 }
 
+export interface SubscriptionInfo {
+	plan: 'free' | 'starter' | 'growth' | 'scale'
+	status: 'active' | 'canceled' | 'past_due' | 'trialing'
+	billingCycle: 'monthly' | 'annual'
+	screenshotsPerMonth: number
+	screenshotsUsedThisMonth: number
+	overageScreenshots: number
+	currentPeriodEnd: string
+}
+
 export function useUser() {
 	return useQuery({
 		queryKey: ['user'],
@@ -15,11 +25,7 @@ export function useUser() {
 				email: string
 				displayName: string | null
 				balance: number
-				autoTopup: {
-					enabled: boolean
-					threshold: number
-					packId: string | null
-				} | null
+				subscription: SubscriptionInfo
 				createdAt: string | null
 			}>(await api.v1.user.me.get())
 	})
@@ -188,6 +194,71 @@ export function useInitializeCredits() {
 			),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['credits'] })
+			queryClient.invalidateQueries({ queryKey: ['user'] })
+		}
+	})
+}
+
+export function useSubscription() {
+	return useQuery({
+		queryKey: ['subscription'],
+		queryFn: async () =>
+			unwrap<{
+				id: string
+				plan: 'free' | 'starter' | 'growth' | 'scale'
+				status: 'active' | 'canceled' | 'past_due' | 'trialing'
+				billingCycle: 'monthly' | 'annual'
+				screenshotsPerMonth: number
+				screenshotsUsedThisMonth: number
+				overageScreenshots: number
+				overageRateCents: number | null
+				currentPeriodStart: string
+				currentPeriodEnd: string
+				canceledAt: string | null
+				createdAt: string
+			}>(await api.v1.subscription.get())
+	})
+}
+
+export function useSubscriptionPortal() {
+	return useQuery({
+		queryKey: ['subscription-portal'],
+		queryFn: async () =>
+			unwrap<{ portalUrl: string }>(
+				await api.v1.subscription.portal.get()
+			),
+		enabled: false
+	})
+}
+
+export function useUpgradeSubscription() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: async (params: {
+			plan: string
+			polarProductId: string
+			billingCycle?: 'monthly' | 'annual'
+			proration?: 'invoice' | 'prorate' | 'next_period'
+		}) =>
+			unwrap<{ success: boolean; message: string }>(
+				await api.v1.subscription.upgrade.post(params)
+			),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['subscription'] })
+			queryClient.invalidateQueries({ queryKey: ['user'] })
+		}
+	})
+}
+
+export function useCancelSubscription() {
+	const queryClient = useQueryClient()
+	return useMutation({
+		mutationFn: async () =>
+			unwrap<{ success: boolean; message: string }>(
+				await api.v1.subscription.cancel.post({})
+			),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['subscription'] })
 			queryClient.invalidateQueries({ queryKey: ['user'] })
 		}
 	})

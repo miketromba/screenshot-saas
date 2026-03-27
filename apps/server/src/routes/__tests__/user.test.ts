@@ -2,17 +2,22 @@ import { beforeEach, describe, expect, it } from 'bun:test'
 import { Elysia } from 'elysia'
 
 let balance = 0
-let autoTopupConfig: {
-	enabled: boolean
-	threshold: number
-	packId: string
-} | null = null
 
 const mockProfile = {
 	id: 'user-123',
 	email: 'test@example.com',
-	displayName: 'Test User',
-	createdAt: new Date('2025-01-01').toISOString()
+	displayName: null as string | null,
+	createdAt: null as string | null
+}
+
+const mockSubscription = {
+	plan: 'free',
+	status: 'active',
+	billingCycle: 'monthly',
+	screenshotsPerMonth: 200,
+	screenshotsUsedThisMonth: 0,
+	overageScreenshots: 0,
+	currentPeriodEnd: new Date().toISOString()
 }
 
 const fakeSessionAuth = new Elysia({ name: 'fake-session-auth' })
@@ -39,13 +44,7 @@ const app = new Elysia({ prefix: '/user' })
 		email: user.email ?? mockProfile.email,
 		displayName: mockProfile.displayName,
 		balance,
-		autoTopup: autoTopupConfig
-			? {
-					enabled: autoTopupConfig.enabled,
-					threshold: autoTopupConfig.threshold,
-					packId: autoTopupConfig.packId
-				}
-			: null,
+		subscription: mockSubscription,
 		createdAt: mockProfile.createdAt
 	}))
 
@@ -54,11 +53,6 @@ const AUTH = { 'x-test-auth': 'true' }
 describe('User routes', () => {
 	beforeEach(() => {
 		balance = 42
-		autoTopupConfig = {
-			enabled: true,
-			threshold: 10,
-			packId: 'pack-growth'
-		}
 	})
 
 	it('returns user profile with correct shape', async () => {
@@ -69,8 +63,8 @@ describe('User routes', () => {
 		const body = await res.json()
 		expect(body.id).toBe('user-123')
 		expect(body.email).toBe('test@example.com')
-		expect(body.displayName).toBe('Test User')
-		expect(body.createdAt).toBeDefined()
+		expect(body.displayName).toBeNull()
+		expect(body.createdAt).toBeNull()
 	})
 
 	it('includes credit balance', async () => {
@@ -81,25 +75,20 @@ describe('User routes', () => {
 		expect(body.balance).toBe(42)
 	})
 
-	it('includes auto-topup config when set', async () => {
+	it('includes subscription info', async () => {
 		const res = await app.handle(
 			new Request('http://localhost/user/me', { headers: AUTH })
 		)
 		const body = await res.json()
-		expect(body.autoTopup).toEqual({
-			enabled: true,
-			threshold: 10,
-			packId: 'pack-growth'
+		expect(body.subscription).toEqual({
+			plan: 'free',
+			status: 'active',
+			billingCycle: 'monthly',
+			screenshotsPerMonth: 200,
+			screenshotsUsedThisMonth: 0,
+			overageScreenshots: 0,
+			currentPeriodEnd: expect.any(String)
 		})
-	})
-
-	it('returns null autoTopup when not configured', async () => {
-		autoTopupConfig = null
-		const res = await app.handle(
-			new Request('http://localhost/user/me', { headers: AUTH })
-		)
-		const body = await res.json()
-		expect(body.autoTopup).toBeNull()
 	})
 
 	it('returns 401 without auth', async () => {

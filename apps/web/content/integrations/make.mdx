@@ -1,0 +1,243 @@
+---
+title: "Screenshot API for Make"
+description: "Automate website screenshots with Make (Integromat) and ScreenshotAPI. Visual scenarios for capturing, processing, and distributing screenshots."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Make
+faq:
+  - question: "How do I call ScreenshotAPI from Make?"
+    answer: "Use Make's HTTP module with the 'Make a request' action. Configure it as a GET request to the ScreenshotAPI endpoint with your API key in the headers."
+  - question: "Can Make handle the binary image data from ScreenshotAPI?"
+    answer: "Yes. Set the HTTP module's Parse response option to capture the binary data. Make can then pass this to storage modules, email attachments, or other actions."
+  - question: "Does Make support scheduled screenshot capture?"
+    answer: "Yes. Use Make's scheduling options to run scenarios at fixed intervals. You can capture screenshots every hour, daily, weekly, or on any custom schedule."
+  - question: "How does Make compare to Zapier for screenshot automation?"
+    answer: "Make offers more visual workflow design, better handling of binary data, and a more flexible branching system. It also tends to be more cost-effective for complex multi-step scenarios."
+relatedPages:
+  - title: "Zapier Integration"
+    description: "No-code screenshot automation with Zapier"
+    href: "/integrations/zapier"
+  - title: "n8n Integration"
+    description: "Open-source screenshot automation"
+    href: "/integrations/n8n"
+  - title: "Retool Integration"
+    description: "Internal tools with screenshot capture"
+    href: "/integrations/retool"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Screenshot API for Make"
+  description: "Automate website screenshots with Make (Integromat) and ScreenshotAPI. Visual scenarios for capturing, processing, and distributing screenshots."
+  dateModified: "2026-03-25"
+---
+
+## Automate Website Screenshots with Make and ScreenshotAPI
+
+Make (formerly Integromat) is a visual automation platform that connects apps and services through scenarios. Its flowchart-style editor makes it easy to build complex workflows with branching, iterations, and error handling. Adding ScreenshotAPI to Make scenarios enables automated screenshot capture for monitoring, reporting, archival, and content generation workflows.
+
+A **Make screenshot** integration with ScreenshotAPI requires no coding. Configure the HTTP module, connect it to your data sources and destinations, and the scenario runs on autopilot.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and copy your API key. **200 free screenshots per month** are included.
+2. Create a new scenario in Make.
+3. Add an HTTP module that calls the ScreenshotAPI endpoint.
+
+## Basic Scenario: Capture and Store
+
+### Module 1: Trigger
+
+Choose any trigger module. Common options include:
+
+- **Schedule**: Run at fixed intervals
+- **Webhook**: Receive requests from external apps
+- **Google Sheets**: Watch for new rows
+- **Slack**: Watch for new messages
+
+### Module 2: HTTP - Make a Request
+
+Configure the HTTP module:
+
+- **URL**: `https://screenshotapi.to/api/v1/screenshot`
+- **Method**: GET
+- **Query String**:
+  - `url`: Map from trigger data or enter a static URL
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `png`
+  - `quality`: `80`
+  - `waitUntil`: `networkidle`
+- **Headers**:
+  - `x-api-key`: `sk_live_xxxxx`
+- **Parse response**: Yes
+- **Response type**: Binary
+
+### Module 3: Storage Action
+
+Connect to your preferred storage:
+
+**Google Drive - Upload a File:**
+- **File Name**: `screenshot-{{formatDate(now; "YYYY-MM-DD-HHmm")}}.png`
+- **Data**: Map the binary data from the HTTP module
+- **Folder**: Select your screenshots folder
+
+**Or Amazon S3 - Upload an Object:**
+- **Bucket**: `your-screenshots-bucket`
+- **Key**: `screenshots/{{formatDate(now; "YYYY-MM-DD")}}/capture.png`
+- **Body**: Map binary data from HTTP module
+
+## Scheduled Monitoring Scenario
+
+Capture multiple pages on a schedule and send a summary to Slack.
+
+### Module 1: Schedule Trigger
+
+- **Run scenario**: Every day at 9:00 AM
+
+### Module 2: Set Variables
+
+Create an array of pages to monitor:
+
+```
+[
+  {"name": "Homepage", "url": "https://yoursite.com"},
+  {"name": "Pricing", "url": "https://yoursite.com/pricing"},
+  {"name": "Blog", "url": "https://yoursite.com/blog"}
+]
+```
+
+### Module 3: Iterator
+
+Iterate over the pages array.
+
+### Module 4: HTTP - Make a Request
+
+- **URL**: `https://screenshotapi.to/api/v1/screenshot`
+- **Query String**:
+  - `url`: `{{item.url}}`
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `png`
+- **Headers**: `x-api-key: sk_live_xxxxx`
+- **Response type**: Binary
+
+### Module 5: Google Drive - Upload
+
+- **File Name**: `{{item.name}}-{{formatDate(now; "YYYY-MM-DD")}}.png`
+
+### Module 6: Array Aggregator
+
+Collect all upload results.
+
+### Module 7: Slack - Send Message
+
+Post a summary with links to the uploaded screenshots.
+
+## Form-Based Screenshot Workflow
+
+Capture screenshots when users submit URLs through a form:
+
+### Module 1: Typeform / Google Forms Watch
+
+Trigger when a new form response arrives with a URL field.
+
+### Module 2: HTTP - Make a Request
+
+Call ScreenshotAPI with the submitted URL:
+
+- **Query String**:
+  - `url`: Map from form URL field
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `webp`
+  - `quality`: `80`
+
+### Module 3: Email - Send
+
+Send the screenshot to the form submitter as an attachment.
+
+## Multi-Viewport Comparison
+
+Capture the same URL at different viewport sizes:
+
+### Module 1: Trigger (any)
+
+### Module 2: Set Variables
+
+```
+[
+  {"name": "desktop", "width": "1440", "height": "900"},
+  {"name": "tablet", "width": "768", "height": "1024"},
+  {"name": "mobile", "width": "390", "height": "844"}
+]
+```
+
+### Module 3: Iterator
+
+### Module 4: HTTP Request
+
+- **Query String**:
+  - `url`: Static URL or from trigger
+  - `width`: `{{item.width}}`
+  - `height`: `{{item.height}}`
+  - `type`: `webp`
+
+### Module 5: Upload to Storage
+
+Save with viewport name in the filename.
+
+## Dark Mode Capture
+
+Add `colorScheme=dark` to the query string to capture dark mode variants. Run two HTTP modules in parallel — one with `colorScheme=light` and one with `colorScheme=dark` — to capture both themes in a single scenario run.
+
+This is useful for [visual regression testing](/use-cases/visual-regression-testing) and theme comparison workflows.
+
+## Error Handling
+
+Make provides built-in error handling through error handler routes:
+
+1. **Add an Error Handler** to the HTTP module
+2. **Resume** on transient errors (retry the module)
+3. **Rollback** on persistent failures
+4. **Break** to stop execution and alert
+
+Configure the HTTP module with:
+- **Timeout**: 30 seconds
+- **Number of retries**: 2
+
+## Advanced: Router for Conditional Processing
+
+Use Make's Router module to process screenshots differently based on conditions:
+
+- **Route 1**: If page has changed, send to Slack
+- **Route 2**: Always upload to Google Drive
+- **Route 3**: If size > 500 KB, compress and re-upload
+
+## Production Tips
+
+### API Key Security
+
+Store the API key in a Make connection or variable. Never hardcode it directly in module configurations if you share scenarios with team members.
+
+### Execution Limits
+
+Make plans have operation limits. Each module execution counts as one operation. A scenario with 5 modules that runs daily uses 150 operations per month.
+
+### Binary Data Handling
+
+When passing screenshots between modules, Make handles binary data natively. No base64 encoding or decoding needed for storage and email modules.
+
+<FreeTierBanner />
+
+## Further Reading
+
+- The [Zapier integration](/integrations/zapier) covers an alternative no-code platform.
+- See the [n8n integration](/integrations/n8n) for a self-hosted option.
+- The [API documentation](/docs) has the full parameter reference for all endpoints.

@@ -143,11 +143,13 @@ export default function TermsPage() {
 					are not stored on our servers after delivery.
 				</p>
 
-				<h3>4.2 Free Credits</h3>
+				<h3>4.2 Free Monthly Allowance</h3>
 				<p>
-					Upon creating an account, you receive 5 free Credits. These
-					Credits are subject to the same terms as purchased Credits
-					and may not be transferred or exchanged for cash.
+					Upon creating an account, you receive 200 free screenshots
+					per month as part of the Free tier. This monthly allowance
+					resets at the beginning of each calendar month. Unused free
+					screenshots do not roll over. The free allowance may not be
+					transferred or exchanged for cash.
 				</p>
 
 				<h3>4.3 Service Modifications</h3>
@@ -160,19 +162,34 @@ export default function TermsPage() {
 					discontinuance of the Service.
 				</p>
 
-				<h2>5. Credit-Based Pricing and Payment</h2>
-				<h3>5.1 Credit Packs</h3>
+				<h2>5. Pricing and Payment</h2>
+				<h3>5.1 Subscription Plans</h3>
 				<p>
-					The Service operates on a credit-based pricing model. You
-					pre-purchase Credit Packs to use the API. Current Credit
-					Pack options and pricing are listed on our pricing page.
-					Credit Pack prices are denominated in U.S. dollars and are
-					subject to change. We will notify you of any price changes
-					before they take effect, and changes will not affect Credits
-					already purchased.
+					The Service offers subscription plans that include a monthly
+					screenshot allowance. Current plan options and pricing are
+					listed on our pricing page. Each plan provides a fixed
+					number of screenshots per billing period. Usage beyond the
+					included allowance is billed as overage at the
+					per-screenshot rate specified for your plan. Subscription
+					prices are denominated in U.S. dollars and are subject to
+					change. We will notify you of any price changes before they
+					take effect, and changes will not affect the current billing
+					period.
 				</p>
 
-				<h3>5.2 Credit Usage</h3>
+				<h3>5.2 Credit Packs</h3>
+				<p>
+					As a secondary pay-as-you-go option, you may pre-purchase
+					Credit Packs. Current Credit Pack options and pricing are
+					listed on our pricing page. Each Credit is consumed when an
+					API request successfully generates a screenshot. Credit Pack
+					prices are denominated in U.S. dollars and are subject to
+					change. We will notify you of any price changes before they
+					take effect, and changes will not affect Credits already
+					purchased. Credits never expire.
+				</p>
+
+				<h3>5.3 Credit Usage</h3>
 				<p>
 					Each successful API request that generates a screenshot
 					consumes one Credit from your balance. Credits are deducted
@@ -180,7 +197,7 @@ export default function TermsPage() {
 					requests do not consume Credits. Credits do not expire.
 				</p>
 
-				<h3>5.3 Auto Top-Up</h3>
+				<h3>5.4 Auto Top-Up</h3>
 				<p>
 					If you enable the Auto Top-Up feature, you authorize us to
 					automatically charge your stored payment method for the
@@ -192,7 +209,7 @@ export default function TermsPage() {
 					service interruption caused by a failed Auto Top-Up charge.
 				</p>
 
-				<h3>5.4 Payment Processing</h3>
+				<h3>5.5 Payment Processing</h3>
 				<p>
 					All payments are processed securely through Polar, our
 					merchant of record. By making a purchase, you agree to
@@ -209,7 +226,7 @@ export default function TermsPage() {
 					processed by Polar as a merchant of record.
 				</p>
 
-				<h3>5.5 Taxes</h3>
+				<h3>5.6 Taxes</h3>
 				<p>
 					All prices are exclusive of applicable taxes, levies, or
 					duties imposed by taxing authorities. You are responsible
@@ -217,7 +234,7 @@ export default function TermsPage() {
 					your purchases, excluding taxes based on our net income.
 				</p>
 
-				<h3>5.6 Refunds</h3>
+				<h3>5.7 Refunds</h3>
 				<p>
 					Credit purchases are generally non-refundable. We may, at
 					our sole discretion, provide refunds or credits on a

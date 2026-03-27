@@ -1,0 +1,352 @@
+---
+title: "Vercel Screenshot API Integration"
+description: "Capture website screenshots on Vercel with ScreenshotAPI. Generate OG images, thumbnails, and previews using serverless and edge functions."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Vercel
+faq:
+  - question: "Why use ScreenshotAPI instead of @vercel/og?"
+    answer: "@vercel/og converts JSX to images using Satori, which supports a limited subset of CSS. ScreenshotAPI captures real browser-rendered pages with full CSS, JavaScript, web fonts, and animation support."
+  - question: "Can I run ScreenshotAPI in Vercel Edge Functions?"
+    answer: "Yes. Edge Functions support the fetch API, which is all you need to call ScreenshotAPI. Responses are fast because ScreenshotAPI's infrastructure handles the browser rendering."
+  - question: "How do I avoid exceeding Vercel's function timeout?"
+    answer: "ScreenshotAPI typically responds in 1-3 seconds, well within Vercel's default 10-second timeout for serverless functions. For complex pages, increase the timeout to 30 seconds in your vercel.json."
+  - question: "Can I cache screenshot responses on Vercel's CDN?"
+    answer: "Yes. Return appropriate Cache-Control headers from your serverless function. Vercel's CDN will cache the response at edge locations worldwide."
+relatedPages:
+  - title: "Next.js Integration"
+    description: "Next.js-specific screenshot patterns with App Router"
+    href: "/integrations/nextjs"
+  - title: "Cloudflare Workers Integration"
+    description: "Edge screenshot capture with Cloudflare Workers"
+    href: "/integrations/cloudflare-workers"
+  - title: "OG Image Generation"
+    description: "Generate dynamic Open Graph images at scale"
+    href: "/use-cases/og-image-generation"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Vercel Screenshot API Integration"
+  description: "Capture website screenshots on Vercel with ScreenshotAPI. Generate OG images and thumbnails using serverless functions."
+  dateModified: "2026-03-25"
+---
+
+## Capture Screenshots on Vercel with ScreenshotAPI
+
+Vercel is the leading platform for deploying frontend applications and serverless functions. For screenshot functionality, many teams reach for Puppeteer or `@vercel/og`. Puppeteer requires a 50 MB Chromium binary that pushes against Vercel's 250 MB function size limit and causes 3-8 second cold starts. `@vercel/og` is lightweight but only supports a limited subset of CSS through its Satori engine.
+
+A **Vercel screenshot API** integration with ScreenshotAPI gives you the best of both worlds: real browser rendering with full CSS and JavaScript support, delivered through a simple fetch call that fits comfortably within Vercel's function size and timeout limits.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and grab your API key. **200 free screenshots per month** are included.
+2. Add the API key to your Vercel project's environment variables.
+3. Create a serverless function that calls ScreenshotAPI.
+
+## Installation
+
+Add the environment variable in Vercel's dashboard or via the CLI:
+
+```bash
+vercel env add SCREENSHOTAPI_KEY
+```
+
+No npm packages are required. The integration uses the built-in `fetch` API.
+
+## Basic Example: Serverless Function
+
+A Vercel serverless function that returns screenshots:
+
+```typescript
+// api/screenshot.ts
+export const config = {
+  maxDuration: 30,
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  const { searchParams } = new URL(request.url)
+  const url = searchParams.get('url')
+
+  if (!url) {
+    return Response.json({ error: 'url parameter is required' }, { status: 400 })
+  }
+
+  const params = new URLSearchParams({
+    url,
+    width: searchParams.get('width') ?? '1440',
+    height: searchParams.get('height') ?? '900',
+    type: searchParams.get('type') ?? 'png',
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    {
+      headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    }
+  )
+
+  if (!response.ok) {
+    return Response.json({ error: 'Capture failed' }, { status: 502 })
+  }
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': `image/${searchParams.get('type') ?? 'png'}`,
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+    },
+  })
+}
+```
+
+## Vercel OG Image Generation
+
+The most popular use case for a **Vercel screenshot API** is generating Open Graph images. While `@vercel/og` is limited to the CSS that Satori supports, ScreenshotAPI renders actual web pages, giving you full CSS3, animations, and complex layouts.
+
+### OG Image Route
+
+```typescript
+// api/og.ts
+export const config = {
+  maxDuration: 30,
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  const { searchParams } = new URL(request.url)
+  const title = searchParams.get('title') ?? 'Default Title'
+  const theme = searchParams.get('theme') ?? 'light'
+
+  const templateUrl = new URL('https://yourdomain.com/og-template')
+  templateUrl.searchParams.set('title', title)
+  templateUrl.searchParams.set('theme', theme)
+
+  const params = new URLSearchParams({
+    url: templateUrl.toString(),
+    width: '1200',
+    height: '630',
+    type: 'png',
+    colorScheme: theme,
+    waitUntil: 'networkidle',
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    {
+      headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    }
+  )
+
+  if (!response.ok) {
+    return Response.json({ error: 'OG generation failed' }, { status: 502 })
+  }
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+    },
+  })
+}
+```
+
+Reference in your HTML meta tags:
+
+```html
+<meta property="og:image" content="https://yourdomain.com/api/og?title=My%20Page" />
+```
+
+For more patterns, see the [OG image generation use case](/use-cases/og-image-generation) guide.
+
+## Edge Function Integration
+
+For the lowest latency, use Vercel Edge Functions:
+
+```typescript
+// api/screenshot-edge.ts
+export const config = {
+  runtime: 'edge',
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  const { searchParams } = new URL(request.url)
+  const url = searchParams.get('url')
+
+  if (!url) {
+    return Response.json({ error: 'url is required' }, { status: 400 })
+  }
+
+  const params = new URLSearchParams({
+    url,
+    width: '1440',
+    height: '900',
+    type: 'webp',
+    quality: '80',
+  })
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    {
+      headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    }
+  )
+
+  if (!response.ok) {
+    return Response.json({ error: 'Capture failed' }, { status: 502 })
+  }
+
+  return new Response(response.body, {
+    headers: {
+      'Content-Type': 'image/webp',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600',
+    },
+  })
+}
+```
+
+Edge Functions start in under 1 ms and run in 30+ global regions, minimizing the time between the user's request and the ScreenshotAPI call.
+
+## Vercel Cron Jobs
+
+Automate periodic screenshot captures with Vercel Cron:
+
+```json
+// vercel.json
+{
+  "crons": [
+    {
+      "path": "/api/cron/screenshots",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
+```
+
+```typescript
+// api/cron/screenshots.ts
+export const config = {
+  maxDuration: 300,
+}
+
+export default async function handler(request: Request): Promise<Response> {
+  const authHeader = request.headers.get('authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const sites = ['https://example.com', 'https://another-site.com']
+
+  const results = await Promise.allSettled(
+    sites.map(async (url) => {
+      const params = new URLSearchParams({
+        url,
+        width: '1440',
+        height: '900',
+        type: 'webp',
+        quality: '80',
+      })
+
+      const res = await fetch(
+        `https://screenshotapi.to/api/v1/screenshot?${params}`,
+        {
+          headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+        }
+      )
+
+      if (!res.ok) throw new Error(`Failed for ${url}`)
+
+      // Store to Vercel Blob, S3, or database
+      return { url, status: 'captured' }
+    })
+  )
+
+  return Response.json({ results })
+}
+```
+
+## Screenshot Utility Module
+
+A shared utility for all your Vercel functions:
+
+```typescript
+// lib/screenshot.ts
+interface ScreenshotOptions {
+  url: string
+  width?: number
+  height?: number
+  type?: 'png' | 'jpeg' | 'webp'
+  quality?: number
+  fullPage?: boolean
+  colorScheme?: 'light' | 'dark'
+  waitUntil?: 'networkidle' | 'load' | 'domcontentloaded'
+}
+
+export async function captureScreenshot(options: ScreenshotOptions): Promise<ArrayBuffer> {
+  const params = new URLSearchParams({
+    url: options.url,
+    width: String(options.width ?? 1440),
+    height: String(options.height ?? 900),
+    type: options.type ?? 'png',
+  })
+
+  if (options.quality) params.set('quality', String(options.quality))
+  if (options.fullPage) params.set('fullPage', 'true')
+  if (options.colorScheme) params.set('colorScheme', options.colorScheme)
+  if (options.waitUntil) params.set('waitUntil', options.waitUntil)
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    {
+      headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`Screenshot API returned ${response.status}`)
+  }
+
+  return response.arrayBuffer()
+}
+```
+
+## Comparing Approaches on Vercel
+
+| Feature | ScreenshotAPI | @vercel/og (Satori) | Puppeteer |
+|---------|--------------|---------------------|-----------|
+| Function size | ~0 KB | ~500 KB | ~50 MB |
+| Cold start | ~0 ms | ~100 ms | 3-8 s |
+| CSS support | Full | Subset | Full |
+| JavaScript support | Yes | No | Yes |
+| Web fonts | Yes | Manual loading | Yes |
+| Pricing | Per-credit | Included | Compute-based |
+
+## Production Tips
+
+### CDN Caching
+
+Vercel's Edge Network caches responses based on `Cache-Control` headers. Use `s-maxage` for CDN caching and `stale-while-revalidate` for background revalidation:
+
+```
+Cache-Control: public, s-maxage=86400, stale-while-revalidate=3600
+```
+
+### Environment Variables
+
+Store your API key in Vercel's environment variables dashboard. Use separate keys for Preview, Development, and Production environments.
+
+### Function Size
+
+Since ScreenshotAPI requires no npm packages for basic usage, your serverless functions stay well under Vercel's 250 MB limit. This leaves plenty of room for your application logic.
+
+<FreeTierBanner />
+
+## Further Reading
+
+- The [Next.js integration](/integrations/nextjs) guide covers App Router-specific patterns.
+- Learn about [OG image generation](/use-cases/og-image-generation) for dynamic social cards.
+- The [JavaScript SDK docs](/docs/sdks/javascript) have the full parameter reference.

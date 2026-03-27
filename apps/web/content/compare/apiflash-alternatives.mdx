@@ -1,0 +1,219 @@
+---
+title: "5 Best ApiFlash Alternatives in 2026"
+description: "Looking for an ApiFlash alternative with more features? Compare modern screenshot APIs with WebP output, dark mode, and flexible pricing models."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Compare
+    href: /compare
+  - label: ApiFlash Alternatives
+faq:
+  - question: "Why look for an ApiFlash alternative?"
+    answer: "ApiFlash is affordable but lacks WebP output, dark mode capture, and CSS selector-based wait strategies. Developers upgrade when they need modern image formats, better rendering control, or a different pricing model."
+  - question: "What has more features than ApiFlash?"
+    answer: "ScreenshotAPI adds WebP output and dark mode. Urlbox adds AVIF, SVG, video, PDF, signed URLs, and stealth mode. Microlink adds metadata extraction and CDN caching."
+  - question: "Is there a cheaper alternative to ApiFlash?"
+    answer: "ApiFlash at $7/month is one of the cheapest subscription-based screenshot APIs. ScreenshotAPI starts at $9/month for 1,000 screenshots, with credit packs also available that never expire."
+  - question: "Does ApiFlash support WebP?"
+    answer: "No. ApiFlash supports PNG and JPEG only. If you need WebP output for smaller file sizes, ScreenshotAPI and Urlbox both support it."
+relatedPages:
+  - title: "ScreenshotAPI vs ApiFlash"
+    description: "Direct comparison between ScreenshotAPI and ApiFlash"
+    href: "/compare/screenshotapi-vs-apiflash"
+  - title: "Best Screenshot API"
+    description: "Complete comparison of the top screenshot APIs"
+    href: "/compare/best-screenshot-api"
+  - title: "Free Screenshot API"
+    description: "Free screenshot API options for developers"
+    href: "/compare/free-screenshot-api"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "5 Best ApiFlash Alternatives in 2026"
+  description: "Looking for an ApiFlash alternative with more features? Compare modern screenshot APIs with WebP output, dark mode, and flexible pricing models."
+  dateModified: "2026-03-25"
+---
+
+ApiFlash is one of the most affordable screenshot APIs available, and its ad blocking and CSS injection features add real value. But it has notable gaps: no WebP output, no dark mode capture, and no CSS selector-based wait strategies. If you are looking for ApiFlash alternatives that address these limitations, several options exist with different feature and pricing trade-offs.
+
+## Why Developers Switch from ApiFlash
+
+ApiFlash works well for basic capture, but these limitations drive developers to look elsewhere:
+
+- **No WebP output.** PNG and JPEG only. WebP delivers 25-35% smaller files, which matters for user-facing [link previews](/use-cases/link-previews) and [directory thumbnails](/use-cases/directory-thumbnails).
+- **No dark mode capture.** Cannot screenshot websites in dark mode with a single parameter.
+- **No CSS selector waiting.** Cannot wait for a specific element to appear before capturing. This causes issues with JavaScript-heavy pages where content loads asynchronously.
+- **API key in URL.** Authentication via query parameter rather than header exposes credentials in logs and referrer headers.
+- **Monthly subscription.** Unused screenshots do not carry over, creating waste during quiet months.
+
+## Alternatives at a Glance
+
+| Feature | ScreenshotAPI | Urlbox | Microlink | Screenshot Machine | ScrapingBee |
+|---|---|---|---|---|---|
+| WebP output | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Dark mode | ✓ | ✓ | ✓ | ✗ | ✗ |
+| CSS selector wait | ✓ | ✓ | ✓ | ✗ | ✓ |
+| Ad blocking | ✓ | ✓ | ✓ | ✗ | ✗ |
+| CSS injection | ✓ | ✓ | ✓ | ✗ | ✗ |
+| PDF generation | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Proxy rotation | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Auth in headers | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Pricing model | Subscriptions + credit packs | Subscription | Subscription | Subscription | Subscription |
+| Starting price | $9/mo | $19/mo | Free (50/mo) | $9.95/mo | $49/mo |
+
+## 1. ScreenshotAPI
+
+**Best for: Modern output formats with flexible pricing**
+
+ScreenshotAPI addresses ApiFlash's biggest feature gaps: WebP output, dark mode capture, and CSS selector waiting. It also now includes ad blocking, CSS/JS injection, PDF export, and signed URLs. Its flexible subscriptions and credit packs are a good fit for developers who used ApiFlash for its affordability.
+
+```php
+<?php
+$params = http_build_query([
+    'url' => 'https://example.com',
+    'width' => 1440,
+    'height' => 900,
+    'type' => 'webp',
+    'colorScheme' => 'dark',
+    'waitForSelector' => '.main-content'
+]);
+
+$context = stream_context_create([
+    'http' => [
+        'header' => "x-api-key: sk_live_xxxxx\r\n"
+    ]
+]);
+
+$image = file_get_contents(
+    "https://screenshotapi.to/api/v1/screenshot?{$params}",
+    false,
+    $context
+);
+
+file_put_contents('screenshot.webp', $image);
+```
+
+**What you gain over ApiFlash:**
+- WebP output for smaller files
+- Dark mode capture
+- CSS selector-based waiting
+- Ad blocking and cookie banner removal
+- CSS/JavaScript injection
+- PDF export and signed URLs
+- Header-based authentication
+- Flexible subscriptions and credit packs that never expire
+
+<ScreenshotAPIPricing showCreditPacks />
+
+For the full comparison, see [ScreenshotAPI vs ApiFlash](/compare/screenshotapi-vs-apiflash). For implementation, check the [PHP guide](/blog/how-to-take-screenshots-with-php).
+
+## 2. Urlbox
+
+**Best for: Everything ApiFlash does, plus much more**
+
+Urlbox is a significant upgrade from ApiFlash in every dimension. It keeps the features ApiFlash has (ad blocking, custom CSS) while adding signed URLs, video capture, retina rendering, and more output formats.
+
+**What you gain over ApiFlash:**
+- WebP and AVIF output
+- Signed URLs for client-side rendering
+- Video capture (MP4, WebM)
+- Ad and cookie banner blocking
+- Stealth mode for anti-bot bypass
+- 4K/5K retina captures
+
+**What costs more:**
+- Starting at $19/month vs ApiFlash's $7/month
+- Higher per-screenshot cost at equivalent volumes
+
+**Pricing:** Plans from $19/month to $498+/month. See [ScreenshotAPI vs Urlbox](/compare/screenshotapi-vs-urlbox).
+
+## 3. Microlink
+
+**Best for: Screenshots plus metadata extraction at scale**
+
+Microlink provides the broadest feature set for teams that need more than just screenshots. Its CDN caching delivers fast responses, and the per-request cost at high volume is lower than ApiFlash.
+
+**What you gain over ApiFlash:**
+- Metadata extraction alongside screenshots
+- Global CDN with 240+ edge locations
+- CSS and JavaScript injection
+- Device emulation presets
+- PDF generation and Lighthouse audits
+- Lower per-request cost at high volume
+
+**What you lose from ApiFlash:**
+- More complex API (JSON response by default)
+- No WebP output for screenshots
+- No built-in ad blocking for screenshots specifically
+
+**Pricing:** 50 free requests/month. Pro plans from ~$30/month. See [ScreenshotAPI vs Microlink](/compare/screenshotapi-vs-microlink).
+
+## 4. Screenshot Machine
+
+**Best for: Simple captures with PDF support on a budget**
+
+Screenshot Machine is a straightforward alternative to ApiFlash with PDF generation and device presets at a competitive price.
+
+**What you gain over ApiFlash:**
+- PDF generation
+- Mobile and tablet device presets
+- Configurable cache TTL
+
+**What you lose from ApiFlash:**
+- No ad blocking
+- No CSS injection
+- Limited wait strategies
+
+**Pricing:** Plans from $9.95/month. See [ScreenshotAPI vs Screenshot Machine](/compare/screenshotapi-vs-screenshotmachine).
+
+## 5. ScrapingBee
+
+**Best for: Capturing sites that block headless browsers**
+
+If you have been using ApiFlash and encountering blank screenshots from sites that detect and block automated browsers, ScrapingBee's residential proxy network solves this problem.
+
+**What you gain over ApiFlash:**
+- Residential proxy rotation for anti-bot bypass
+- JavaScript execution for complex page interactions
+- Combined scraping and screenshot capability
+- Custom headers and cookies
+
+**What costs more:**
+- Starts at $49/month, significantly more than ApiFlash's $7/month
+- Pricing includes scraping infrastructure you may not need
+
+**Pricing:** Plans from $49/month. See [ScreenshotAPI vs ScrapingBee](/compare/screenshotapi-vs-scrapingbee).
+
+## Choosing the Right Alternative
+
+| If you want... | Choose |
+|---|---|
+| WebP + dark mode + full feature set | ScreenshotAPI |
+| Maximum features and enterprise support | Urlbox |
+| High-volume with CDN caching | Microlink |
+| PDF generation on a budget | Screenshot Machine |
+| Screenshots of blocked/protected sites | ScrapingBee |
+| Cheapest possible per-screenshot cost | Keep ApiFlash |
+
+## Migration from ApiFlash
+
+Switching from ApiFlash to any alternative follows the same pattern. Here is the parameter mapping to ScreenshotAPI:
+
+| ApiFlash | ScreenshotAPI |
+|---|---|
+| `access_key=KEY` (in URL) | `x-api-key: KEY` (in header) |
+| `format=png` | `type=png` |
+| `width` | `width` |
+| `height` | `height` |
+| `full_page=true` | `fullPage=true` |
+| `quality` | `quality` |
+| `wait_until=network_idle` | `waitUntil=networkidle` |
+
+See the [ApiFlash migration guide](/blog/migrate-from-apiflash) for a step-by-step walkthrough.
+
+## Verdict
+
+ApiFlash remains a solid budget choice for basic screenshots with ad blocking. If you need more, **ScreenshotAPI** covers the modern feature gaps. **Urlbox** is the full-featured upgrade. **Microlink** wins at scale. **Screenshot Machine** adds PDF support. **ScrapingBee** handles blocked sites.
+
+For the full picture, see the [best screenshot API comparison](/compare/best-screenshot-api).

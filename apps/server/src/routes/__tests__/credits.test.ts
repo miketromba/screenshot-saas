@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { Elysia, t } from 'elysia'
 
-const FREE_CREDITS = 5
-
 interface MockTransaction {
 	id: string
 	userId: string
@@ -108,15 +106,7 @@ const app = new Elysia({ prefix: '/credits' })
 		{ body: t.Object({ packId: t.String() }) }
 	)
 	.post('/initialize', () => {
-		balance = FREE_CREDITS
-		transactions.push({
-			id: `txn-${Date.now()}`,
-			userId: 'user-123',
-			amount: FREE_CREDITS,
-			type: 'signup_bonus',
-			description: `Welcome bonus: ${FREE_CREDITS} free credits`,
-			createdAt: new Date()
-		})
+		balance = 0
 		return { balance }
 	})
 
@@ -270,7 +260,7 @@ describe('Credit routes', () => {
 			)
 			expect(res.status).toBe(200)
 			const body = await res.json()
-			expect(body.balance).toBe(FREE_CREDITS)
+			expect(body.balance).toBe(0)
 		})
 	})
 })

@@ -11,3 +11,4 @@ dist/
 # bun.lock is included for Vercel deployment reproducibility
 .source/
 .vercel
+.env*.local

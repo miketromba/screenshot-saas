@@ -1,0 +1,171 @@
+---
+title: "ScreenshotAPI vs Urlbox: Pricing, Features, and Performance"
+description: "Honest comparison of ScreenshotAPI and Urlbox. See how pricing, features, output formats, and developer experience differ between these screenshot APIs."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Compare
+    href: /compare
+  - label: ScreenshotAPI vs Urlbox
+faq:
+  - question: "Is ScreenshotAPI cheaper than Urlbox?"
+    answer: "ScreenshotAPI starts at $9/month for 1,000 screenshots, with credit packs also available that never expire. Urlbox starts at $19/month for 2,000 renders. Both offer competitive pricing."
+  - question: "Does Urlbox have features ScreenshotAPI doesn't?"
+    answer: "Urlbox supports more output formats (AVIF, SVG, MP4, WEBM) and has a longer track record with enterprise customers. ScreenshotAPI now offers ad blocking, CSS/JS injection, signed URLs, PDF export, stealth mode, and retina captures alongside its flexible pricing."
+  - question: "Which is better for high-volume screenshot capture?"
+    answer: "It depends on your volume pattern. Urlbox's Business plan ($498/month) suits consistent high volume. ScreenshotAPI's Scale plan ($299/month for 100,000 screenshots) offers strong value, with credit packs available for bursty workloads."
+  - question: "Can I migrate from Urlbox to ScreenshotAPI?"
+    answer: "Yes. Both use similar REST API patterns. Most Urlbox parameters have direct ScreenshotAPI equivalents. The main change is switching from Urlbox's API key format to ScreenshotAPI's x-api-key header."
+relatedPages:
+  - title: "Urlbox Alternatives"
+    description: "All the best alternatives to Urlbox"
+    href: "/compare/urlbox-alternatives"
+  - title: "Best Screenshot API"
+    description: "Full comparison of the top screenshot APIs"
+    href: "/compare/best-screenshot-api"
+  - title: "ScreenshotAPI vs Browserless"
+    description: "Compare with Browserless's hosted browser approach"
+    href: "/compare/screenshotapi-vs-browserless"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "ScreenshotAPI vs Urlbox: Pricing, Features, and Performance"
+  description: "Honest comparison of ScreenshotAPI and Urlbox. See how pricing, features, output formats, and developer experience differ between these screenshot APIs."
+  dateModified: "2026-03-25"
+---
+
+Urlbox is one of the most established screenshot APIs on the market, with years of production use and a broad feature set. ScreenshotAPI is a focused alternative with simpler pricing and a streamlined developer experience. If you are evaluating Urlbox vs ScreenshotAPI, this guide covers the real differences in pricing, features, and developer experience so you can make an informed decision.
+
+## Feature Comparison
+
+| Feature | ScreenshotAPI | Urlbox |
+|---|---|---|
+| PNG screenshots | ✓ | ✓ |
+| JPEG screenshots | ✓ | ✓ |
+| WebP screenshots | ✓ | ✓ |
+| AVIF screenshots | ✗ | ✓ |
+| SVG output | ✗ | ✓ |
+| PDF generation | ✓ | ✓ |
+| Video capture (MP4) | ✗ | ✓ |
+| Full-page capture | ✓ | ✓ |
+| Custom viewport | ✓ | ✓ |
+| Dark mode | ✓ | ✓ |
+| Wait strategies | ✓ | ✓ |
+| CSS selector wait | ✓ | ✓ |
+| Custom delay | ✓ | ✓ |
+| Ad blocking | ✓ | ✓ |
+| Cookie banner blocking | ✓ | ✓ |
+| Signed URLs | ✓ | ✓ |
+| Retina (2x) | ✓ | ✓ |
+| Stealth mode | ✓ | ✓ |
+| Webhook callbacks | ✓ | ✓ |
+
+Urlbox still leads in output format breadth (AVIF, SVG, MP4 video). However, ScreenshotAPI now matches Urlbox on ad blocking, cookie banner blocking, signed URLs, retina captures, stealth mode, and webhook callbacks. The feature gap has narrowed significantly.
+
+## Code Comparison
+
+### ScreenshotAPI
+
+```javascript
+const response = await fetch(
+  'https://screenshotapi.to/api/v1/screenshot?' + new URLSearchParams({
+    url: 'https://example.com',
+    width: '1440',
+    height: '900',
+    type: 'png'
+  }),
+  { headers: { 'x-api-key': 'sk_live_xxxxx' } }
+);
+```
+
+### Urlbox
+
+```javascript
+const response = await fetch(
+  'https://api.urlbox.io/v1/render?' + new URLSearchParams({
+    url: 'https://example.com',
+    width: '1440',
+    height: '900',
+    format: 'png'
+  }),
+  { headers: { Authorization: 'Bearer YOUR_API_KEY' } }
+);
+```
+
+Both APIs follow similar REST patterns. The developer experience for basic screenshot capture is nearly identical. The differences emerge in advanced features and pricing models.
+
+## Pricing Comparison
+
+This is where the two services diverge significantly.
+
+<CompetitorComparison competitor="urlbox" />
+
+## Where Urlbox Wins
+
+**Enterprise maturity.** Urlbox has been operating for years and has a proven track record with high-volume enterprise customers. If you need an SLA with teeth, Urlbox's Business and Enterprise tiers include dedicated support and infrastructure.
+
+**Output format breadth.** AVIF, SVG, and MP4 output cover niche use cases that ScreenshotAPI does not address. If you need video capture or next-gen image formats, Urlbox has them.
+
+**Signed URLs.** Both services now support signed URLs for client-side rendering. Urlbox pioneered this feature and has a more mature implementation.
+
+**Video capture.** Urlbox supports MP4 and WebM video capture, which ScreenshotAPI does not offer.
+
+## Where ScreenshotAPI Wins
+
+**More affordable entry point.** 200 free screenshots/month on signup let you test the API immediately. The Starter plan at $9/month is a low-risk way to integrate screenshots into your product.
+
+**Feature parity on key capabilities.** ScreenshotAPI now matches Urlbox on ad blocking, cookie blocking, signed URLs, retina captures, stealth mode, and webhooks.
+
+**Flexible pricing.** Choose monthly subscriptions or credit packs that never expire. No wasted spend on unused capacity.
+
+**Simpler API.** Fewer parameters means less to learn and fewer things to misconfigure.
+
+## Use Case Recommendations
+
+### Best for link previews and thumbnails
+
+**ScreenshotAPI.** Simple URL-to-image capture at the lowest commitment. See the [link previews use case](/use-cases/link-previews) and [directory thumbnails guide](/use-cases/directory-thumbnails).
+
+### Best for enterprise applications
+
+**Urlbox.** Mature infrastructure, SLA guarantees, and signed URLs for direct client rendering.
+
+### Best for OG image generation
+
+**Either works.** Both handle basic screenshot capture well. ScreenshotAPI's simplicity is an advantage for straightforward [OG image workflows](/use-cases/og-image-generation).
+
+### Best for variable or low-volume usage
+
+**ScreenshotAPI.** Credits that never expire mean you pay exactly for what you use, nothing more.
+
+### Best for high-volume, consistent usage
+
+**Urlbox.** Monthly plans are more cost-effective at scale when you know your volume.
+
+## Migration: Urlbox to ScreenshotAPI
+
+If you are switching from Urlbox, here is how parameters map:
+
+| Urlbox | ScreenshotAPI |
+|---|---|
+| `url` | `url` |
+| `width` | `width` |
+| `height` | `height` |
+| `format=png` | `type=png` |
+| `full_page=true` | `fullPage=true` |
+| `quality` | `quality` |
+| `dark_mode=true` | `colorScheme=dark` |
+| `wait_until=networkidle` | `waitUntil=networkidle` |
+| `wait_for=.selector` | `waitForSelector=.selector` |
+| `delay` | `delay` |
+
+For a detailed walkthrough, see the [Urlbox migration guide](/blog/migrate-from-urlbox).
+
+## Verdict
+
+**Choose Urlbox** if you need the broadest feature set, enterprise SLAs, signed URLs, or video/PDF output. It is the more mature product with more capabilities.
+
+**Choose ScreenshotAPI** if you want a full-featured screenshot API with flexible pricing. It now matches Urlbox on most key features while offering a lower entry point and credit packs that never expire.
+
+Both are solid products. The right choice depends on your feature requirements and how you prefer to pay. Check out the [full alternatives comparison](/compare/urlbox-alternatives) to see how other options stack up.

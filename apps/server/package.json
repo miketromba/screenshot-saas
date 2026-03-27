@@ -9,17 +9,25 @@
 	"scripts": {
 		"dev": "bun --watch src/index.ts",
 		"typecheck": "tsc --noEmit",
-		"test": "bun test"
+		"test": "bun test",
+		"test:integration": "bun test __integration__/",
+		"test:all": "bun run test && bun run test:integration"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1017.0",
 		"@elysiajs/cors": "^1.3.0",
+		"@polar-sh/elysia": "^0.5.5",
+		"@polar-sh/sdk": "^0.46.6",
 		"@screenshot-saas/config": "workspace:*",
 		"@screenshot-saas/db": "workspace:*",
 		"@sparticuz/chromium": "^133.0.0",
 		"@supabase/ssr": "^0.9.0",
 		"@supabase/supabase-js": "^2.100.0",
 		"elysia": "^1.3.0",
-		"puppeteer-core": "^24.0.0",
-		"@polar-sh/sdk": "^0.46.6"
+		"puppeteer-core": "^24.0.0"
+	},
+	"devDependencies": {
+		"drizzle-orm": "^0.45.1",
+		"postgres": "^3.4.8"
 	}
 }

@@ -14,9 +14,9 @@ ScreenshotAPI uses a simple credit-based pricing model:
 - Credits are deducted only for **successful** screenshots
 - Failed requests are **never charged**
 - Credits **never expire**
-- New accounts receive **5 free credits**
+- New accounts receive **200 free screenshots per month**
 
-This means you only pay for what you use — no monthly subscriptions, no overage fees, and no wasted spend.
+This means you only pay for what you use — flexible subscriptions and pay-as-you-go credit packs, no overage fees, and no wasted spend.
 
 ## Checking Your Balance
 
@@ -114,29 +114,29 @@ curl "https://screenshotapi.to/api/v1/credits/packs"
   {
     "id": "pack_starter",
     "name": "Starter",
-    "credits": 100,
-    "priceCents": 500,
+    "credits": 1000,
+    "priceCents": 900,
     "isPopular": false
+  },
+  {
+    "id": "pack_growth",
+    "name": "Growth",
+    "credits": 5000,
+    "priceCents": 2900,
+    "isPopular": true
   },
   {
     "id": "pack_pro",
     "name": "Pro",
-    "credits": 1000,
-    "priceCents": 3500,
-    "isPopular": true
-  },
-  {
-    "id": "pack_business",
-    "name": "Business",
-    "credits": 5000,
-    "priceCents": 12500,
+    "credits": 25000,
+    "priceCents": 9900,
     "isPopular": false
   },
   {
-    "id": "pack_enterprise",
-    "name": "Enterprise",
-    "credits": 25000,
-    "priceCents": 50000,
+    "id": "pack_scale",
+    "name": "Scale",
+    "credits": 100000,
+    "priceCents": 29900,
     "isPopular": false
   }
 ]
@@ -251,7 +251,7 @@ curl "https://screenshotapi.to/api/v1/credits/transactions?limit=10&offset=0" \
   --cookie "session=your_session_cookie"
 ```
 
-Each transaction shows the type (`purchase`, `auto_topup`, `usage`, `signup_bonus`), amount, description, and timestamp.
+Each transaction shows the type (`purchase`, `auto_topup`, `usage`, `subscription`), amount, description, and timestamp.
 
 ## Auto Top-Up
 
@@ -264,7 +264,7 @@ Configure credit balance monitoring from your [dashboard](https://screenshotapi.
 **How it works:**
 
 1. Set a **threshold** (e.g., 50 credits).
-2. Choose a **credit pack** to suggest (e.g., Pro pack with 1,000 credits).
+2. Choose a **credit pack** to suggest (e.g., Growth pack with 5,000 credits).
 3. When your balance drops below 50, you'll see a prompt to buy more credits.
 
 You can enable, disable, or reconfigure auto top-up at any time from the settings page.
@@ -287,9 +287,9 @@ The request is not processed and no credit is deducted.
 
 | Pack | Credits | Price | Per Credit |
 |---|---|---|---|
-| Starter | 100 | $5.00 | $0.050 |
-| Pro | 1,000 | $35.00 | $0.035 |
-| Business | 5,000 | $125.00 | $0.025 |
-| Enterprise | 25,000 | $500.00 | $0.020 |
+| Starter | 1,000 | $9.00 | $0.009 |
+| Growth | 5,000 | $29.00 | $0.0058 |
+| Pro | 25,000 | $99.00 | $0.00396 |
+| Scale | 100,000 | $299.00 | $0.00299 |
 
 Higher-volume packs offer a lower cost per credit. All prices are in USD and exclude applicable taxes.

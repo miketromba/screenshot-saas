@@ -1,198 +1,278 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
+'use client'
 
-export const metadata: Metadata = {
-	title: 'Pricing',
-	description:
-		'Simple credit-based pricing for ScreenshotAPI. No subscriptions — buy credits and use them at your own pace.'
+import { CREDIT_PACK_TIERS, SUBSCRIPTION_TIERS } from '@screenshot-saas/config'
+import Link from 'next/link'
+import { useState } from 'react'
+
+function CheckIcon() {
+	return (
+		<svg
+			className="h-4 w-4 shrink-0 text-green-600"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth={2}
+			stroke="currentColor"
+		>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M4.5 12.75l6 6 9-13.5"
+			/>
+		</svg>
+	)
 }
 
-const packs = [
-	{
-		name: 'Starter',
-		credits: 500,
-		price: 20,
-		perCredit: '0.040',
-		description: 'Perfect for side projects and prototypes'
-	},
-	{
-		name: 'Growth',
-		credits: 2_000,
-		price: 60,
-		perCredit: '0.030',
-		popular: true,
-		description: 'Great for growing applications'
-	},
-	{
-		name: 'Pro',
-		credits: 10_000,
-		price: 200,
-		perCredit: '0.020',
-		description: 'For production workloads'
-	},
-	{
-		name: 'Scale',
-		credits: 50_000,
-		price: 750,
-		perCredit: '0.015',
-		description: 'Best value for high-volume use'
+function FeatureItem({ children }: { children: string }) {
+	return (
+		<li className="flex items-start gap-2 text-sm text-muted-foreground">
+			<CheckIcon />
+			<span>{children}</span>
+		</li>
+	)
+}
+
+type BillingPeriod = 'monthly' | 'annual'
+
+const subscriptionTiers = SUBSCRIPTION_TIERS.map(tier => {
+	const isFree = tier.slug === 'free'
+	return {
+		id: tier.slug,
+		name: tier.name,
+		screenshotsPerMo: `${tier.screenshotsPerMonth.toLocaleString()}/mo`,
+		monthlyPrice: tier.monthlyPrice,
+		annualPricePerMo: isFree ? null : tier.annualPrice,
+		annualTotal: isFree ? null : tier.annualPrice * 12,
+		perScreenshotMonthly: tier.perScreenshot,
+		perScreenshotAnnual:
+			!isFree && tier.screenshotsPerMonth > 0
+				? `$${(tier.annualPrice / tier.screenshotsPerMonth).toFixed(4)}`
+				: null,
+		overage: tier.overageRate,
+		popular: 'popular' in tier,
+		features: tier.features,
+		footnote: null as string | null
 	}
-]
+})
 
 const faqs = [
 	{
 		q: 'What is a credit?',
-		a: 'One credit equals one screenshot. Every API call that successfully returns a screenshot deducts one credit from your balance.'
+		a: 'One credit equals one screenshot. Credits are consumed from your credit pack balance after your subscription quota is used up.'
+	},
+	{
+		q: 'How do subscriptions work?',
+		a: 'Your plan includes a monthly screenshot allowance that resets each billing period. Go over your limit? Paid plans allow overage at a small per-screenshot cost, or you can use credit packs.'
 	},
 	{
 		q: 'Do credits expire?',
-		a: 'No. Credits never expire. Use them whenever you need them.'
-	},
-	{
-		q: 'What happens when I run out of credits?',
-		a: 'The API will return a 402 status code. You can purchase more credits from your dashboard at any time.'
-	},
-	{
-		q: 'Can I get a refund?',
-		a: 'We evaluate refund requests on a case-by-case basis within 30 days of purchase. Contact support@screenshotapi.to with your request.'
+		a: 'No. Credit pack credits never expire. Use them whenever you need them. Subscription allowances reset monthly.'
 	},
 	{
 		q: 'Is there a free tier?',
-		a: 'Every new account receives 5 free credits to test the API. No credit card required to sign up.'
+		a: 'Yes! Every account gets 200 free screenshots per month. No credit card required.'
 	},
 	{
-		q: 'Do failed screenshots use credits?',
-		a: 'No. Credits are only deducted for successful screenshots. If a screenshot fails, you keep your credit.'
+		q: 'Can I switch between plans?',
+		a: 'Yes. Upgrade or downgrade anytime. Changes take effect at the start of your next billing period.'
 	},
 	{
-		q: 'Do you offer enterprise pricing?',
-		a: 'For volume above 50,000 screenshots, contact support@screenshotapi.to and we can discuss custom pricing.'
+		q: 'Do cached screenshots count against my quota?',
+		a: 'No. Cached responses are served instantly and do not count against your monthly allowance.'
+	},
+	{
+		q: 'What payment methods do you accept?',
+		a: 'We accept all major credit cards, debit cards, and select local payment methods through our payment provider.'
 	}
-]
+] as const
+
+function formatPrice(n: number) {
+	return `$${n}/mo`
+}
 
 export default function PricingPage() {
+	const [billing, setBilling] = useState<BillingPeriod>('monthly')
+
 	return (
 		<>
 			<section className="py-20 md:py-28">
 				<div className="mx-auto max-w-6xl px-6">
 					<div className="mx-auto max-w-2xl text-center">
 						<h1 className="text-4xl font-bold tracking-tight">
-							Simple, credit-based pricing
+							Pricing that scales with you
 						</h1>
 						<p className="mt-4 text-lg text-muted-foreground">
-							No subscriptions or monthly fees. Buy credits and
-							use them whenever you need. Every account starts
-							with 5 free credits.
+							Subscriptions for predictable monthly usage, plus
+							credit packs when you need a boost. Start free — no
+							credit card required.
 						</p>
 					</div>
 
-					<div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-						{packs.map(pack => (
-							<div
-								key={pack.name}
-								className={`relative flex flex-col rounded-xl border p-6 transition-colors hover:border-primary/50 ${
-									pack.popular
-										? 'border-primary bg-primary/5 shadow-lg shadow-primary/5'
-										: 'border-border bg-card'
+					<div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+						<span className="text-sm font-medium text-muted-foreground">
+							Billing
+						</span>
+						<div className="inline-flex rounded-lg border border-border bg-muted/50 p-1">
+							<button
+								type="button"
+								onClick={() => setBilling('monthly')}
+								className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+									billing === 'monthly'
+										? 'bg-card text-foreground shadow-sm'
+										: 'text-muted-foreground hover:text-foreground'
 								}`}
 							>
-								{pack.popular && (
-									<div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
-										Most popular
+								Monthly
+							</button>
+							<button
+								type="button"
+								onClick={() => setBilling('annual')}
+								className={`relative cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+									billing === 'annual'
+										? 'bg-card text-foreground shadow-sm'
+										: 'text-muted-foreground hover:text-foreground'
+								}`}
+							>
+								Annual
+								<span className="ml-1.5 inline-flex rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+									Save 20%
+								</span>
+							</button>
+						</div>
+					</div>
+
+					<div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+						{subscriptionTiers.map(tier => {
+							const isFree = tier.id === 'free'
+							const showAnnual =
+								billing === 'annual' &&
+								tier.annualPricePerMo !== null
+							const displayPrice = isFree
+								? '$0'
+								: showAnnual
+									? formatPrice(tier.annualPricePerMo!)
+									: formatPrice(tier.monthlyPrice)
+							const annualNote =
+								showAnnual && tier.annualTotal !== null
+									? `($${tier.annualTotal.toLocaleString()}/yr)`
+									: null
+
+							return (
+								<div
+									key={tier.id}
+									className={`relative flex flex-col rounded-xl border p-6 transition-colors ${
+										tier.popular
+											? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
+											: 'border-border bg-card hover:border-primary/40'
+									}`}
+								>
+									{tier.popular && (
+										<div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
+											Most popular
+										</div>
+									)}
+									<h3 className="text-lg font-semibold">
+										{tier.name}
+									</h3>
+									<p className="mt-1 text-sm text-muted-foreground">
+										{tier.screenshotsPerMo}
+									</p>
+									<div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+										<span className="text-4xl font-bold tabular-nums">
+											{displayPrice}
+										</span>
+										{annualNote && (
+											<span className="text-sm text-muted-foreground">
+												{annualNote}
+											</span>
+										)}
 									</div>
-								)}
-								<h3 className="text-lg font-semibold">
-									{pack.name}
-								</h3>
-								<p className="mt-1 text-sm text-muted-foreground">
-									{pack.description}
-								</p>
-								<div className="mt-4">
-									<span className="text-4xl font-bold">
+									{!isFree &&
+										tier.perScreenshotMonthly &&
+										tier.perScreenshotAnnual && (
+											<p className="mt-2 text-sm text-muted-foreground">
+												{billing === 'annual'
+													? tier.perScreenshotAnnual
+													: tier.perScreenshotMonthly}{' '}
+												per screenshot
+											</p>
+										)}
+									{!isFree && tier.overage && (
+										<p className="mt-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground">
+											Overage: {tier.overage}/screenshot
+										</p>
+									)}
+									{isFree && (
+										<p className="mt-2 text-sm text-muted-foreground">
+											No credit card required · 200
+											screenshots/month
+										</p>
+									)}
+									<ul className="mt-6 flex-1 space-y-2.5">
+										{tier.features.map(f => (
+											<FeatureItem key={f}>
+												{f}
+											</FeatureItem>
+										))}
+									</ul>
+									{tier.footnote && (
+										<p className="mt-4 text-xs text-muted-foreground">
+											{tier.footnote}
+										</p>
+									)}
+									<Link
+										href="/sign-up"
+										className={`mt-6 block cursor-pointer rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
+											tier.popular
+												? 'bg-primary text-primary-foreground hover:bg-primary/90'
+												: 'border border-border bg-background hover:bg-muted'
+										}`}
+									>
+										Get started
+									</Link>
+								</div>
+							)
+						})}
+					</div>
+				</div>
+			</section>
+
+			<section className="border-t border-border bg-muted/20 py-16 md:py-24">
+				<div className="mx-auto max-w-6xl px-6">
+					<div className="mx-auto max-w-2xl text-center">
+						<h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+							Prefer pay-as-you-go?
+						</h2>
+						<p className="mt-3 text-muted-foreground">
+							Credit packs never expire. No subscription required.
+							Use them at your own pace.
+						</p>
+					</div>
+
+					<div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+						{CREDIT_PACK_TIERS.map(pack => (
+							<div
+								key={pack.name}
+								className="flex flex-col rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/40"
+							>
+								<div className="flex items-baseline justify-between gap-2">
+									<h3 className="font-semibold">
+										{pack.name}
+									</h3>
+									<span className="text-2xl font-bold tabular-nums">
 										${pack.price}
 									</span>
 								</div>
 								<p className="mt-1 text-sm text-muted-foreground">
 									{pack.credits.toLocaleString()} credits
 								</p>
-								<div className="mt-1 rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground inline-block w-fit">
-									${pack.perCredit}/screenshot
-								</div>
-								<ul className="mt-6 flex-1 space-y-2 text-sm text-muted-foreground">
-									<li className="flex items-center gap-2">
-										<svg
-											className="h-4 w-4 text-green-600"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth={2}
-											stroke="currentColor"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M4.5 12.75l6 6 9-13.5"
-											/>
-										</svg>
-										All screenshot options
-									</li>
-									<li className="flex items-center gap-2">
-										<svg
-											className="h-4 w-4 text-green-600"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth={2}
-											stroke="currentColor"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M4.5 12.75l6 6 9-13.5"
-											/>
-										</svg>
-										PNG, JPEG, WebP output
-									</li>
-									<li className="flex items-center gap-2">
-										<svg
-											className="h-4 w-4 text-green-600"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth={2}
-											stroke="currentColor"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M4.5 12.75l6 6 9-13.5"
-											/>
-										</svg>
-										Credits never expire
-									</li>
-									<li className="flex items-center gap-2">
-										<svg
-											className="h-4 w-4 text-green-600"
-											fill="none"
-											viewBox="0 0 24 24"
-											strokeWidth={2}
-											stroke="currentColor"
-										>
-											<path
-												strokeLinecap="round"
-												strokeLinejoin="round"
-												d="M4.5 12.75l6 6 9-13.5"
-											/>
-										</svg>
-										Auto top-up available
-									</li>
-								</ul>
+								<p className="mt-2 text-xs text-muted-foreground">
+									{pack.perScreenshot} per screenshot
+								</p>
 								<Link
 									href="/sign-up"
-									className={`mt-6 block cursor-pointer rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
-										pack.popular
-											? 'bg-primary text-primary-foreground hover:bg-primary/90'
-											: 'border border-border bg-background hover:bg-muted'
-									}`}
+									className="mt-4 cursor-pointer rounded-md border border-border bg-background px-3 py-2 text-center text-sm font-medium transition-colors hover:bg-muted"
 								>
-									Get started
+									Buy credits
 								</Link>
 							</div>
 						))}
@@ -200,8 +280,7 @@ export default function PricingPage() {
 				</div>
 			</section>
 
-			{/* FAQ */}
-			<section className="border-t border-border bg-muted/20 py-20 md:py-28">
+			<section className="border-t border-border py-20 md:py-28">
 				<div className="mx-auto max-w-3xl px-6">
 					<h2 className="text-center text-3xl font-bold tracking-tight">
 						Frequently asked questions

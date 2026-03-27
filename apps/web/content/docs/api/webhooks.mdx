@@ -1,17 +1,163 @@
 ---
 title: Webhooks
-description: How ScreenshotAPI processes Polar webhooks for payment events.
+description: Receive real-time notifications when screenshots complete, and learn how ScreenshotAPI processes payment webhooks.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 import { Callout } from 'fumadocs-ui/components/callout'
 
 ## Overview
 
-ScreenshotAPI uses Polar webhooks to process payment events. When a user purchases credits through Polar Checkout, a webhook event is sent to our server to fulfill the order by adding credits to the user's account.
+ScreenshotAPI supports two kinds of webhooks:
 
-<Callout type="info">
-Webhooks are handled server-side and are not something you need to configure as an API consumer. This documentation is provided for transparency and for developers integrating with the ScreenshotAPI platform.
+1. **Customer webhooks** — You register endpoints to receive real-time notifications (e.g., when a screenshot completes).
+2. **Payment webhooks** — Internal Polar webhooks that process credit purchases and subscription events.
+
+---
+
+## Customer Webhooks
+
+Register your own HTTP endpoints to receive event notifications from ScreenshotAPI. This is useful for asynchronous workflows where you want to be notified when a screenshot is ready rather than polling for results.
+
+### Register a Webhook Endpoint
+
+```
+POST /api/v1/webhooks
+```
+
+Creates a new webhook endpoint. Requires session authentication. Returns the endpoint details including a **webhook secret** used to verify incoming deliveries.
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `url` | `string` | Yes | The HTTPS URL that will receive webhook events |
+| `events` | `string[]` | Yes | Event types to subscribe to (e.g., `["screenshot.completed"]`) |
+
+#### Response
+
+```json
+{
+  "id": "wh_abc123",
+  "url": "https://example.com/webhooks/screenshots",
+  "events": ["screenshot.completed"],
+  "secret": "whsec_MmY3ZjRhNjgtYzUwYi00..."
+}
+```
+
+<Callout type="warn">
+Store the `secret` value securely — it is only returned once when the endpoint is created. You'll need it to verify webhook signatures.
 </Callout>
+
+#### Example
+
+<Tabs groupId="sdk" persist items={['cURL', 'JavaScript', 'Python']}>
+<Tab value="cURL">
+```bash
+curl -X POST "https://screenshotapi.to/api/v1/webhooks" \
+  -H "Content-Type: application/json" \
+  --cookie "session=your_session_cookie" \
+  -d '{
+    "url": "https://example.com/webhooks/screenshots",
+    "events": ["screenshot.completed"]
+  }'
+```
+</Tab>
+<Tab value="JavaScript">
+```typescript
+const response = await fetch('https://screenshotapi.to/api/v1/webhooks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    url: 'https://example.com/webhooks/screenshots',
+    events: ['screenshot.completed']
+  })
+})
+
+const { id, secret } = await response.json()
+// Store the secret securely for signature verification
+```
+</Tab>
+<Tab value="Python">
+```python
+import requests
+
+response = requests.post(
+    "https://screenshotapi.to/api/v1/webhooks",
+    json={
+        "url": "https://example.com/webhooks/screenshots",
+        "events": ["screenshot.completed"]
+    },
+    cookies={"session": "your_session_cookie"}
+)
+
+data = response.json()
+# Store data["secret"] securely for signature verification
+```
+</Tab>
+</Tabs>
+
+### Supported Events
+
+| Event | Description |
+|---|---|
+| `screenshot.completed` | Fired when a screenshot has been successfully captured |
+
+### Webhook Payload
+
+When an event fires, ScreenshotAPI sends a `POST` request to your endpoint with a JSON body:
+
+```json
+{
+  "event": "screenshot.completed",
+  "timestamp": "2026-03-24T15:30:00.000Z",
+  "data": {
+    "screenshotId": "screenshot_xyz",
+    "url": "https://example.com",
+    "format": "png",
+    "width": 1280,
+    "height": 720
+  }
+}
+```
+
+### Signature Verification
+
+Every webhook delivery is signed with **HMAC-SHA256** using the secret provided when you created the endpoint. The signature is sent in the `x-webhook-signature` header.
+
+To verify a delivery, compute the HMAC-SHA256 of the raw request body using your webhook secret and compare it to the header value:
+
+<Tabs groupId="sdk" persist items={['JavaScript', 'Python']}>
+<Tab value="JavaScript">
+```typescript
+import { createHmac, timingSafeEqual } from 'node:crypto'
+
+function verifyWebhook(body: string, signature: string, secret: string): boolean {
+  const expected = createHmac('sha256', secret).update(body).digest('hex')
+  return timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+}
+```
+</Tab>
+<Tab value="Python">
+```python
+import hmac
+import hashlib
+
+def verify_webhook(body: bytes, signature: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(signature, expected)
+```
+</Tab>
+</Tabs>
+
+<Callout type="warn">
+Always verify the signature before processing a webhook delivery to prevent spoofed requests.
+</Callout>
+
+---
+
+## Payment Webhooks (Polar)
 
 ## Webhook Endpoint
 

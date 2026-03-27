@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 		template: '%s | ScreenshotAPI'
 	},
 	description:
-		'A fast, reliable API for generating web page screenshots on demand. Pay per screenshot with simple credit-based pricing.',
+		'A fast, reliable API for generating web page screenshots on demand. Flexible pricing with subscriptions and pay-as-you-go credit packs. 200 free screenshots per month.',
 	metadataBase: new URL(
 		process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 	)

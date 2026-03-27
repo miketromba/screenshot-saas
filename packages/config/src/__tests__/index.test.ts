@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import {
 	CREDIT_PACKS,
-	DEFAULT_AUTO_TOPUP_THRESHOLD,
-	FREE_CREDITS,
+	FREE_MONTHLY_SCREENSHOTS,
 	PRODUCT_NAME,
+	SUBSCRIPTION_PLANS,
 	SUPPORT_EMAIL
 } from '../index'
 
@@ -16,12 +16,38 @@ describe('config', () => {
 		expect(SUPPORT_EMAIL).toContain('@')
 	})
 
-	it('should provide 5 free credits', () => {
-		expect(FREE_CREDITS).toBe(5)
+	it('should provide 200 free monthly screenshots', () => {
+		expect(FREE_MONTHLY_SCREENSHOTS).toBe(200)
+	})
+})
+
+describe('subscription plans', () => {
+	it('should have 4 plans', () => {
+		expect(Object.keys(SUBSCRIPTION_PLANS)).toHaveLength(4)
 	})
 
-	it('should have a default auto-topup threshold', () => {
-		expect(DEFAULT_AUTO_TOPUP_THRESHOLD).toBeGreaterThan(0)
+	it('should have free plan with 200 screenshots', () => {
+		expect(SUBSCRIPTION_PLANS.free.screenshotsPerMonth).toBe(200)
+		expect(SUBSCRIPTION_PLANS.free.monthlyPriceCents).toBe(0)
+	})
+
+	it('should have increasing screenshots per tier', () => {
+		const plans = ['free', 'starter', 'growth', 'scale'] as const
+		for (let i = 1; i < plans.length; i++) {
+			expect(
+				SUBSCRIPTION_PLANS[plans[i]!].screenshotsPerMonth
+			).toBeGreaterThan(
+				SUBSCRIPTION_PLANS[plans[i - 1]!].screenshotsPerMonth
+			)
+		}
+	})
+
+	it('should have annual prices lower than monthly', () => {
+		for (const plan of ['starter', 'growth', 'scale'] as const) {
+			expect(SUBSCRIPTION_PLANS[plan].annualPriceCents).toBeLessThan(
+				SUBSCRIPTION_PLANS[plan].monthlyPriceCents
+			)
+		}
 	})
 })
 

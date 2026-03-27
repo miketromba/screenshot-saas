@@ -1,0 +1,278 @@
+---
+title: "Screenshot API for n8n"
+description: "Automate website screenshots with n8n and ScreenshotAPI. Self-hosted workflow automation with HTTP Request nodes and batch processing."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: n8n
+faq:
+  - question: "How do I call ScreenshotAPI from n8n?"
+    answer: "Use n8n's HTTP Request node configured as a GET request to the ScreenshotAPI endpoint. Add the x-api-key header and set the URL with query parameters for width, height, and format."
+  - question: "Can I process multiple screenshots in an n8n workflow?"
+    answer: "Yes. Use the Split In Batches node to iterate over a list of URLs and pass each one to an HTTP Request node. n8n handles the parallelism and data flow automatically."
+  - question: "Does n8n support binary data from ScreenshotAPI?"
+    answer: "Yes. Configure the HTTP Request node with Response Format set to File. n8n treats the response as binary data that you can pass to storage nodes or email attachments."
+  - question: "Can I self-host n8n with ScreenshotAPI?"
+    answer: "Yes. n8n is open-source and can be self-hosted on any server or Docker container. The HTTP Request to ScreenshotAPI works identically in self-hosted and cloud versions."
+relatedPages:
+  - title: "Zapier Integration"
+    description: "No-code screenshot automation with Zapier"
+    href: "/integrations/zapier"
+  - title: "Make Integration"
+    description: "Screenshots with Make scenarios"
+    href: "/integrations/make"
+  - title: "GitHub Actions Integration"
+    description: "CI/CD screenshot automation"
+    href: "/integrations/github-actions"
+  - title: "Screenshot API Reference"
+    description: "Full API parameter reference for all endpoints"
+    href: "/docs/api/screenshot"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Screenshot API for n8n"
+  description: "Automate website screenshots with n8n and ScreenshotAPI. Self-hosted workflow automation with HTTP Request nodes and batch processing."
+  dateModified: "2026-03-25"
+---
+
+## Automate Website Screenshots with n8n and ScreenshotAPI
+
+n8n is an open-source workflow automation tool that you can self-host or use as a cloud service. It provides a visual editor for building workflows with 400+ integrations. Adding ScreenshotAPI to n8n workflows lets you automate screenshot capture, storage, and distribution without writing application code.
+
+An **n8n screenshot** integration with ScreenshotAPI is ideal for visual monitoring, automated reporting, content archival, and building internal tools that need on-demand screenshot functionality.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and copy your API key. **200 free screenshots per month** are included.
+2. Open your n8n instance (self-hosted or cloud).
+3. Create a workflow with an HTTP Request node that calls the API.
+
+## Basic Workflow: Screenshot on Demand
+
+Create a workflow triggered by a webhook that captures and returns a screenshot.
+
+### Workflow Configuration
+
+**Node 1: Webhook Trigger**
+
+- **HTTP Method**: GET
+- **Path**: `screenshot`
+
+This creates an endpoint like `https://your-n8n.com/webhook/screenshot?url=https://example.com`.
+
+**Node 2: HTTP Request**
+
+- **Method**: GET
+- **URL**: `https://screenshotapi.to/api/v1/screenshot`
+- **Authentication**: None (using header instead)
+- **Send Query Parameters**: Yes
+  - `url`: `{{ $json.query.url }}`
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `png`
+- **Send Headers**: Yes
+  - `x-api-key`: `sk_live_xxxxx`
+- **Response Format**: File
+
+**Node 3: Respond to Webhook**
+
+- **Response Body**: Binary data from the HTTP Request node
+- **Content-Type**: `image/png`
+
+### Import via JSON
+
+You can import this workflow directly into n8n:
+
+```json
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "screenshot",
+        "responseMode": "responseNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://screenshotapi.to/api/v1/screenshot",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "url", "value": "={{ $json.query.url }}" },
+            { "name": "width", "value": "1440" },
+            { "name": "height", "value": "900" },
+            { "name": "type", "value": "png" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "sk_live_xxxxx" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "file" } }
+        }
+      },
+      "name": "Capture Screenshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Capture Screenshot", "type": "main", "index": 0 }]] },
+    "Capture Screenshot": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  }
+}
+```
+
+## Scheduled Monitoring Workflow
+
+Capture screenshots of your site on a schedule and store them:
+
+**Node 1: Schedule Trigger**
+
+- **Rule**: Every 6 hours
+
+**Node 2: Set Pages**
+
+- **Mode**: Define values
+- **Values**: JSON array of pages to capture:
+
+```json
+[
+  { "name": "homepage", "url": "https://yoursite.com" },
+  { "name": "pricing", "url": "https://yoursite.com/pricing" },
+  { "name": "docs", "url": "https://yoursite.com/docs" }
+]
+```
+
+**Node 3: Split In Batches**
+
+Process each page individually.
+
+**Node 4: HTTP Request**
+
+- **URL**: `https://screenshotapi.to/api/v1/screenshot`
+- **Query Params**:
+  - `url`: `{{ $json.url }}`
+  - `width`: `1440`
+  - `height`: `900`
+  - `type`: `png`
+- **Headers**: `x-api-key: sk_live_xxxxx`
+- **Response Format**: File
+
+**Node 5: Upload to S3 (or Google Drive)**
+
+Upload the binary data with a timestamped filename like `{{ $json.name }}-{{ $now.format('yyyy-MM-dd-HHmm') }}.png`.
+
+## Batch Screenshot Processing
+
+Process a list of URLs from a spreadsheet:
+
+**Node 1: Google Sheets Trigger** (or Read Spreadsheet)
+
+Read a sheet with a "URL" column.
+
+**Node 2: Split In Batches**
+
+- **Batch Size**: 5
+
+**Node 3: HTTP Request**
+
+Configure as above, mapping `url` from `{{ $json.URL }}`.
+
+**Node 4: Move Binary Data**
+
+Rename the binary field for downstream nodes.
+
+**Node 5: S3 Upload / Email / Slack**
+
+Send or store the results.
+
+## Visual Change Detection
+
+Compare screenshots over time to detect visual changes:
+
+**Node 1: Schedule Trigger** (daily)
+
+**Node 2: HTTP Request** (capture current screenshot)
+
+**Node 3: Read Binary File** (load previous screenshot from storage)
+
+**Node 4: Code Node** (compare file sizes or hashes)
+
+```javascript
+const current = $input.first().binary.data;
+const previous = $input.last().binary.data;
+
+const currentSize = Buffer.from(current.data, 'base64').length;
+const previousSize = Buffer.from(previous.data, 'base64').length;
+
+const sizeDiff = Math.abs(currentSize - previousSize);
+const changed = sizeDiff > 1000;
+
+return [{ json: { changed, currentSize, previousSize, sizeDiff } }];
+```
+
+**Node 5: IF Node** (check if changed)
+
+**Node 6: Send Notification** (Slack, email, or webhook)
+
+## Credential Management
+
+Store the API key securely using n8n credentials:
+
+1. Go to **Credentials** in n8n
+2. Create a new **Header Auth** credential
+3. Set **Name**: `x-api-key`
+4. Set **Value**: `sk_live_xxxxx`
+5. Reference this credential in your HTTP Request nodes
+
+This keeps the key out of your workflow JSON and makes it easy to rotate.
+
+## Dark Mode Screenshots
+
+Add `colorScheme=dark` to the query parameters to capture dark mode variants. This pairs well with [visual regression testing](/use-cases/visual-regression-testing) workflows where you need both themes.
+
+## Production Tips
+
+### Error Handling
+
+Add an Error Trigger node to catch failures. Configure the HTTP Request node with retry options:
+
+- **Retry On Fail**: Yes
+- **Max Retries**: 2
+- **Wait Between Retries**: 2000ms
+
+### Execution Limits
+
+n8n cloud has execution time limits. Since ScreenshotAPI responds within 2-5 seconds, a single screenshot easily fits within these limits. For large batches, use the Split In Batches node to process sequentially and avoid memory issues.
+
+### Self-Hosting
+
+When self-hosting n8n, ensure your server has outbound HTTPS access to `screenshotapi.to`. No other network configuration is needed since there is no headless browser to manage.
+
+<FreeTierBanner />
+
+## Further Reading
+
+- The [Zapier integration](/integrations/zapier) covers a cloud-only alternative.
+- See the [Make integration](/integrations/make) for another visual automation tool.
+- The [API documentation](/docs) has the full parameter reference for all endpoints.

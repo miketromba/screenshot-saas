@@ -1,8 +1,12 @@
 import { db, eq, schema } from '@screenshot-saas/db'
 import { Elysia, t } from 'elysia'
 import { sessionAuth } from '../middleware/session-auth'
-import { deductCredit, getBalance } from '../services/credits'
+import { polar } from '../services/polar'
 import { type ScreenshotOptions, takeScreenshot } from '../services/screenshot'
+import {
+	checkScreenshotAllowance,
+	recordScreenshotUsage
+} from '../services/subscription'
 
 export const playgroundRoutes = new Elysia({
 	name: 'playground-routes',
@@ -12,13 +16,13 @@ export const playgroundRoutes = new Elysia({
 	.get(
 		'/screenshot',
 		async ({ query, user, set }) => {
-			const balance = await getBalance(user.id)
-			if (balance <= 0) {
+			const allowance = await checkScreenshotAllowance(user.id)
+			if (!allowance.allowed) {
 				set.status = 402
 				return {
-					error: 'Insufficient credits',
+					error: 'Insufficient quota',
 					balance: 0,
-					message: 'Purchase more credits to continue'
+					message: allowance.reason
 				}
 			}
 
@@ -28,12 +32,22 @@ export const playgroundRoutes = new Elysia({
 				width: query.width ? Number(query.width) : undefined,
 				height: query.height ? Number(query.height) : undefined,
 				fullPage: query.fullPage === 'true',
-				type: (query.type as 'png' | 'webp' | 'jpeg') ?? undefined,
+				type: (query.type as ScreenshotOptions['type']) ?? undefined,
 				quality: query.quality ? Number(query.quality) : undefined,
 				colorScheme: query.colorScheme as 'light' | 'dark' | undefined,
 				waitUntil: query.waitUntil as ScreenshotOptions['waitUntil'],
 				waitForSelector: query.waitForSelector ?? undefined,
-				delay: query.delay ? Number(query.delay) : undefined
+				delay: query.delay ? Number(query.delay) : undefined,
+				blockAds: query.blockAds === 'true',
+				removeCookieBanners: query.removeCookieBanners === 'true',
+				cssInject: query.cssInject ?? undefined,
+				jsInject: query.jsInject ?? undefined,
+				stealthMode: query.stealthMode === 'true',
+				devicePixelRatio: query.devicePixelRatio
+					? Number(query.devicePixelRatio)
+					: undefined,
+				timezone: query.timezone ?? undefined,
+				locale: query.locale ?? undefined
 			}
 
 			let screenshotId: string | undefined
@@ -60,24 +74,32 @@ export const playgroundRoutes = new Elysia({
 						.where(eq(schema.screenshots.id, screenshotId))
 				}
 
-				const deduction = await deductCredit({
-					userId: user.id,
-					screenshotId: screenshotId ?? 'unknown'
-				})
+				const usage = await recordScreenshotUsage(user.id)
 
 				if (screenshotId) {
 					db.update(schema.screenshots)
-						.set({ creditDeducted: true })
+						.set({ creditDeducted: usage.source === 'credits' })
 						.where(eq(schema.screenshots.id, screenshotId))
 						.execute()
 				}
 
+				polar
+					.ingestScreenshotEvent({
+						userId: user.id,
+						screenshotId,
+						url: options.url
+					})
+					.catch(() => {})
+
+				const newAllowance = await checkScreenshotAllowance(user.id)
+
 				set.headers['content-type'] = contentType
 				set.headers['x-credits-remaining'] = String(
-					deduction.newBalance
+					newAllowance.remainingInPlan + newAllowance.creditBalance
 				)
 				set.headers['x-screenshot-id'] = screenshotId ?? ''
 				set.headers['x-duration-ms'] = String(durationMs)
+				set.headers['x-usage-source'] = usage.source
 
 				return new Response(new Uint8Array(buffer))
 			} catch (err) {
@@ -107,7 +129,15 @@ export const playgroundRoutes = new Elysia({
 				colorScheme: t.Optional(t.String()),
 				waitUntil: t.Optional(t.String()),
 				waitForSelector: t.Optional(t.String()),
-				delay: t.Optional(t.String())
+				delay: t.Optional(t.String()),
+				blockAds: t.Optional(t.String()),
+				removeCookieBanners: t.Optional(t.String()),
+				cssInject: t.Optional(t.String()),
+				jsInject: t.Optional(t.String()),
+				stealthMode: t.Optional(t.String()),
+				devicePixelRatio: t.Optional(t.String()),
+				timezone: t.Optional(t.String()),
+				locale: t.Optional(t.String())
 			})
 		}
 	)

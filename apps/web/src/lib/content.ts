@@ -24,7 +24,9 @@ export function getContentPage(
 	section: string,
 	slug: string
 ): ContentPage | null {
-	const filePath = path.join(contentRoot, section, `${slug}.md`)
+	const mdxPath = path.join(contentRoot, section, `${slug}.mdx`)
+	const mdPath = path.join(contentRoot, section, `${slug}.md`)
+	const filePath = fs.existsSync(mdxPath) ? mdxPath : mdPath
 	if (!fs.existsSync(filePath)) return null
 
 	const raw = fs.readFileSync(filePath, 'utf-8')
@@ -43,9 +45,9 @@ export function getAllContentPages(section: string): ContentPage[] {
 
 	return fs
 		.readdirSync(dir)
-		.filter(f => f.endsWith('.md'))
+		.filter(f => f.endsWith('.mdx') || f.endsWith('.md'))
 		.map(f => {
-			const slug = f.replace(/\.md$/, '')
+			const slug = f.replace(/\.mdx?$/, '')
 			return getContentPage(section, slug)
 		})
 		.filter((p): p is ContentPage => p !== null)
@@ -58,6 +60,6 @@ export function getAllSlugs(section: string): string[] {
 
 	return fs
 		.readdirSync(dir)
-		.filter(f => f.endsWith('.md'))
-		.map(f => f.replace(/\.md$/, ''))
+		.filter(f => f.endsWith('.mdx') || f.endsWith('.md'))
+		.map(f => f.replace(/\.mdx?$/, ''))
 }

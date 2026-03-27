@@ -1,0 +1,232 @@
+---
+title: "Migrate from Screenshotlayer to ScreenshotAPI"
+description: "Replace Screenshotlayer with ScreenshotAPI. Modern features, better pricing, and flexible subscriptions. Complete migration guide with code examples."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Blog
+    href: /blog
+  - label: Migrate from Screenshotlayer
+faq:
+  - question: "Why switch from Screenshotlayer?"
+    answer: "Screenshotlayer uses subscription pricing starting at $19.99/month, offers only basic screenshot features, has no dark mode support, and is part of a 100+ API ecosystem with limited focus on screenshot quality. ScreenshotAPI offers flexible subscription-based pricing, modern features, and SDKs for all major languages."
+  - question: "Is the migration difficult?"
+    answer: "No. Both are REST APIs. You update the endpoint URL, switch from access_key query parameter to x-api-key header, and rename a few parameters. Most migrations take under 30 minutes."
+  - question: "Does ScreenshotAPI have a free tier like Screenshotlayer?"
+    answer: "ScreenshotAPI provides 200 free screenshots/month. Screenshotlayer offers 100 free screenshots per month on its free tier, but with significant limitations (low resolution, limited format options, no HTTPS capture on free plan)."
+  - question: "Will my screenshots look better?"
+    answer: "Likely yes. ScreenshotAPI uses modern Chromium for rendering with full CSS Grid, Flexbox, and web font support. Screenshotlayer's rendering engine may not support the latest CSS features."
+relatedPages:
+  - title: "Best Screenshot APIs"
+    description: "Full comparison of screenshot API services."
+    href: "/blog/best-screenshot-apis"
+  - title: "Best Free Screenshot APIs"
+    description: "Free-tier options for budget-conscious projects."
+    href: "/blog/best-free-screenshot-apis"
+  - title: "API Documentation"
+    description: "Complete ScreenshotAPI parameter reference."
+    href: "/docs"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "Migrate from Screenshotlayer to ScreenshotAPI"
+  description: "Replace Screenshotlayer with ScreenshotAPI. Modern features, better pricing, and flexible subscriptions. Complete migration guide with code examples."
+  dateModified: "2026-03-25"
+---
+
+Screenshotlayer is one of the older screenshot APIs, but it has fallen behind modern alternatives in features, rendering quality, and pricing flexibility. If you are using Screenshotlayer and encountering limitations, migrating to [ScreenshotAPI](/) gives you modern Chromium rendering, dark mode support, WebP output, SPA waiting strategies, and flexible subscription-based pricing.
+
+## Feature Comparison
+
+<CompetitorComparison competitor="screenshotlayer" />
+
+## Parameter Mapping
+
+| Screenshotlayer | ScreenshotAPI | Notes |
+|---|---|---|
+| `access_key=xxx` (query param) | `x-api-key: xxx` (header) | Auth method changed |
+| `url` | `url` | Same |
+| `viewport=1440x900` | `width=1440&height=900` | Separate params |
+| `fullpage=1` | `fullPage=true` | Different format |
+| `format=PNG` | `type=png` | Lowercase, renamed |
+| `quality=80` | `quality=80` | Same |
+| `delay=5` (seconds) | `delay=5000` (milliseconds) | Unit changed |
+| `force=1` | N/A | Not needed |
+| `css_url=...` | N/A | Not yet supported |
+| `accept_lang=en` | N/A | Not yet supported |
+
+## Before: Screenshotlayer (JavaScript)
+
+```javascript
+const ACCESS_KEY = 'your_screenshotlayer_key';
+
+async function takeScreenshot(url) {
+  const params = new URLSearchParams({
+    access_key: ACCESS_KEY,
+    url,
+    viewport: '1440x900',
+    format: 'PNG',
+    fullpage: '0',
+  });
+
+  const response = await fetch(
+    `https://api.screenshotlayer.com/api/capture?${params}`
+  );
+
+  return Buffer.from(await response.arrayBuffer());
+}
+```
+
+## After: ScreenshotAPI (JavaScript)
+
+```javascript
+async function takeScreenshot(url) {
+  const params = new URLSearchParams({
+    url,
+    width: '1440',
+    height: '900',
+    type: 'png',
+    waitUntil: 'networkidle'
+  });
+
+  const response = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${params}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOT_API_KEY } }
+  );
+
+  if (!response.ok) throw new Error(`Screenshot failed: ${response.status}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+```
+
+## Before: Screenshotlayer (PHP)
+
+```php
+$params = http_build_query([
+    'access_key' => 'your_screenshotlayer_key',
+    'url' => 'https://example.com',
+    'viewport' => '1440x900',
+    'format' => 'PNG',
+]);
+
+$image = file_get_contents("https://api.screenshotlayer.com/api/capture?{$params}");
+file_put_contents('screenshot.png', $image);
+```
+
+## After: ScreenshotAPI (PHP)
+
+```php
+$params = http_build_query([
+    'url' => 'https://example.com',
+    'width' => 1440,
+    'height' => 900,
+    'type' => 'png',
+]);
+
+$ch = curl_init("https://screenshotapi.to/api/v1/screenshot?{$params}");
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => ['x-api-key: sk_live_your_api_key'],
+]);
+
+$image = curl_exec($ch);
+curl_close($ch);
+file_put_contents('screenshot.png', $image);
+```
+
+## Before: Screenshotlayer (Python)
+
+```python
+import requests
+
+params = {
+    "access_key": "your_screenshotlayer_key",
+    "url": "https://example.com",
+    "viewport": "1440x900",
+    "format": "PNG",
+}
+
+response = requests.get("https://api.screenshotlayer.com/api/capture", params=params)
+with open("screenshot.png", "wb") as f:
+    f.write(response.content)
+```
+
+## After: ScreenshotAPI (Python)
+
+```python
+import requests
+
+response = requests.get(
+    "https://screenshotapi.to/api/v1/screenshot",
+    params={
+        "url": "https://example.com",
+        "width": 1440,
+        "height": 900,
+        "type": "png",
+        "waitUntil": "networkidle",
+    },
+    headers={"x-api-key": "sk_live_your_api_key"},
+)
+
+with open("screenshot.png", "wb") as f:
+    f.write(response.content)
+```
+
+## New Features Available After Migration
+
+After switching, you gain access to features Screenshotlayer does not offer:
+
+### Dark mode
+
+```javascript
+const params = new URLSearchParams({
+  url: 'https://github.com',
+  width: '1440',
+  height: '900',
+  colorScheme: 'dark',
+  type: 'png'
+});
+```
+
+### WebP output (smaller files)
+
+```javascript
+const params = new URLSearchParams({
+  url: 'https://example.com',
+  width: '1440',
+  height: '900',
+  type: 'webp',
+  quality: '85'
+});
+```
+
+### SPA support with selector waiting
+
+```javascript
+const params = new URLSearchParams({
+  url: 'https://myreactapp.com',
+  width: '1440',
+  height: '900',
+  waitForSelector: '#content-loaded',
+  waitUntil: 'networkidle',
+  type: 'png'
+});
+```
+
+## Migration Steps
+
+1. **Sign up** at [screenshotapi.to](/) — 200 free screenshots/month included
+2. **Update endpoint**: `api.screenshotlayer.com/api/capture` → `screenshotapi.to/api/v1/screenshot`
+3. **Update auth**: Move from `access_key` query param to `x-api-key` header
+4. **Update params**: `viewport` → `width`+`height`, `format` → `type`, `fullpage` → `fullPage`
+5. **Update delay**: Convert seconds to milliseconds
+6. **Test**: Compare screenshot output visually
+7. **Cancel Screenshotlayer subscription**
+
+## Next Steps
+
+- Browse the [API documentation](/docs) for all available parameters
+- See the [best screenshot APIs](/blog/best-screenshot-apis) for a broader comparison
+- Check [pricing](/pricing) for subscription plans
+- Try the [cURL guide](/blog/how-to-take-screenshots-with-curl) for quick testing

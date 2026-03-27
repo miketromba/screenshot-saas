@@ -1,45 +1,103 @@
+import { Webhooks } from '@polar-sh/elysia'
+import {
+	POLAR_PRODUCT_IDS,
+	type SubscriptionPlan
+} from '@screenshot-saas/config'
 import { Elysia } from 'elysia'
 import { addCredits } from '../services/credits'
-import { polar, WebhookVerificationError } from '../services/polar'
+import {
+	cancelSubscription,
+	updateSubscriptionPlan
+} from '../services/subscription'
+
+function getPlanFromProductId(
+	productId: string
+): { plan: SubscriptionPlan; billingCycle: 'monthly' | 'annual' } | null {
+	for (const [plan, ids] of Object.entries(POLAR_PRODUCT_IDS)) {
+		if (ids.monthly === productId) {
+			return { plan: plan as SubscriptionPlan, billingCycle: 'monthly' }
+		}
+		if (ids.annual === productId) {
+			return { plan: plan as SubscriptionPlan, billingCycle: 'annual' }
+		}
+	}
+	return null
+}
 
 export const webhookRoutes = new Elysia({
 	name: 'webhook-routes',
 	prefix: '/webhooks'
-}).post('/polar', async ({ request, set }) => {
-	const body = await request.text()
-	const headers: Record<string, string> = {}
-	request.headers.forEach((value, key) => {
-		headers[key] = value
-	})
+}).post(
+	'/polar',
+	Webhooks({
+		webhookSecret: process.env.POLAR_WEBHOOK_SECRET!,
+		onOrderPaid: async payload => {
+			const order = payload.data
+			const userId = order.customer.externalId ?? order.metadata.userId
+			if (typeof userId !== 'string' || !userId) return
 
-	let event: ReturnType<typeof polar.verifyWebhookSignature>
-	try {
-		event = polar.verifyWebhookSignature({ body, headers })
-	} catch (error) {
-		if (error instanceof WebhookVerificationError) {
-			set.status = 403
-			return { error: 'Invalid webhook signature' }
-		}
-		throw error
-	}
-
-	if (event.type === 'checkout.updated') {
-		const checkout = event.data
-		if (checkout.status === 'succeeded') {
-			const userId = checkout.metadata?.userId as string | undefined
-			const credits = Number(checkout.metadata?.credits)
-
-			if (userId && credits > 0) {
-				await addCredits({
-					userId,
-					amount: credits,
-					type: 'purchase',
-					description: `Purchased ${credits.toLocaleString()} credits`,
-					referenceId: checkout.id
-				})
+			if (order.metadata.type === 'credit_pack') {
+				const credits = Number(order.metadata.credits)
+				if (credits > 0) {
+					await addCredits({
+						userId,
+						amount: credits,
+						type: 'purchase',
+						description: `Purchased ${credits.toLocaleString()} credits`,
+						referenceId: order.id
+					})
+				}
 			}
-		}
-	}
+		},
+		onSubscriptionActive: async payload => {
+			const subscription = payload.data
+			const externalId = subscription.customer.externalId
+			if (!externalId) return
 
-	return { received: true }
-})
+			const planInfo = getPlanFromProductId(subscription.productId)
+			if (!planInfo) return
+
+			await updateSubscriptionPlan({
+				userId: externalId,
+				plan: planInfo.plan,
+				billingCycle: planInfo.billingCycle,
+				polarSubscriptionId: subscription.id,
+				polarCustomerId: subscription.customerId
+			})
+		},
+		onSubscriptionCanceled: async payload => {
+			const subscription = payload.data
+			const externalId = subscription.customer.externalId
+			if (!externalId) return
+
+			await cancelSubscription(externalId)
+		},
+		onSubscriptionRevoked: async payload => {
+			const subscription = payload.data
+			const externalId = subscription.customer.externalId
+			if (!externalId) return
+
+			await updateSubscriptionPlan({
+				userId: externalId,
+				plan: 'free',
+				billingCycle: 'monthly'
+			})
+		},
+		onSubscriptionUncanceled: async payload => {
+			const subscription = payload.data
+			const externalId = subscription.customer.externalId
+			if (!externalId) return
+
+			const planInfo = getPlanFromProductId(subscription.productId)
+			if (!planInfo) return
+
+			await updateSubscriptionPlan({
+				userId: externalId,
+				plan: planInfo.plan,
+				billingCycle: planInfo.billingCycle,
+				polarSubscriptionId: subscription.id,
+				polarCustomerId: subscription.customerId
+			})
+		}
+	})
+)

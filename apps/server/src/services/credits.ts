@@ -1,4 +1,3 @@
-import { FREE_CREDITS } from '@screenshot-saas/config'
 import { and, db, eq, ne, schema, sql } from '@screenshot-saas/db'
 
 export async function getBalance(userId: string): Promise<number> {
@@ -11,15 +10,8 @@ export async function getBalance(userId: string): Promise<number> {
 export async function initializeCredits(userId: string): Promise<void> {
 	await db
 		.insert(schema.creditBalances)
-		.values({ userId, balance: FREE_CREDITS })
+		.values({ userId, balance: 0 })
 		.onConflictDoNothing()
-
-	await db.insert(schema.creditTransactions).values({
-		userId,
-		amount: FREE_CREDITS,
-		type: 'signup_bonus',
-		description: `Welcome bonus: ${FREE_CREDITS} free credits`
-	})
 }
 
 export async function deductCredit({
@@ -64,7 +56,7 @@ export async function addCredits({
 }: {
 	userId: string
 	amount: number
-	type: 'purchase' | 'auto_topup' | 'refund'
+	type: 'purchase' | 'auto_topup' | 'refund' | 'subscription'
 	description: string
 	referenceId?: string
 }): Promise<number> {
@@ -123,21 +115,4 @@ export async function getTransactions({
 		limit,
 		offset
 	})
-}
-
-export async function checkAutoTopup(userId: string): Promise<void> {
-	const config = await db.query.autoTopupConfigs.findFirst({
-		where: eq(schema.autoTopupConfigs.userId, userId)
-	})
-
-	if (!config?.enabled || !config.packId) {
-		return
-	}
-
-	const balance = await getBalance(userId)
-	if (balance >= config.threshold) return
-
-	console.warn(
-		`Auto top-up triggered for user ${userId}: balance ${balance} < threshold ${config.threshold}. User must purchase credits manually.`
-	)
 }

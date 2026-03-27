@@ -10,8 +10,10 @@ import {
 	Loader2,
 	RefreshCw,
 	Star,
-	X
+	X,
+	Zap
 } from 'lucide-react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import {
@@ -47,7 +49,8 @@ const typeConfig: Record<
 		label: 'Auto Top-up',
 		color: 'text-chart-2'
 	},
-	refund: { icon: ArrowUpRight, label: 'Refund', color: 'text-chart-1' }
+	refund: { icon: ArrowUpRight, label: 'Refund', color: 'text-chart-1' },
+	subscription: { icon: Zap, label: 'Subscription', color: 'text-chart-4' }
 }
 
 function CreditsContent() {
@@ -112,29 +115,63 @@ function CreditsContent() {
 			)}
 
 			<div className="mb-8">
-				<h1 className="text-2xl font-bold tracking-tight">Credits</h1>
+				<h1 className="text-2xl font-bold tracking-tight">
+					Credit Packs
+				</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Purchase credits and view your transaction history
+					Purchase credits for pay-as-you-go usage beyond your
+					subscription allowance. Credits never expire.
 				</p>
 			</div>
 
-			<div className="mb-8 rounded-xl border border-border bg-card p-6">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Current Balance
-				</p>
-				{userLoading ? (
-					<div className="mt-2 h-10 w-32 animate-pulse rounded bg-muted" />
-				) : (
-					<p className="mt-2 font-(family-name:--font-geist-mono) text-4xl font-bold tracking-tight">
-						{user?.balance?.toLocaleString() ?? 0}
-						<span className="ml-2 text-base font-normal text-muted-foreground">
-							credits
-						</span>
+			<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div className="rounded-xl border border-border bg-card p-6">
+					<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						Credit Balance
 					</p>
-				)}
+					{userLoading ? (
+						<div className="mt-2 h-10 w-32 animate-pulse rounded bg-muted" />
+					) : (
+						<p className="mt-2 font-(family-name:--font-geist-mono) text-4xl font-bold tracking-tight">
+							{user?.balance?.toLocaleString() ?? 0}
+							<span className="ml-2 text-base font-normal text-muted-foreground">
+								credits
+							</span>
+						</p>
+					)}
+				</div>
+				<div className="rounded-xl border border-border bg-card p-6">
+					<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						Subscription Plan
+					</p>
+					{userLoading ? (
+						<div className="mt-2 h-10 w-32 animate-pulse rounded bg-muted" />
+					) : (
+						<div className="mt-2">
+							<p className="text-2xl font-bold capitalize tracking-tight">
+								{user?.subscription?.plan ?? 'Free'}
+							</p>
+							<p className="text-sm text-muted-foreground">
+								{user?.subscription
+									? `${user.subscription.screenshotsUsedThisMonth.toLocaleString()} / ${user.subscription.screenshotsPerMonth.toLocaleString()} screenshots this month`
+									: '200 free screenshots/month'}
+							</p>
+							<Link
+								href="/dashboard/billing"
+								className="mt-1 inline-block cursor-pointer text-xs font-medium text-primary transition-colors hover:text-primary/80"
+							>
+								Manage subscription &rarr;
+							</Link>
+						</div>
+					)}
+				</div>
 			</div>
 
-			<h2 className="mb-4 text-sm font-semibold">Buy Credits</h2>
+			<h2 className="mb-4 text-sm font-semibold">Buy Credit Packs</h2>
+			<p className="mb-4 text-xs text-muted-foreground">
+				Credits are consumed after your monthly subscription allowance
+				is used up. They never expire.
+			</p>
 			{packsLoading ? (
 				<div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					{Array.from({ length: 4 }).map((_, i) => (
@@ -173,7 +210,7 @@ function CreditsContent() {
 							<p className="text-xs text-muted-foreground">
 								$
 								{(pack.priceCents / pack.credits / 100).toFixed(
-									3
+									4
 								)}{' '}
 								per credit
 							</p>

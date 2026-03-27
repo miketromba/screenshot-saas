@@ -83,7 +83,8 @@ export default function SignUpPage() {
 				<p className="text-sm text-muted-foreground">
 					We sent a confirmation link to{' '}
 					<span className="font-medium text-foreground">{email}</span>
-					. Click it to activate your account and get 5 free credits.
+					. Click it to activate your account and get 200 free
+					screenshots per month.
 				</p>
 			</div>
 		)
@@ -96,7 +97,7 @@ export default function SignUpPage() {
 					Create your account
 				</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Get 5 free screenshots to start
+					Get 200 free screenshots per month
 				</p>
 			</div>
 

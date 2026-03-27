@@ -2,28 +2,28 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-	title: 'ScreenshotAPI — Website Screenshots via API',
+	title: 'ScreenshotAPI — The screenshot API that respects your time',
 	description:
-		'A fast, reliable API for generating web page screenshots on demand. One API call, one screenshot, one credit. SDKs for every major platform.'
+		'A fast, reliable screenshot API with ad blocking, PDF export, and smart caching. 200 free screenshots per month. One API call, one screenshot. SDKs for every platform.'
 }
 
 const features = [
 	{
 		title: 'Simple REST API',
 		description:
-			'One GET request is all it takes. Pass a URL, get back a screenshot. No SDKs required — works with any HTTP client.',
+			'One GET request is all it takes. Pass a URL, get back a screenshot. Works with any HTTP client.',
 		icon: (
 			<path
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+				d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
 			/>
 		)
 	},
 	{
 		title: 'Multiple Formats',
 		description:
-			'Export as PNG, JPEG, or WebP. Control quality settings for optimal file size. Full-page or viewport-only captures.',
+			'Export as PNG, JPEG, WebP, or PDF. Control quality settings. Full-page or viewport captures.',
 		icon: (
 			<path
 				strokeLinecap="round"
@@ -33,33 +33,45 @@ const features = [
 		)
 	},
 	{
-		title: 'Light & Dark Mode',
+		title: 'Ad Blocking',
 		description:
-			'Capture sites in light or dark color schemes using the colorScheme parameter. Emulates prefers-color-scheme.',
+			'Remove ads, trackers, and cookie banners automatically. Clean screenshots every time.',
 		icon: (
 			<path
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+				d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
 			/>
 		)
 	},
 	{
-		title: 'Custom Viewports',
+		title: 'Response Caching',
 		description:
-			'Set exact width and height for pixel-perfect captures. Simulate any device viewport from mobile to desktop.',
+			"Smart caching with configurable TTL. Cached responses are served instantly and don't count against your quota.",
 		icon: (
 			<path
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z"
+				d="M3.75 13.5L14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+			/>
+		)
+	},
+	{
+		title: 'HTML Rendering',
+		description:
+			'Render raw HTML to images or PDFs. Perfect for OG images, invoices, and email previews.',
+		icon: (
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25"
 			/>
 		)
 	},
 	{
 		title: 'Smart Wait Strategies',
 		description:
-			'Wait for network idle, specific CSS selectors, or fixed delays. Ensure dynamic content is fully loaded before capture.',
+			'Wait for network idle, CSS selectors, or fixed delays. Capture dynamic content reliably.',
 		icon: (
 			<path
 				strokeLinecap="round"
@@ -69,14 +81,26 @@ const features = [
 		)
 	},
 	{
-		title: 'Pay Per Screenshot',
+		title: 'Stealth Mode',
 		description:
-			'No subscriptions or monthly fees. Buy credit packs and use them at your own pace. Auto top-up available.',
+			'Bypass bot detection with user agent rotation and anti-fingerprinting. Capture protected sites.',
 		icon: (
 			<path
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
+				d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+			/>
+		)
+	},
+	{
+		title: 'Flexible Pricing',
+		description:
+			'Monthly subscriptions for predictable costs or credit packs for pay-as-you-go. 200 free screenshots/month.',
+		icon: (
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9v3"
 			/>
 		)
 	}
@@ -87,33 +111,59 @@ const steps = [
 		step: '1',
 		title: 'Create an account',
 		description:
-			'Sign up and get 5 free credits instantly. No credit card required.'
+			'Sign up and get 200 free screenshots per month. No credit card required.'
 	},
 	{
 		step: '2',
 		title: 'Generate an API key',
 		description:
-			'Create a key in your dashboard. Use it in the x-api-key header or as a Bearer token.'
+			'Create a key in your dashboard with one click. Use it in the x-api-key header.'
 	},
 	{
 		step: '3',
 		title: 'Take screenshots',
 		description:
-			'Make a GET request with a URL and options. Receive the screenshot image in response.'
+			'Make a GET request with a URL. Get back a screenshot in PNG, JPEG, WebP, or PDF.'
 	}
 ]
 
-const packs = [
-	{ name: 'Starter', credits: 500, price: 20, perCredit: '0.040' },
+const pricingTiers = [
+	{
+		name: 'Free',
+		price: '$0',
+		priceSuffix: '',
+		screenshots: '200 screenshots/month',
+		popular: false,
+		href: '/sign-up',
+		cta: 'Get started'
+	},
+	{
+		name: 'Starter',
+		price: '$19',
+		priceSuffix: '/mo',
+		screenshots: '5,000 screenshots/month',
+		popular: false,
+		href: '/pricing',
+		cta: 'Choose plan'
+	},
 	{
 		name: 'Growth',
-		credits: 2_000,
-		price: 60,
-		perCredit: '0.030',
-		popular: true
+		price: '$49',
+		priceSuffix: '/mo',
+		screenshots: '25,000 screenshots/month',
+		popular: true,
+		href: '/pricing',
+		cta: 'Choose plan'
 	},
-	{ name: 'Pro', credits: 10_000, price: 200, perCredit: '0.020' },
-	{ name: 'Scale', credits: 50_000, price: 750, perCredit: '0.015' }
+	{
+		name: 'Scale',
+		price: '$149',
+		priceSuffix: '/mo',
+		screenshots: '100,000 screenshots/month',
+		popular: false,
+		href: '/pricing',
+		cta: 'Choose plan'
+	}
 ]
 
 export default function HomePage() {
@@ -126,7 +176,7 @@ export default function HomePage() {
 					<div className="mx-auto max-w-3xl text-center">
 						<div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
 							<span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-							5 free credits on signup
+							200 free screenshots/month
 						</div>
 						<h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
 							Website screenshots
@@ -136,9 +186,9 @@ export default function HomePage() {
 							</span>
 						</h1>
 						<p className="mt-6 text-lg text-muted-foreground md:text-xl">
-							A fast, reliable screenshot API. One GET request,
-							one screenshot, one credit. SDKs for every major
-							platform.
+							A fast, reliable screenshot API with ad blocking,
+							PDF export, and smart caching. One API call, one
+							screenshot. SDKs for every platform.
 						</p>
 						<div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
 							<Link
@@ -187,20 +237,15 @@ export default function HomePage() {
 									</span>
 									{'\n   '}
 									<span className="text-cyan-300">
-										{'&width=1440'}
+										{'&type=png'}
 									</span>
 									{'\n   '}
 									<span className="text-cyan-300">
-										{'&height=900'}
+										{'&blockAds=true'}
 									</span>
 									{'\n   '}
 									<span className="text-cyan-300">
-										{'&type=png"'}
-									</span>
-									<span className="text-white"> \</span>
-									{'\n  '}
-									<span className="text-white">
-										-o screenshot.png
+										{'&removeCookieBanners=true"'}
 									</span>
 								</code>
 							</pre>
@@ -217,15 +262,15 @@ export default function HomePage() {
 				<div className="mx-auto max-w-6xl px-6">
 					<div className="mx-auto max-w-2xl text-center">
 						<h2 className="text-3xl font-bold tracking-tight">
-							Everything you need to capture the web
+							The screenshot API that respects your time
 						</h2>
 						<p className="mt-4 text-muted-foreground">
-							A complete screenshot API with the flexibility to
-							handle any use case — from OG images to visual
-							regression testing.
+							Everything you need to capture the web — from ad
+							blocking and caching to HTML rendering and stealth
+							mode.
 						</p>
 					</div>
-					<div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+					<div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 						{features.map(feature => (
 							<div
 								key={feature.title}
@@ -283,57 +328,67 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* Pricing */}
+			{/* Pricing preview */}
 			<section className="border-t border-border py-20 md:py-28">
 				<div className="mx-auto max-w-6xl px-6">
 					<div className="mx-auto max-w-2xl text-center">
 						<h2 className="text-3xl font-bold tracking-tight">
-							Simple, credit-based pricing
+							Flexible pricing for every scale
 						</h2>
 						<p className="mt-4 text-muted-foreground">
-							No subscriptions. Buy credits, use them at your own
-							pace. Every account starts with 5 free credits.
+							Start free with 200 screenshots/month. Upgrade as
+							you grow.
 						</p>
 					</div>
 					<div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-						{packs.map(pack => (
+						{pricingTiers.map(tier => (
 							<div
-								key={pack.name}
+								key={tier.name}
 								className={`relative rounded-xl border p-6 transition-colors hover:border-primary/50 ${
-									pack.popular
+									tier.popular
 										? 'border-primary bg-primary/5'
 										: 'border-border bg-card'
 								}`}
 							>
-								{pack.popular && (
+								{tier.popular && (
 									<div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
 										Most popular
 									</div>
 								)}
-								<h3 className="font-semibold">{pack.name}</h3>
+								<h3 className="font-semibold">{tier.name}</h3>
 								<div className="mt-3">
 									<span className="text-3xl font-bold">
-										${pack.price}
+										{tier.price}
 									</span>
+									{tier.priceSuffix ? (
+										<span className="text-sm text-muted-foreground">
+											{tier.priceSuffix}
+										</span>
+									) : null}
 								</div>
 								<p className="mt-1 text-sm text-muted-foreground">
-									{pack.credits.toLocaleString()} credits
-								</p>
-								<p className="text-xs text-muted-foreground">
-									${pack.perCredit} per screenshot
+									{tier.screenshots}
 								</p>
 								<Link
-									href="/sign-up"
+									href={tier.href}
 									className={`mt-6 block cursor-pointer rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
-										pack.popular
+										tier.popular
 											? 'bg-primary text-primary-foreground hover:bg-primary/90'
 											: 'border border-border bg-background hover:bg-muted'
 									}`}
 								>
-									Get started
+									{tier.cta}
 								</Link>
 							</div>
 						))}
+					</div>
+					<div className="mt-10 text-center">
+						<Link
+							href="/pricing"
+							className="cursor-pointer text-sm font-medium text-primary transition-colors hover:text-primary/80"
+						>
+							View full pricing & credit packs →
+						</Link>
 					</div>
 				</div>
 			</section>
@@ -391,7 +446,7 @@ export default function HomePage() {
 						Start capturing screenshots today
 					</h2>
 					<p className="mt-4 text-muted-foreground">
-						Create a free account and get 5 credits to try the API.
+						Create a free account and get 200 screenshots per month.
 						No credit card required.
 					</p>
 					<Link

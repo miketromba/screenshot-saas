@@ -10,9 +10,10 @@ import { Callout } from 'fumadocs-ui/components/callout'
 
 ```
 GET /api/v1/screenshot
+POST /api/v1/screenshot
 ```
 
-Captures a screenshot of the specified URL and returns the binary image data directly in the response body. Requires [API key authentication](/docs/authentication).
+Captures a screenshot of the specified URL (or raw HTML via POST) and returns the binary image data directly in the response body. Requires [API key authentication](/docs/authentication). Use `POST` when sending raw HTML via the `html` body parameter.
 
 ## Authentication
 
@@ -38,12 +39,27 @@ Include your API key in one of these headers:
 | `width` | `number` | `1440` | Viewport width in pixels. Maximum: `1920`. |
 | `height` | `number` | `900` | Viewport height in pixels. Maximum: `10000`. |
 | `fullPage` | `string` | `"false"` | Set to `"true"` to capture the entire scrollable page. Ignores the `height` parameter when enabled. |
-| `type` | `string` | `"png"` | Image format: `"png"`, `"jpeg"`, or `"webp"`. |
+| `type` | `string` | `"png"` | Image format: `"png"`, `"jpeg"`, `"webp"`, or `"pdf"`. |
 | `quality` | `number` | `100` | Image quality from `1` to `100`. Only applies to JPEG and WebP formats. Ignored for PNG. |
 | `colorScheme` | `string` | — | Force color scheme: `"light"` or `"dark"`. Emulates the `prefers-color-scheme` media feature. |
 | `waitUntil` | `string` | `"networkidle2"` | Page load event to wait for before capturing. See [Wait Strategies](#wait-strategies). |
 | `waitForSelector` | `string` | — | CSS selector to wait for before capturing. The screenshot is taken once this element exists in the DOM. |
 | `delay` | `number` | `0` | Additional delay in milliseconds after the page loads and before the screenshot is taken. Range: `0`–`30000`. |
+| `blockAds` | `boolean` | `false` | Enable ad blocking. Removes ads from the page before capture. |
+| `removeCookieBanners` | `boolean` | `false` | Auto-remove cookie consent dialogs before capture. |
+| `cssInject` | `string` | — | Inject custom CSS into the page before capture. Useful for hiding elements or overriding styles. |
+| `jsInject` | `string` | — | Inject custom JavaScript into the page before capture. Runs after the page loads but before the screenshot is taken. |
+| `stealthMode` | `boolean` | `false` | Enable anti-bot-detection mode. Masks headless browser fingerprints to avoid being blocked by bot-detection systems. |
+| `devicePixelRatio` | `number` | `1` | Device pixel ratio for Retina/HiDPI captures. Accepted values: `1`, `2`, or `3`. Higher values produce larger, sharper images. |
+| `timezone` | `string` | — | Timezone emulation (e.g. `"America/New_York"`). Overrides the browser's default timezone for the capture. |
+| `locale` | `string` | — | Locale and Accept-Language emulation (e.g. `"en-US"`). Controls the language used by the browser during the capture. |
+| `cacheTtl` | `number` | `0` | Response cache TTL in seconds. When set to a value greater than `0`, identical requests within the TTL window return a cached response. Set to `0` to disable caching. |
+
+### POST-only Body Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `html` | `string` | Raw HTML string to render instead of navigating to a URL. When provided, the `url` parameter is ignored. Must use `POST` method with a JSON body. |
 
 ## Wait Strategies
 
@@ -68,7 +84,7 @@ For single-page applications (SPAs) that load content dynamically, combine `wait
 
 | Header | Type | Description |
 |---|---|---|
-| `Content-Type` | `string` | `image/png`, `image/jpeg`, or `image/webp` |
+| `Content-Type` | `string` | `image/png`, `image/jpeg`, `image/webp`, or `application/pdf` |
 | `x-credits-remaining` | `string` | Your remaining credit balance |
 | `x-screenshot-id` | `string` | Unique identifier for this screenshot |
 | `x-duration-ms` | `string` | Time taken to capture the screenshot in milliseconds |

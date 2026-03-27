@@ -11,7 +11,7 @@ export function CTABlock({
 				<div>
 					<p className="font-semibold">Try ScreenshotAPI free</p>
 					<p className="text-sm text-muted-foreground">
-						5 free credits. No credit card required.
+						200 free screenshots/month. No credit card required.
 					</p>
 				</div>
 				<Link
@@ -30,8 +30,8 @@ export function CTABlock({
 				Start capturing screenshots today
 			</h2>
 			<p className="mx-auto mt-3 max-w-md text-muted-foreground">
-				Create a free account and get 5 credits to try the API. No
-				credit card required. Pay only for what you use.
+				Create a free account and get 200 free screenshots per month to
+				try the API. No credit card required.
 			</p>
 			<div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
 				<Link

@@ -3,33 +3,45 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, ImageIcon, Loader2, Play } from 'lucide-react'
 import { useState } from 'react'
-import { useCredits } from '@/hooks/use-queries'
+import { useCredits, useUser } from '@/hooks/use-queries'
 
 interface ScreenshotResult {
 	imageUrl: string
 	creditsRemaining: string | null
 	screenshotId: string | null
 	durationMs: string | null
+	usageSource: string | null
 }
 
 export default function PlaygroundPage() {
 	const { data: credits } = useCredits()
+	const { data: user } = useUser()
 	const queryClient = useQueryClient()
 
 	const [url, setUrl] = useState('')
 	const [width, setWidth] = useState('1280')
 	const [height, setHeight] = useState('720')
-	const [format, setFormat] = useState<'png' | 'jpeg' | 'webp'>('png')
+	const [format, setFormat] = useState<'png' | 'jpeg' | 'webp' | 'pdf'>('png')
 	const [quality, setQuality] = useState('80')
 	const [fullPage, setFullPage] = useState(false)
 	const [colorScheme, setColorScheme] = useState<'light' | 'dark' | ''>('')
 	const [waitUntil, setWaitUntil] = useState('')
 	const [waitForSelector, setWaitForSelector] = useState('')
 	const [delay, setDelay] = useState('')
+	const [blockAds, setBlockAds] = useState(false)
+	const [removeCookieBanners, setRemoveCookieBanners] = useState(false)
+	const [stealthMode, setStealthMode] = useState(false)
+	const [cssInject, setCssInject] = useState('')
+	const [jsInject, setJsInject] = useState('')
+	const [devicePixelRatio, setDevicePixelRatio] = useState('')
+	const [timezone, setTimezone] = useState('')
+	const [locale, setLocale] = useState('')
 
 	const [loading, setLoading] = useState(false)
 	const [result, setResult] = useState<ScreenshotResult | null>(null)
 	const [error, setError] = useState<string | null>(null)
+
+	const sub = user?.subscription
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
@@ -41,12 +53,21 @@ export default function PlaygroundPage() {
 		if (width) params.set('width', width)
 		if (height) params.set('height', height)
 		if (format) params.set('type', format)
-		if (quality && format !== 'png') params.set('quality', quality)
+		if (quality && format !== 'png' && format !== 'pdf')
+			params.set('quality', quality)
 		if (fullPage) params.set('fullPage', 'true')
 		if (colorScheme) params.set('colorScheme', colorScheme)
 		if (waitUntil) params.set('waitUntil', waitUntil)
 		if (waitForSelector) params.set('waitForSelector', waitForSelector)
 		if (delay) params.set('delay', delay)
+		if (blockAds) params.set('blockAds', 'true')
+		if (removeCookieBanners) params.set('removeCookieBanners', 'true')
+		if (stealthMode) params.set('stealthMode', 'true')
+		if (cssInject) params.set('cssInject', cssInject)
+		if (jsInject) params.set('jsInject', jsInject)
+		if (devicePixelRatio) params.set('devicePixelRatio', devicePixelRatio)
+		if (timezone) params.set('timezone', timezone)
+		if (locale) params.set('locale', locale)
 
 		try {
 			const response = await fetch(
@@ -69,7 +90,8 @@ export default function PlaygroundPage() {
 				imageUrl,
 				creditsRemaining: response.headers.get('x-credits-remaining'),
 				screenshotId: response.headers.get('x-screenshot-id'),
-				durationMs: response.headers.get('x-duration-ms')
+				durationMs: response.headers.get('x-duration-ms'),
+				usageSource: response.headers.get('x-usage-source')
 			})
 
 			queryClient.invalidateQueries({ queryKey: ['credits'] })
@@ -87,6 +109,48 @@ export default function PlaygroundPage() {
 		'w-full cursor-pointer rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-ring focus:ring-1 focus:ring-ring'
 	const labelClass = 'block text-sm font-medium mb-1.5'
 
+	function Toggle({
+		checked,
+		onChange,
+		label
+	}: {
+		checked: boolean
+		onChange: (v: boolean) => void
+		label: string
+	}) {
+		return (
+			<div className="flex items-center gap-3">
+				<button
+					type="button"
+					role="switch"
+					aria-checked={checked}
+					onClick={() => onChange(!checked)}
+					className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+						checked ? 'bg-primary' : 'bg-input'
+					}`}
+				>
+					<span
+						className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+							checked ? 'translate-x-5' : 'translate-x-0'
+						}`}
+					/>
+				</button>
+				<span
+					className="cursor-pointer text-sm font-medium"
+					onClick={() => onChange(!checked)}
+					onKeyDown={e => {
+						if (e.key === 'Enter' || e.key === ' ')
+							onChange(!checked)
+					}}
+					role="button"
+					tabIndex={0}
+				>
+					{label}
+				</span>
+			</div>
+		)
+	}
+
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 			<div className="mb-8 flex items-center justify-between">
@@ -99,14 +163,33 @@ export default function PlaygroundPage() {
 						needed
 					</p>
 				</div>
-				{credits && (
-					<div className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
-						<span className="text-muted-foreground">Credits: </span>
-						<span className="font-semibold tabular-nums">
-							{credits.balance}
-						</span>
-					</div>
-				)}
+				<div className="flex items-center gap-3">
+					{sub && (
+						<div className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+							<span className="text-muted-foreground">
+								Plan:{' '}
+							</span>
+							<span className="font-semibold capitalize">
+								{sub.plan}
+							</span>
+							<span className="text-muted-foreground">
+								{' '}
+								({sub.screenshotsUsedThisMonth}/
+								{sub.screenshotsPerMonth})
+							</span>
+						</div>
+					)}
+					{credits && (
+						<div className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
+							<span className="text-muted-foreground">
+								Credits:{' '}
+							</span>
+							<span className="font-semibold tabular-nums">
+								{credits.balance}
+							</span>
+						</div>
+					)}
+				</div>
 			</div>
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -179,6 +262,7 @@ export default function PlaygroundPage() {
 												| 'png'
 												| 'jpeg'
 												| 'webp'
+												| 'pdf'
 										)
 									}
 									className={selectClass}
@@ -186,6 +270,7 @@ export default function PlaygroundPage() {
 									<option value="png">PNG</option>
 									<option value="jpeg">JPEG</option>
 									<option value="webp">WebP</option>
+									<option value="pdf">PDF</option>
 								</select>
 							</div>
 							<div>
@@ -202,43 +287,34 @@ export default function PlaygroundPage() {
 									max="100"
 									value={quality}
 									onChange={e => setQuality(e.target.value)}
-									disabled={format === 'png'}
+									disabled={
+										format === 'png' || format === 'pdf'
+									}
 									className={`${inputClass} disabled:opacity-50`}
 								/>
 							</div>
 						</div>
 
-						<div className="flex items-center gap-3">
-							<button
-								type="button"
-								role="switch"
-								aria-checked={fullPage}
-								onClick={() => setFullPage(!fullPage)}
-								className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
-									fullPage ? 'bg-primary' : 'bg-input'
-								}`}
-							>
-								<span
-									className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-										fullPage
-											? 'translate-x-5'
-											: 'translate-x-0'
-									}`}
-								/>
-							</button>
-							<span
-								className="cursor-pointer text-sm font-medium"
-								onClick={() => setFullPage(!fullPage)}
-								onKeyDown={e => {
-									if (e.key === 'Enter' || e.key === ' ')
-										setFullPage(!fullPage)
-								}}
-								role="button"
-								tabIndex={0}
-							>
-								Full Page Screenshot
-							</span>
-						</div>
+						<Toggle
+							checked={fullPage}
+							onChange={setFullPage}
+							label="Full Page Screenshot"
+						/>
+						<Toggle
+							checked={blockAds}
+							onChange={setBlockAds}
+							label="Block Ads"
+						/>
+						<Toggle
+							checked={removeCookieBanners}
+							onChange={setRemoveCookieBanners}
+							label="Remove Cookie Banners"
+						/>
+						<Toggle
+							checked={stealthMode}
+							onChange={setStealthMode}
+							label="Stealth Mode"
+						/>
 
 						<div>
 							<label
@@ -326,6 +402,96 @@ export default function PlaygroundPage() {
 						</div>
 					</div>
 
+					<div className="space-y-4 rounded-xl border border-border bg-card p-5">
+						<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+							Advanced
+						</p>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<label htmlFor="pg-dpr" className={labelClass}>
+									Device Pixel Ratio
+								</label>
+								<select
+									id="pg-dpr"
+									value={devicePixelRatio}
+									onChange={e =>
+										setDevicePixelRatio(e.target.value)
+									}
+									className={selectClass}
+								>
+									<option value="">1x (default)</option>
+									<option value="2">2x (Retina)</option>
+									<option value="3">3x</option>
+								</select>
+							</div>
+							<div>
+								<label
+									htmlFor="pg-timezone"
+									className={labelClass}
+								>
+									Timezone
+								</label>
+								<input
+									id="pg-timezone"
+									type="text"
+									value={timezone}
+									onChange={e => setTimezone(e.target.value)}
+									placeholder="America/New_York"
+									className={inputClass}
+								/>
+							</div>
+						</div>
+
+						<div>
+							<label htmlFor="pg-locale" className={labelClass}>
+								Locale
+							</label>
+							<input
+								id="pg-locale"
+								type="text"
+								value={locale}
+								onChange={e => setLocale(e.target.value)}
+								placeholder="en-US"
+								className={inputClass}
+							/>
+						</div>
+
+						<div>
+							<label
+								htmlFor="pg-css-inject"
+								className={labelClass}
+							>
+								CSS Injection
+							</label>
+							<textarea
+								id="pg-css-inject"
+								value={cssInject}
+								onChange={e => setCssInject(e.target.value)}
+								placeholder="body { background: white; }"
+								rows={2}
+								className={`${inputClass} font-(family-name:--font-geist-mono) resize-none`}
+							/>
+						</div>
+
+						<div>
+							<label
+								htmlFor="pg-js-inject"
+								className={labelClass}
+							>
+								JS Injection
+							</label>
+							<textarea
+								id="pg-js-inject"
+								value={jsInject}
+								onChange={e => setJsInject(e.target.value)}
+								placeholder="document.querySelector('.popup')?.remove()"
+								rows={2}
+								className={`${inputClass} font-(family-name:--font-geist-mono) resize-none`}
+							/>
+						</div>
+					</div>
+
 					<button
 						type="submit"
 						disabled={loading || !url}
@@ -374,11 +540,11 @@ export default function PlaygroundPage() {
 								<p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
 									Response
 								</p>
-								<div className="grid grid-cols-3 gap-3">
+								<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 									{result.creditsRemaining !== null && (
 										<div>
 											<p className="text-xs text-muted-foreground">
-												Credits Left
+												Remaining
 											</p>
 											<p className="font-(family-name:--font-geist-mono) text-sm font-semibold">
 												{result.creditsRemaining}
@@ -399,6 +565,16 @@ export default function PlaygroundPage() {
 											</p>
 										</div>
 									)}
+									{result.usageSource && (
+										<div>
+											<p className="text-xs text-muted-foreground">
+												Source
+											</p>
+											<p className="text-sm font-semibold capitalize">
+												{result.usageSource}
+											</p>
+										</div>
+									)}
 									{result.screenshotId !== null && (
 										<div>
 											<p className="text-xs text-muted-foreground">
@@ -412,13 +588,28 @@ export default function PlaygroundPage() {
 								</div>
 							</div>
 
-							<div className="overflow-hidden rounded-xl border border-border bg-card">
-								<img
-									src={result.imageUrl}
-									alt="Screenshot result"
-									className="w-full"
-								/>
-							</div>
+							{format === 'pdf' ? (
+								<div className="rounded-xl border border-border bg-card p-8 text-center">
+									<p className="text-sm text-muted-foreground">
+										PDF generated successfully
+									</p>
+									<a
+										href={result.imageUrl}
+										download="screenshot.pdf"
+										className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+									>
+										Download PDF
+									</a>
+								</div>
+							) : (
+								<div className="overflow-hidden rounded-xl border border-border bg-card">
+									<img
+										src={result.imageUrl}
+										alt="Screenshot result"
+										className="w-full"
+									/>
+								</div>
+							)}
 						</div>
 					)}
 

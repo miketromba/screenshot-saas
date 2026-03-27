@@ -1,0 +1,389 @@
+---
+title: "Next.js Screenshot API Integration"
+description: "Integrate ScreenshotAPI with Next.js to generate website screenshots, OG images, and thumbnails using App Router and Server Components."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Next.js
+faq:
+  - question: "Can I generate OG images with ScreenshotAPI in Next.js?"
+    answer: "Yes. Create a Route Handler that calls ScreenshotAPI and returns the image bytes with the correct Content-Type header. Then reference that route in your OpenGraph metadata. Unlike @vercel/og, you can screenshot any live page, not just JSX templates."
+  - question: "Does ScreenshotAPI work with the Next.js App Router?"
+    answer: "Absolutely. Server Components can call the API at build time with generateStaticParams or at request time in Route Handlers. The JavaScript SDK works in both server and client environments."
+  - question: "How do I cache screenshots in Next.js?"
+    answer: "Use the built-in fetch cache with next.revalidate, store images in a CDN-backed bucket, or leverage Next.js ISR to regenerate screenshots on a schedule without burning extra credits."
+  - question: "Is ScreenshotAPI faster than running Puppeteer on Vercel?"
+    answer: "Yes. Puppeteer requires a 50 MB Chromium binary that inflates cold starts on serverless platforms. ScreenshotAPI offloads rendering entirely, returning images in under 2 seconds with no binary overhead."
+relatedPages:
+  - title: "Vercel Integration"
+    description: "Deploy screenshot workflows on Vercel's edge network"
+    href: "/integrations/vercel"
+  - title: "React Integration"
+    description: "Add screenshot capabilities to any React application"
+    href: "/integrations/react"
+  - title: "OG Image Generation"
+    description: "Generate dynamic Open Graph images at scale"
+    href: "/use-cases/og-image-generation"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Next.js Screenshot API Integration"
+  description: "Integrate ScreenshotAPI with Next.js to generate website screenshots, OG images, and thumbnails using App Router and Server Components."
+  dateModified: "2026-03-25"
+---
+
+## Take Website Screenshots in Next.js with ScreenshotAPI
+
+Capturing website screenshots inside a Next.js application is useful for generating OG images, building link preview cards, running visual regression tests, and creating PDF reports. Most tutorials suggest spinning up Puppeteer or Playwright locally, but those tools add a 50 MB Chromium dependency that bloats serverless deployments and slows cold starts.
+
+ScreenshotAPI gives your **Next.js screenshot API** integration a simpler path: one HTTP request returns a pixel-perfect PNG, JPEG, or WebP. No headless browser, no binary management, no container hacks.
+
+## Quick Start
+
+1. [Sign up for ScreenshotAPI](https://screenshotapi.to) and grab your API key from the dashboard. You get **200 free screenshots per month** to test with immediately.
+2. Install the JavaScript SDK.
+3. Create a Route Handler that proxies screenshot requests.
+
+The rest of this guide walks through each step with production-ready code.
+
+## Installation
+
+Install the SDK from npm using your package manager:
+
+```bash
+bun add screenshotapi
+```
+
+Or with npm:
+
+```bash
+npm install screenshotapi
+```
+
+Store your API key in `.env.local`:
+
+```bash
+SCREENSHOTAPI_KEY=sk_live_xxxxx
+```
+
+## Basic Example
+
+The simplest integration is a Route Handler that accepts a URL and returns the screenshot image:
+
+```typescript
+// app/api/screenshot/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export async function GET(request: NextRequest) {
+  const url = request.nextUrl.searchParams.get('url')
+  if (!url) {
+    return NextResponse.json({ error: 'url parameter is required' }, { status: 400 })
+  }
+
+  const params = new URLSearchParams({
+    url,
+    width: '1200',
+    height: '630',
+    type: 'png',
+  })
+
+  const response = await fetch(`${API_BASE}?${params}`, {
+    headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    next: { revalidate: 86400 },
+  })
+
+  if (!response.ok) {
+    return NextResponse.json(
+      { error: 'Screenshot capture failed' },
+      { status: response.status }
+    )
+  }
+
+  const imageBuffer = await response.arrayBuffer()
+
+  return new NextResponse(imageBuffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
+  })
+}
+```
+
+Call it from any component:
+
+```tsx
+<img src="/api/screenshot?url=https://example.com" alt="Website preview" />
+```
+
+## Next.js OG Image Generation
+
+One of the most popular uses for a Next.js screenshot API is dynamic OG image generation. While `@vercel/og` converts JSX to images using Satori, ScreenshotAPI captures actual rendered pages, giving you full CSS support, web fonts, animations frozen at the right frame, and interactive widget states.
+
+### Dynamic OG Route Handler
+
+```typescript
+// app/api/og/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export async function GET(request: NextRequest) {
+  const title = request.nextUrl.searchParams.get('title') ?? 'Default Title'
+  const theme = request.nextUrl.searchParams.get('theme') ?? 'light'
+
+  const ogPageUrl = new URL('/og-template', request.nextUrl.origin)
+  ogPageUrl.searchParams.set('title', title)
+
+  const params = new URLSearchParams({
+    url: ogPageUrl.toString(),
+    width: '1200',
+    height: '630',
+    type: 'png',
+    colorScheme: theme,
+    waitUntil: 'networkidle',
+  })
+
+  const response = await fetch(`${API_BASE}?${params}`, {
+    headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+    next: { revalidate: 3600 },
+  })
+
+  if (!response.ok) {
+    return NextResponse.json({ error: 'OG generation failed' }, { status: 502 })
+  }
+
+  return new NextResponse(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
+  })
+}
+```
+
+### Reference the OG Route in Metadata
+
+```typescript
+// app/blog/[slug]/page.tsx
+import type { Metadata } from 'next'
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getPost(params.slug)
+
+  return {
+    title: post.title,
+    openGraph: {
+      images: [`/api/og?title=${encodeURIComponent(post.title)}`],
+    },
+  }
+}
+```
+
+Learn more about this pattern in our [OG image generation use case](/use-cases/og-image-generation) guide.
+
+## Server Component Integration
+
+Server Components can fetch screenshots at render time. This is useful for building dashboards that display live site thumbnails:
+
+```tsx
+// app/dashboard/previews.tsx
+async function SitePreviews({ urls }: { urls: string[] }) {
+  const screenshots = await Promise.all(
+    urls.map(async (url) => {
+      const params = new URLSearchParams({
+        url,
+        width: '1440',
+        height: '900',
+        type: 'webp',
+        quality: '80',
+      })
+
+      const res = await fetch(
+        `https://screenshotapi.to/api/v1/screenshot?${params}`,
+        {
+          headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+          next: { revalidate: 3600 },
+        }
+      )
+
+      if (!res.ok) return null
+
+      const buffer = Buffer.from(await res.arrayBuffer())
+      return `data:image/webp;base64,${buffer.toString('base64')}`
+    })
+  )
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {urls.map((url, i) => (
+        <div key={url} className="overflow-hidden rounded-lg border">
+          {screenshots[i] ? (
+            <img src={screenshots[i]!} alt={`Preview of ${url}`} />
+          ) : (
+            <div className="flex h-48 items-center justify-center bg-muted">
+              <span>Failed to load preview</span>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+## Static Generation with generateStaticParams
+
+For marketing pages with known URLs, generate screenshots at build time so visitors never wait:
+
+```typescript
+// app/showcase/[slug]/page.tsx
+export async function generateStaticParams() {
+  const sites = await getSites()
+  return sites.map((site) => ({ slug: site.slug }))
+}
+
+export default async function ShowcasePage({ params }: { params: { slug: string } }) {
+  const site = await getSite(params.slug)
+
+  const screenshotParams = new URLSearchParams({
+    url: site.url,
+    width: '1440',
+    height: '900',
+    type: 'webp',
+    quality: '85',
+    waitUntil: 'networkidle',
+  })
+
+  const res = await fetch(
+    `https://screenshotapi.to/api/v1/screenshot?${screenshotParams}`,
+    { headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! } }
+  )
+
+  const buffer = Buffer.from(await res.arrayBuffer())
+  const dataUrl = `data:image/webp;base64,${buffer.toString('base64')}`
+
+  return (
+    <article>
+      <h1>{site.name}</h1>
+      <img src={dataUrl} alt={`Screenshot of ${site.name}`} />
+    </article>
+  )
+}
+```
+
+## Production Tips
+
+### Error Handling Middleware
+
+Wrap screenshot calls in a utility function with retries and timeout logic:
+
+```typescript
+// lib/screenshot.ts
+interface ScreenshotOptions {
+  url: string
+  width?: number
+  height?: number
+  type?: 'png' | 'jpeg' | 'webp'
+  quality?: number
+  fullPage?: boolean
+  colorScheme?: 'light' | 'dark'
+  waitUntil?: 'networkidle' | 'load' | 'domcontentloaded'
+}
+
+export async function captureScreenshot(
+  options: ScreenshotOptions,
+  retries = 2
+): Promise<Buffer> {
+  const params = new URLSearchParams({
+    url: options.url,
+    width: String(options.width ?? 1440),
+    height: String(options.height ?? 900),
+    type: options.type ?? 'png',
+  })
+
+  if (options.quality) params.set('quality', String(options.quality))
+  if (options.fullPage) params.set('fullPage', 'true')
+  if (options.colorScheme) params.set('colorScheme', options.colorScheme)
+  if (options.waitUntil) params.set('waitUntil', options.waitUntil)
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(
+        `https://screenshotapi.to/api/v1/screenshot?${params}`,
+        {
+          headers: { 'x-api-key': process.env.SCREENSHOTAPI_KEY! },
+          signal: AbortSignal.timeout(30_000),
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error(`Screenshot API returned ${res.status}`)
+      }
+
+      return Buffer.from(await res.arrayBuffer())
+    } catch (error) {
+      if (attempt === retries) throw error
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+    }
+  }
+
+  throw new Error('Screenshot capture failed after retries')
+}
+```
+
+### Caching Strategy
+
+Avoid burning credits on repeated captures of the same page:
+
+1. **Next.js fetch cache**: Pass `next: { revalidate: 3600 }` to reuse responses for one hour.
+2. **CDN headers**: Set `Cache-Control: public, s-maxage=86400` on your Route Handler responses.
+3. **Database or S3**: For long-lived thumbnails, store the image in an object store and serve from there.
+
+<FreeTierBanner />
+
+### Rate Limiting
+
+If your app lets users submit arbitrary URLs, protect your API key with server-side rate limiting. Use a library like `next-rate-limit` or track requests per IP in a KV store.
+
+## Dark Mode Screenshots
+
+ScreenshotAPI supports the `colorScheme` parameter, making it straightforward to capture both light and dark variants:
+
+```typescript
+const lightShot = await captureScreenshot({
+  url: 'https://example.com',
+  colorScheme: 'light',
+})
+
+const darkShot = await captureScreenshot({
+  url: 'https://example.com',
+  colorScheme: 'dark',
+})
+```
+
+This is especially useful for [visual regression testing](/use-cases/visual-regression-testing) where you need to verify both themes.
+
+## Comparing Approaches
+
+| Approach | Cold Start | Dependencies | CSS Support |
+|----------|-----------|-------------|-------------|
+| ScreenshotAPI | ~0 ms | None | Full |
+| Puppeteer on Vercel | 3-8 s | 50 MB Chromium | Full |
+| @vercel/og (Satori) | ~100 ms | 500 KB WASM | Limited subset |
+
+ScreenshotAPI captures real browser output with zero infrastructure overhead. For a deeper comparison, see [ScreenshotAPI vs Puppeteer](/compare/screenshotapi-vs-puppeteer).
+
+## Further Reading
+
+- [How to Take Screenshots with JavaScript](/blog/how-to-take-screenshots-with-javascript) covers the fundamentals of browser-based screenshot capture.
+- The [JavaScript SDK documentation](/docs/sdks/javascript) has the full parameter reference.
+- Explore the [Vercel integration guide](/integrations/vercel) if you are deploying to Vercel's platform.

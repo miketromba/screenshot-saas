@@ -13,12 +13,14 @@ import {
 	Zap
 } from 'lucide-react'
 import Link from 'next/link'
-import {
-	useApiKeys,
-	useUsageLogs,
-	useUsageStats,
-	useUser
-} from '@/hooks/use-queries'
+import { useApiKeys, useUsageLogs, useUser } from '@/hooks/use-queries'
+
+const PLAN_LABELS: Record<string, string> = {
+	free: 'Free',
+	starter: 'Starter',
+	growth: 'Growth',
+	scale: 'Scale'
+}
 
 function formatRelative(date: string | Date): string {
 	const d = new Date(date)
@@ -37,13 +39,37 @@ function formatRelative(date: string | Date): string {
 
 export default function DashboardPage() {
 	const { data: user, isLoading: userLoading } = useUser()
-	const { data: stats, isLoading: statsLoading } = useUsageStats()
 	const { data: apiKeys, isLoading: keysLoading } = useApiKeys()
 	const { data: recentLogs, isLoading: logsLoading } = useUsageLogs({
 		limit: 10
 	})
 
+	const sub = user?.subscription
+	const usagePercent = sub
+		? Math.min(
+				100,
+				Math.round(
+					(sub.screenshotsUsedThisMonth / sub.screenshotsPerMonth) *
+						100
+				)
+			)
+		: 0
+
 	const statCards = [
+		{
+			label: 'Plan',
+			value: sub ? (PLAN_LABELS[sub.plan] ?? sub.plan) : '—',
+			icon: Zap,
+			loading: userLoading
+		},
+		{
+			label: 'Monthly Usage',
+			value: sub
+				? `${sub.screenshotsUsedThisMonth.toLocaleString()} / ${sub.screenshotsPerMonth.toLocaleString()}`
+				: '—',
+			icon: Camera,
+			loading: userLoading
+		},
 		{
 			label: 'Credit Balance',
 			value: user?.balance?.toLocaleString() ?? '—',
@@ -51,30 +77,20 @@ export default function DashboardPage() {
 			loading: userLoading
 		},
 		{
-			label: 'Screenshots (30d)',
-			value: stats?.last30Days?.toLocaleString() ?? '—',
-			icon: Camera,
-			loading: statsLoading
-		},
-		{
 			label: 'API Keys',
 			value: apiKeys?.length?.toString() ?? '—',
 			icon: Key,
 			loading: keysLoading
-		},
-		{
-			label: 'Avg Speed',
-			value: stats?.avgDurationMs
-				? `${(stats.avgDurationMs / 1000).toFixed(1)}s`
-				: '—',
-			icon: Zap,
-			loading: statsLoading
 		}
 	]
 
 	const quickActions = [
 		{ label: 'Create API Key', href: '/dashboard/api-keys', icon: Plus },
-		{ label: 'Buy Credits', href: '/dashboard/credits', icon: CreditCard },
+		{
+			label: 'Manage Billing',
+			href: '/dashboard/billing',
+			icon: CreditCard
+		},
 		{
 			label: 'Open Playground',
 			href: '/dashboard/playground',
@@ -125,6 +141,43 @@ export default function DashboardPage() {
 					</div>
 				))}
 			</div>
+
+			{sub && !userLoading && (
+				<div className="mb-8 rounded-xl border border-border bg-card p-5">
+					<div className="flex items-center justify-between">
+						<p className="text-sm font-medium">
+							Monthly Usage ({PLAN_LABELS[sub.plan]} plan)
+						</p>
+						<p className="font-(family-name:--font-geist-mono) text-sm text-muted-foreground">
+							{usagePercent}%
+						</p>
+					</div>
+					<div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+						<div
+							className="h-full rounded-full bg-primary transition-all duration-300"
+							style={{ width: `${usagePercent}%` }}
+						/>
+					</div>
+					<div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+						<span>
+							{sub.screenshotsUsedThisMonth.toLocaleString()} used
+						</span>
+						<span>
+							{sub.screenshotsPerMonth.toLocaleString()} included
+						</span>
+					</div>
+					{sub.plan !== 'free' &&
+						sub.plan !== null &&
+						sub.screenshotsUsedThisMonth >=
+							sub.screenshotsPerMonth && (
+							<p className="mt-2 text-xs text-amber-600">
+								You&rsquo;ve used your monthly allowance.
+								Additional screenshots will use credit packs or
+								incur overage charges.
+							</p>
+						)}
+				</div>
+			)}
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 				<div className="lg:col-span-2">

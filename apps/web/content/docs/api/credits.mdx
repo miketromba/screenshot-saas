@@ -132,29 +132,29 @@ Returns all available credit packs with pricing. This endpoint is **public** —
   {
     "id": "pack_starter",
     "name": "Starter",
-    "credits": 100,
-    "priceCents": 500,
+    "credits": 1000,
+    "priceCents": 900,
     "isPopular": false
+  },
+  {
+    "id": "pack_growth",
+    "name": "Growth",
+    "credits": 5000,
+    "priceCents": 2900,
+    "isPopular": true
   },
   {
     "id": "pack_pro",
     "name": "Pro",
-    "credits": 1000,
-    "priceCents": 3500,
-    "isPopular": true
-  },
-  {
-    "id": "pack_business",
-    "name": "Business",
-    "credits": 5000,
-    "priceCents": 12500,
+    "credits": 25000,
+    "priceCents": 9900,
     "isPopular": false
   },
   {
-    "id": "pack_enterprise",
-    "name": "Enterprise",
-    "credits": 25000,
-    "priceCents": 50000,
+    "id": "pack_scale",
+    "name": "Scale",
+    "credits": 100000,
+    "priceCents": 29900,
     "isPopular": false
   }
 ]
@@ -167,7 +167,7 @@ Returns all available credit packs with pricing. This endpoint is **public** —
 | `id` | `string` | Pack identifier (used when purchasing) |
 | `name` | `string` | Human-readable pack name |
 | `credits` | `number` | Number of credits included |
-| `priceCents` | `number` | Price in US cents (e.g., `3500` = $35.00) |
+| `priceCents` | `number` | Price in US cents (e.g., `2900` = $29.00) |
 | `isPopular` | `boolean` | Whether this pack is highlighted as the recommended option |
 
 ### Example
@@ -459,9 +459,9 @@ Returns an array of transactions ordered by creation date (newest first).
   },
   {
     "id": "txn_ghi789",
-    "type": "signup_bonus",
-    "amount": 5,
-    "description": "Welcome bonus",
+    "type": "subscription",
+    "amount": 200,
+    "description": "Free tier monthly allowance",
     "referenceId": null,
     "createdAt": "2026-03-20T09:00:00.000Z"
   }
@@ -475,7 +475,7 @@ Returns an array of transactions ordered by creation date (newest first).
 | `purchase` | Credits purchased via Polar checkout |
 | `auto_topup` | Credits added via automatic top-up |
 | `usage` | Credits deducted for a screenshot (amount is negative) |
-| `signup_bonus` | Free credits awarded on account creation |
+| `subscription` | Credits granted by a subscription plan (e.g., 200/month on Free tier) |
 
 ### Example
 

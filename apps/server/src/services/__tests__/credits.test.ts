@@ -82,17 +82,12 @@ mock.module('@screenshot-saas/db', () => ({
 	notInArray: mock((a: unknown, b: unknown) => ({ notInArray: a, b }))
 }))
 
-mock.module('@screenshot-saas/config', () => ({
-	FREE_CREDITS: 5
-}))
-
 const {
 	getBalance,
 	initializeCredits,
 	deductCredit,
 	addCredits,
-	getTransactions,
-	checkAutoTopup
+	getTransactions
 } = await import('../credits')
 
 describe('getBalance', () => {
@@ -131,27 +126,17 @@ describe('initializeCredits', () => {
 		})
 	})
 
-	it('inserts credit_balances with FREE_CREDITS', async () => {
+	it('inserts credit_balances with 0 balance', async () => {
 		await initializeCredits('user-1')
 		expect(mockInsert).toHaveBeenCalled()
 		expect(mockInsertValues).toHaveBeenCalledWith(
-			expect.objectContaining({ userId: 'user-1', balance: 5 })
+			expect.objectContaining({ userId: 'user-1', balance: 0 })
 		)
 	})
 
 	it('uses onConflictDoNothing for idempotency', async () => {
 		await initializeCredits('user-1')
 		expect(mockOnConflictDoNothing).toHaveBeenCalled()
-	})
-
-	it('inserts a signup_bonus transaction', async () => {
-		await initializeCredits('user-1')
-		const calls = mockInsertValues.mock.calls
-		const txnCall = calls.find(
-			c => (c[0] as Record<string, unknown>)?.type === 'signup_bonus'
-		)
-		expect(txnCall).toBeDefined()
-		expect((txnCall?.[0] as Record<string, unknown>).amount).toBe(5)
 	})
 })
 
@@ -323,105 +308,5 @@ describe('getTransactions', () => {
 		expect(mockFindMany).toHaveBeenCalledWith(
 			expect.objectContaining({ limit: 10, offset: 20 })
 		)
-	})
-})
-
-describe('checkAutoTopup', () => {
-	beforeEach(() => {
-		mockFindFirst.mockReset()
-		mockReturning.mockReset()
-		mockUpdate.mockReset()
-		mockUpdateSet.mockReset()
-		mockUpdateWhere.mockReset()
-		mockInsert.mockReset()
-		mockInsertValues.mockReset()
-
-		mockUpdate.mockReturnValue({ set: mockUpdateSet })
-		mockUpdateSet.mockReturnValue({ where: mockUpdateWhere })
-		mockUpdateWhere.mockReturnValue({ returning: mockReturning })
-		mockInsert.mockReturnValue({ values: mockInsertValues })
-		mockInsertValues.mockReturnValue({
-			onConflictDoNothing: mockOnConflictDoNothing
-		})
-	})
-
-	it('does nothing when auto-topup is not configured', async () => {
-		mockFindFirst.mockReturnValue(null)
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('does nothing when auto-topup is disabled', async () => {
-		mockFindFirst.mockReturnValue({
-			enabled: false,
-			packId: 'pack-1',
-			threshold: 10
-		})
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('does nothing when balance is above threshold', async () => {
-		let callCount = 0
-		mockFindFirst.mockImplementation(() => {
-			callCount++
-			if (callCount === 1) {
-				return {
-					enabled: true,
-					packId: 'pack-1',
-					threshold: 10
-				}
-			}
-			return { userId: 'user-1', balance: 50 }
-		})
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('does nothing when packId is missing', async () => {
-		mockFindFirst.mockReturnValue({
-			enabled: true,
-			packId: null,
-			threshold: 10
-		})
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('logs warning when balance is below threshold (no auto-charge with Polar)', async () => {
-		let callCount = 0
-		mockFindFirst.mockImplementation(() => {
-			callCount++
-			if (callCount === 1) {
-				return {
-					enabled: true,
-					packId: 'pack-1',
-					threshold: 10
-				}
-			}
-			return { userId: 'user-1', balance: 3 }
-		})
-
-		await checkAutoTopup('user-1')
-
-		expect(mockUpdate).not.toHaveBeenCalled()
-	})
-
-	it('does nothing when pack is not found', async () => {
-		let callCount = 0
-		mockFindFirst.mockImplementation(() => {
-			callCount++
-			if (callCount === 1) {
-				return {
-					enabled: true,
-					packId: 'pack-gone',
-					threshold: 10
-				}
-			}
-			return { userId: 'user-1', balance: 3 }
-		})
-
-		await checkAutoTopup('user-1')
-		expect(mockUpdate).not.toHaveBeenCalled()
 	})
 })

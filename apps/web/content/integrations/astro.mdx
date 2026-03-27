@@ -1,0 +1,348 @@
+---
+title: "Screenshot API for Astro"
+description: "Add website screenshots to Astro sites with ScreenshotAPI. Server endpoints, build-time generation, and content collection patterns."
+lastUpdated: "2026-03-25"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Integrations
+    href: /integrations
+  - label: Astro
+faq:
+  - question: "Can I generate screenshots at build time with Astro?"
+    answer: "Yes. In Astro's static mode, you can call ScreenshotAPI during the build in getStaticPaths or inside .astro component frontmatter. The images are baked into the output and no runtime API calls are needed."
+  - question: "Does ScreenshotAPI work with Astro server endpoints?"
+    answer: "Yes. With output set to server or hybrid in your Astro config, you can create API endpoints that call ScreenshotAPI at request time and return the image response."
+  - question: "Do I need to install Puppeteer for Astro screenshots?"
+    answer: "No. ScreenshotAPI handles all browser rendering remotely. Your Astro project makes a standard fetch request and receives image bytes. No Chromium required."
+  - question: "What is the best image format for Astro screenshot integration?"
+    answer: "WebP works well for most cases because Astro's image optimization pipeline supports it natively. Use type=webp with quality=80 for the best size-to-quality ratio."
+relatedPages:
+  - title: "Next.js Integration"
+    description: "Screenshot patterns for Next.js applications"
+    href: "/integrations/nextjs"
+  - title: "Vercel Integration"
+    description: "Deploy Astro screenshot workflows on Vercel"
+    href: "/integrations/vercel"
+  - title: "Cloudflare Workers Integration"
+    description: "Edge screenshot capture for Astro on Cloudflare"
+    href: "/integrations/cloudflare-workers"
+  - title: "JavaScript SDK"
+    description: "Full reference for the ScreenshotAPI JavaScript SDK"
+    href: "/docs/sdks/javascript"
+jsonLd:
+  "@context": "https://schema.org"
+  "@type": "TechArticle"
+  headline: "Screenshot API for Astro"
+  description: "Add website screenshots to Astro sites with ScreenshotAPI. Server endpoints, build-time generation, and content collection patterns."
+  dateModified: "2026-03-25"
+---
+
+## Capture Website Screenshots in Astro with ScreenshotAPI
+
+Astro's content-focused architecture excels at building marketing sites, documentation, and blogs. Adding screenshot functionality for link previews, showcase galleries, or OG images usually means pulling in Puppeteer, which is overkill for a framework designed to ship minimal JavaScript.
+
+ScreenshotAPI keeps your **Astro screenshot API** integration lightweight. One fetch call returns a pixel-perfect PNG, JPEG, or WebP. No headless browser dependency, no Node.js-specific runtime requirements, and it works in both static and server modes.
+
+## Quick Start
+
+1. [Create a free ScreenshotAPI account](https://screenshotapi.to) and copy your API key. **200 free screenshots per month** are included.
+2. Add the key to your `.env` file.
+3. Create a server endpoint or generate screenshots at build time.
+
+## Installation
+
+No extra packages are required. Astro's built-in `fetch` handles the API calls:
+
+```bash
+# .env
+SCREENSHOTAPI_KEY=sk_live_xxxxx
+```
+
+## Server Endpoint
+
+For on-demand screenshots, create an API endpoint. You need `output: 'server'` or `output: 'hybrid'` in your Astro config:
+
+```typescript
+// astro.config.mjs
+import { defineConfig } from 'astro/config'
+import node from '@astrojs/node'
+
+export default defineConfig({
+  output: 'hybrid',
+  adapter: node({ mode: 'standalone' }),
+})
+```
+
+Then create the endpoint:
+
+```typescript
+// src/pages/api/screenshot.ts
+import type { APIRoute } from 'astro'
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export const prerender = false
+
+export const GET: APIRoute = async ({ url }) => {
+  const targetUrl = url.searchParams.get('url')
+
+  if (!targetUrl) {
+    return new Response(JSON.stringify({ error: 'url parameter is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const params = new URLSearchParams({
+    url: targetUrl,
+    width: url.searchParams.get('width') ?? '1440',
+    height: url.searchParams.get('height') ?? '900',
+    type: url.searchParams.get('type') ?? 'webp',
+    quality: url.searchParams.get('quality') ?? '80',
+  })
+
+  const colorScheme = url.searchParams.get('colorScheme')
+  if (colorScheme) params.set('colorScheme', colorScheme)
+
+  const fullPage = url.searchParams.get('fullPage')
+  if (fullPage) params.set('fullPage', fullPage)
+
+  const response = await fetch(`${API_BASE}?${params}`, {
+    headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+  })
+
+  if (!response.ok) {
+    return new Response(JSON.stringify({ error: 'Screenshot capture failed' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const imageType = url.searchParams.get('type') ?? 'webp'
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': `image/${imageType}`,
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
+  })
+}
+```
+
+## Build-Time Screenshot Generation
+
+For static sites, generate screenshots during the build. This approach uses zero runtime credits after deployment:
+
+```astro
+---
+// src/pages/showcase/[slug].astro
+import { getCollection } from 'astro:content'
+
+export async function getStaticPaths() {
+  const sites = await getCollection('showcase')
+  return sites.map((site) => ({
+    params: { slug: site.slug },
+    props: { site },
+  }))
+}
+
+const { site } = Astro.props
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+const params = new URLSearchParams({
+  url: site.data.url,
+  width: '1440',
+  height: '900',
+  type: 'webp',
+  quality: '85',
+  waitUntil: 'networkidle',
+})
+
+let screenshotSrc: string | null = null
+
+try {
+  const response = await fetch(`${API_BASE}?${params}`, {
+    headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+  })
+
+  if (response.ok) {
+    const buffer = Buffer.from(await response.arrayBuffer())
+    screenshotSrc = `data:image/webp;base64,${buffer.toString('base64')}`
+  }
+} catch {
+  // Build continues without the screenshot
+}
+---
+
+<article>
+  <h1>{site.data.name}</h1>
+  {screenshotSrc ? (
+    <img src={screenshotSrc} alt={`Screenshot of ${site.data.name}`} />
+  ) : (
+    <div class="placeholder">Screenshot unavailable</div>
+  )}
+  <p>{site.data.description}</p>
+</article>
+```
+
+## Screenshot Gallery Component
+
+Build a reusable Astro component for displaying screenshots across pages:
+
+```astro
+---
+// src/components/ScreenshotGallery.astro
+interface Props {
+  urls: { name: string; url: string }[]
+  width?: number
+  height?: number
+}
+
+const { urls, width = 1440, height = 900 } = Astro.props
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+const screenshots = await Promise.all(
+  urls.map(async (item) => {
+    const params = new URLSearchParams({
+      url: item.url,
+      width: String(width),
+      height: String(height),
+      type: 'webp',
+      quality: '80',
+    })
+
+    try {
+      const response = await fetch(`${API_BASE}?${params}`, {
+        headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+      })
+
+      if (!response.ok) return { ...item, image: null }
+
+      const buffer = Buffer.from(await response.arrayBuffer())
+      return {
+        ...item,
+        image: `data:image/webp;base64,${buffer.toString('base64')}`,
+      }
+    } catch {
+      return { ...item, image: null }
+    }
+  })
+)
+---
+
+<div class="grid">
+  {screenshots.map((item) => (
+    <div class="card">
+      <h3>{item.name}</h3>
+      {item.image ? (
+        <img src={item.image} alt={`Screenshot of ${item.name}`} loading="lazy" />
+      ) : (
+        <div class="placeholder">Failed to load</div>
+      )}
+    </div>
+  ))}
+</div>
+```
+
+Use it in any page:
+
+```astro
+---
+import ScreenshotGallery from '../components/ScreenshotGallery.astro'
+---
+
+<ScreenshotGallery urls={[
+  { name: 'GitHub', url: 'https://github.com' },
+  { name: 'Astro', url: 'https://astro.build' },
+  { name: 'Vercel', url: 'https://vercel.com' },
+]} />
+```
+
+## OG Image Generation
+
+Generate dynamic OG images for content pages using a server endpoint:
+
+```typescript
+// src/pages/og/[slug].png.ts
+import type { APIRoute } from 'astro'
+import { getEntry } from 'astro:content'
+
+export const prerender = false
+
+const API_BASE = 'https://screenshotapi.to/api/v1/screenshot'
+
+export const GET: APIRoute = async ({ params, url }) => {
+  const post = await getEntry('blog', params.slug!)
+  if (!post) return new Response('Not found', { status: 404 })
+
+  const templateUrl = new URL(`/og-template/${params.slug}`, url.origin)
+
+  const screenshotParams = new URLSearchParams({
+    url: templateUrl.toString(),
+    width: '1200',
+    height: '630',
+    type: 'png',
+    waitUntil: 'networkidle',
+  })
+
+  const response = await fetch(`${API_BASE}?${screenshotParams}`, {
+    headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+  })
+
+  if (!response.ok) {
+    return new Response('OG generation failed', { status: 502 })
+  }
+
+  return new Response(await response.arrayBuffer(), {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  })
+}
+```
+
+Learn more in the [OG image generation use case](/use-cases/og-image-generation) guide.
+
+## Dark Mode Screenshots
+
+Capture both light and dark variants for theme showcases or [visual regression testing](/use-cases/visual-regression-testing):
+
+```typescript
+const [lightRes, darkRes] = await Promise.all([
+  fetch(`${API_BASE}?url=${encodeURIComponent(siteUrl)}&colorScheme=light&type=webp`, {
+    headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+  }),
+  fetch(`${API_BASE}?url=${encodeURIComponent(siteUrl)}&colorScheme=dark&type=webp`, {
+    headers: { 'x-api-key': import.meta.env.SCREENSHOTAPI_KEY },
+  }),
+])
+```
+
+## Production Tips
+
+### Build-Time vs Runtime
+
+For content that changes infrequently (showcase sites, documentation), generate screenshots at build time to avoid runtime API calls entirely. Use server endpoints only for dynamic or user-submitted URLs.
+
+### Content Collections
+
+Pair screenshots with Astro content collections. Define a showcase collection with URL fields, and generate screenshots for each entry during the build.
+
+### Caching
+
+For server endpoints, set `Cache-Control` headers so CDNs cache the responses. Astro deployed on Vercel or Cloudflare automatically benefits from edge caching.
+
+<FreeTierBanner />
+
+### Error Handling
+
+Always wrap screenshot fetch calls in try-catch blocks. During the build, a failed screenshot should not break the entire site generation.
+
+## Further Reading
+
+- [How to Take Screenshots with JavaScript](/blog/how-to-take-screenshots-with-javascript) covers the fundamentals of browser screenshot capture.
+- The [JavaScript SDK documentation](/docs/sdks/javascript) has the full parameter reference.
+- See the [Cloudflare Workers integration](/integrations/cloudflare-workers) for edge-based screenshot capture with Astro.
