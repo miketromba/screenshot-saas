@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { SdkShowcase } from '@/components/marketing/sdk-showcase'
 
 export const metadata: Metadata = {
 	title: 'ScreenshotAPI — The screenshot API that respects your time',
@@ -393,51 +394,7 @@ export default function HomePage() {
 				</div>
 			</section>
 
-			{/* SDK section */}
-			<section className="border-t border-border bg-muted/20 py-20 md:py-28">
-				<div className="mx-auto max-w-6xl px-6">
-					<div className="mx-auto max-w-2xl text-center">
-						<h2 className="text-3xl font-bold tracking-tight">
-							SDKs for every platform
-						</h2>
-						<p className="mt-4 text-muted-foreground">
-							Official libraries for JavaScript, Python, Go, Ruby,
-							and PHP. Or just use cURL.
-						</p>
-					</div>
-					<div className="mx-auto mt-10 flex max-w-md flex-wrap items-center justify-center gap-4">
-						{[
-							'JavaScript',
-							'Python',
-							'Go',
-							'Ruby',
-							'PHP',
-							'cURL'
-						].map(lang => (
-							<Link
-								key={lang}
-								href={`/docs/sdks/${lang.toLowerCase()}`}
-								className="cursor-pointer rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-							>
-								{lang}
-							</Link>
-						))}
-					</div>
-					<div className="mx-auto mt-8 max-w-2xl text-center">
-						<p className="text-sm text-muted-foreground">
-							Plus integration guides for 30+ frameworks and
-							platforms including Next.js, React, Vue, Django,
-							Rails, Laravel, AWS Lambda, and more.
-						</p>
-						<Link
-							href="/integrations"
-							className="mt-3 inline-block cursor-pointer text-sm font-medium text-primary transition-colors hover:text-primary/80"
-						>
-							Browse all integrations &rarr;
-						</Link>
-					</div>
-				</div>
-			</section>
+			<SdkShowcase />
 
 			{/* CTA */}
 			<section className="border-t border-border py-20 md:py-28">

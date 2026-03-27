@@ -1,0 +1,289 @@
+---
+title: Rust
+description: Use ScreenshotAPI from Rust with the reqwest HTTP client.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+These examples use [reqwest](https://crates.io/crates/reqwest), the most popular HTTP client for Rust. Add it to your `Cargo.toml`:
+
+```toml
+[dependencies]
+reqwest = { version = "0.12", features = ["blocking"] }
+tokio = { version = "1", features = ["full"] }
+```
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```rust
+use std::env;
+use std::fs;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let api_key = env::var("SCREENSHOTAPI_KEY")?;
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get("https://screenshotapi.to/api/v1/screenshot")
+        .query(&[("url", "https://example.com")])
+        .header("x-api-key", &api_key)
+        .send()
+        .await?
+        .error_for_status()?;
+
+    let credits = response
+        .headers()
+        .get("x-credits-remaining")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("unknown");
+    println!("Credits remaining: {credits}");
+
+    let bytes = response.bytes().await?;
+    fs::write("screenshot.png", &bytes)?;
+
+    Ok(())
+}
+```
+
+</Step>
+
+</Steps>
+
+## Client Struct
+
+A reusable client with all screenshot options:
+
+```rust
+use reqwest::header::HeaderMap;
+use std::collections::HashMap;
+
+pub struct ScreenshotAPI {
+    api_key: String,
+    base_url: String,
+    client: reqwest::Client,
+}
+
+pub struct ScreenshotResult {
+    pub content: Vec<u8>,
+    pub content_type: String,
+    pub credits_remaining: i32,
+    pub screenshot_id: String,
+    pub duration_ms: i32,
+}
+
+#[derive(Default)]
+pub struct CaptureOptions {
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub full_page: bool,
+    pub format: Option<String>,
+    pub quality: Option<u32>,
+    pub color_scheme: Option<String>,
+    pub wait_until: Option<String>,
+    pub wait_for_selector: Option<String>,
+    pub delay: Option<u32>,
+}
+
+impl ScreenshotAPI {
+    pub fn new(api_key: impl Into<String>) -> Self {
+        Self {
+            api_key: api_key.into(),
+            base_url: "https://screenshotapi.to".into(),
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub async fn capture(
+        &self,
+        url: &str,
+        opts: CaptureOptions,
+    ) -> Result<ScreenshotResult, Box<dyn std::error::Error>> {
+        let mut params: Vec<(&str, String)> = vec![("url", url.to_string())];
+
+        if let Some(w) = opts.width { params.push(("width", w.to_string())); }
+        if let Some(h) = opts.height { params.push(("height", h.to_string())); }
+        if opts.full_page { params.push(("fullPage", "true".into())); }
+        if let Some(ref f) = opts.format { params.push(("type", f.clone())); }
+        if let Some(q) = opts.quality { params.push(("quality", q.to_string())); }
+        if let Some(ref cs) = opts.color_scheme { params.push(("colorScheme", cs.clone())); }
+        if let Some(ref wu) = opts.wait_until { params.push(("waitUntil", wu.clone())); }
+        if let Some(ref ws) = opts.wait_for_selector { params.push(("waitForSelector", ws.clone())); }
+        if let Some(d) = opts.delay { params.push(("delay", d.to_string())); }
+
+        let response = self
+            .client
+            .get(format!("{}/api/v1/screenshot", self.base_url))
+            .query(&params)
+            .header("x-api-key", &self.api_key)
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let headers = response.headers().clone();
+
+        Ok(ScreenshotResult {
+            content: response.bytes().await?.to_vec(),
+            content_type: header_str(&headers, "content-type")
+                .unwrap_or("image/png".into()),
+            credits_remaining: header_int(&headers, "x-credits-remaining"),
+            screenshot_id: header_str(&headers, "x-screenshot-id")
+                .unwrap_or_default(),
+            duration_ms: header_int(&headers, "x-duration-ms"),
+        })
+    }
+}
+
+fn header_str(headers: &HeaderMap, name: &str) -> Option<String> {
+    headers.get(name)?.to_str().ok().map(String::from)
+}
+
+fn header_int(headers: &HeaderMap, name: &str) -> i32 {
+    header_str(headers, name)
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0)
+}
+```
+
+### Usage
+
+```rust
+use std::fs;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let api = ScreenshotAPI::new(std::env::var("SCREENSHOTAPI_KEY")?);
+
+    let result = api.capture("https://github.com", CaptureOptions {
+        width: Some(1280),
+        height: Some(720),
+        format: Some("webp".into()),
+        quality: Some(85),
+        ..Default::default()
+    }).await?;
+
+    fs::write("github.webp", &result.content)?;
+    println!("Credits remaining: {}", result.credits_remaining);
+    println!("Duration: {}ms", result.duration_ms);
+
+    Ok(())
+}
+```
+
+## Common Patterns
+
+### Batch Screenshots
+
+Capture multiple URLs concurrently with `tokio::join!`:
+
+```rust
+use futures::future::join_all;
+use std::fs;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let api = ScreenshotAPI::new(std::env::var("SCREENSHOTAPI_KEY")?);
+
+    let urls = vec![
+        "https://example.com",
+        "https://github.com",
+        "https://news.ycombinator.com",
+    ];
+
+    let tasks: Vec<_> = urls
+        .iter()
+        .enumerate()
+        .map(|(i, url)| {
+            let api = &api;
+            async move {
+                match api.capture(url, CaptureOptions::default()).await {
+                    Ok(result) => {
+                        let filename = format!("screenshot-{i}.png");
+                        fs::write(&filename, &result.content).ok();
+                        println!("✓ {url} → {filename}");
+                    }
+                    Err(e) => eprintln!("✗ {url}: {e}"),
+                }
+            }
+        })
+        .collect();
+
+    join_all(tasks).await;
+    Ok(())
+}
+```
+
+### Axum Handler
+
+Serve screenshots in an Axum web application:
+
+```rust
+use axum::{extract::Query, http::StatusCode, response::IntoResponse};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct ScreenshotParams {
+    url: String,
+}
+
+async fn screenshot_handler(
+    Query(params): Query<ScreenshotParams>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let api = ScreenshotAPI::new(std::env::var("SCREENSHOTAPI_KEY").unwrap());
+
+    let result = api
+        .capture(&params.url, CaptureOptions {
+            format: Some("webp".into()),
+            quality: Some(80),
+            ..Default::default()
+        })
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    Ok((
+        [(axum::http::header::CONTENT_TYPE, result.content_type),
+         (axum::http::header::CACHE_CONTROL, "public, max-age=3600".into())],
+        result.content,
+    ))
+}
+```
+
+## Error Handling
+
+```rust
+match api.capture("https://example.com", CaptureOptions::default()).await {
+    Ok(result) => {
+        std::fs::write("screenshot.png", &result.content)?;
+    }
+    Err(e) => {
+        let msg = e.to_string();
+        if msg.contains("402") {
+            eprintln!("Out of credits — purchase more at screenshotapi.to");
+        } else if msg.contains("403") {
+            eprintln!("Invalid API key — check your configuration");
+        } else {
+            eprintln!("Screenshot failed: {msg}");
+        }
+    }
+}
+```

@@ -1,4 +1,4 @@
 {
 	"title": "SDKs",
-	"pages": ["javascript", "python", "go", "ruby", "php", "curl"]
+	"pages": ["javascript", "python", "go", "ruby", "php", "java", "csharp", "elixir", "rust", "curl"]
 }

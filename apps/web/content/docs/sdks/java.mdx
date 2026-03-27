@@ -1,0 +1,246 @@
+---
+title: Java
+description: Use ScreenshotAPI from Java with the built-in HttpClient.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+These examples use Java's built-in `HttpClient` (Java 11+). No external dependencies are required.
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```java
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class Screenshot {
+    public static void main(String[] args) throws Exception {
+        String apiKey = System.getenv("SCREENSHOTAPI_KEY");
+
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("https://screenshotapi.to/api/v1/screenshot?url=https://example.com"))
+            .header("x-api-key", apiKey)
+            .GET()
+            .build();
+
+        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+        if (response.statusCode() != 200) {
+            System.err.println("Error " + response.statusCode() + ": " + new String(response.body()));
+            System.exit(1);
+        }
+
+        Files.write(Path.of("screenshot.png"), response.body());
+        System.out.println("Credits remaining: " +
+            response.headers().firstValue("x-credits-remaining").orElse("unknown"));
+    }
+}
+```
+
+</Step>
+
+</Steps>
+
+## Client Class
+
+A reusable client with all screenshot options:
+
+```java
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class ScreenshotAPI {
+    private final String apiKey;
+    private final String baseUrl;
+    private final HttpClient client;
+
+    public ScreenshotAPI(String apiKey) {
+        this(apiKey, "https://screenshotapi.to");
+    }
+
+    public ScreenshotAPI(String apiKey, String baseUrl) {
+        this.apiKey = apiKey;
+        this.baseUrl = baseUrl;
+        this.client = HttpClient.newHttpClient();
+    }
+
+    public record ScreenshotResult(
+        byte[] content,
+        String contentType,
+        int creditsRemaining,
+        String screenshotId,
+        int durationMs
+    ) {}
+
+    public ScreenshotResult capture(String url) throws Exception {
+        return capture(url, Map.of());
+    }
+
+    public ScreenshotResult capture(String url, Map<String, String> options) throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("url", url);
+        params.putAll(options);
+
+        String query = params.entrySet().stream()
+            .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "=" +
+                       URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+            .reduce((a, b) -> a + "&" + b)
+            .orElse("");
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + "/api/v1/screenshot?" + query))
+            .header("x-api-key", apiKey)
+            .GET()
+            .build();
+
+        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException(
+                "Screenshot failed (" + response.statusCode() + "): " + new String(response.body()));
+        }
+
+        return new ScreenshotResult(
+            response.body(),
+            response.headers().firstValue("content-type").orElse("image/png"),
+            Integer.parseInt(response.headers().firstValue("x-credits-remaining").orElse("0")),
+            response.headers().firstValue("x-screenshot-id").orElse(""),
+            Integer.parseInt(response.headers().firstValue("x-duration-ms").orElse("0"))
+        );
+    }
+}
+```
+
+### Usage
+
+```java
+ScreenshotAPI api = new ScreenshotAPI(System.getenv("SCREENSHOTAPI_KEY"));
+
+ScreenshotAPI.ScreenshotResult result = api.capture("https://github.com", Map.of(
+    "width", "1280",
+    "height", "720",
+    "type", "webp",
+    "quality", "85"
+));
+
+Files.write(Path.of("github.webp"), result.content());
+System.out.println("Credits remaining: " + result.creditsRemaining());
+System.out.println("Duration: " + result.durationMs() + "ms");
+```
+
+## Common Patterns
+
+### Batch Screenshots
+
+Process multiple URLs concurrently with virtual threads (Java 21+):
+
+```java
+import java.util.List;
+import java.util.concurrent.StructuredTaskScope;
+
+List<String> urls = List.of(
+    "https://example.com",
+    "https://github.com",
+    "https://news.ycombinator.com"
+);
+
+try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
+    List<StructuredTaskScope.Subtask<ScreenshotAPI.ScreenshotResult>> tasks = urls.stream()
+        .map(url -> scope.fork(() -> api.capture(url)))
+        .toList();
+
+    scope.join();
+
+    for (int i = 0; i < tasks.size(); i++) {
+        ScreenshotAPI.ScreenshotResult result = tasks.get(i).get();
+        Files.write(Path.of("screenshot-" + i + ".png"), result.content());
+        System.out.println("✓ " + urls.get(i));
+    }
+}
+```
+
+### Spring Boot Controller
+
+Serve screenshots in a Spring Boot application:
+
+```java
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class ScreenshotController {
+    private final ScreenshotAPI api;
+
+    public ScreenshotController() {
+        this.api = new ScreenshotAPI(System.getenv("SCREENSHOTAPI_KEY"));
+    }
+
+    @GetMapping("/screenshot")
+    public ResponseEntity<byte[]> screenshot(@RequestParam String url) {
+        try {
+            ScreenshotAPI.ScreenshotResult result = api.capture(url, Map.of(
+                "type", "webp",
+                "quality", "80"
+            ));
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(result.contentType()))
+                .header("Cache-Control", "public, max-age=3600")
+                .body(result.content());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+```
+
+## Error Handling
+
+```java
+try {
+    ScreenshotAPI.ScreenshotResult result = api.capture("https://example.com");
+} catch (RuntimeException e) {
+    String message = e.getMessage();
+    if (message.contains("402")) {
+        System.err.println("Out of credits — purchase more at screenshotapi.to");
+    } else if (message.contains("403")) {
+        System.err.println("Invalid API key — check your configuration");
+    } else {
+        System.err.println("Screenshot failed: " + message);
+    }
+}
+```

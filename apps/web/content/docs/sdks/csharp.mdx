@@ -1,0 +1,284 @@
+---
+title: C# / .NET
+description: Use ScreenshotAPI from C# with the built-in HttpClient.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+These examples use the built-in `HttpClient` from .NET 6+. No external packages are required.
+
+## Quick Start
+
+<Steps>
+
+<Step>
+
+### Set your API key
+
+```bash
+export SCREENSHOTAPI_KEY="sk_live_your_key_here"
+```
+
+</Step>
+
+<Step>
+
+### Take a screenshot
+
+```csharp
+using System.Net.Http.Headers;
+using System.Web;
+
+var apiKey = Environment.GetEnvironmentVariable("SCREENSHOTAPI_KEY")!;
+
+using var client = new HttpClient();
+client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+
+var query = HttpUtility.ParseQueryString(string.Empty);
+query["url"] = "https://example.com";
+
+var response = await client.GetAsync(
+    $"https://screenshotapi.to/api/v1/screenshot?{query}");
+response.EnsureSuccessStatusCode();
+
+var bytes = await response.Content.ReadAsByteArrayAsync();
+await File.WriteAllBytesAsync("screenshot.png", bytes);
+
+Console.WriteLine($"Credits remaining: {response.Headers.GetValues("x-credits-remaining").First()}");
+```
+
+</Step>
+
+</Steps>
+
+## Client Class
+
+A reusable client with full options support:
+
+```csharp
+using System.Net.Http.Headers;
+using System.Web;
+
+public record ScreenshotResult(
+    byte[] Content,
+    string ContentType,
+    int CreditsRemaining,
+    string ScreenshotId,
+    int DurationMs
+);
+
+public record ScreenshotOptions
+{
+    public required string Url { get; init; }
+    public int? Width { get; init; }
+    public int? Height { get; init; }
+    public bool FullPage { get; init; }
+    public string Format { get; init; } = "png";
+    public int? Quality { get; init; }
+    public string? ColorScheme { get; init; }
+    public string? WaitUntil { get; init; }
+    public string? WaitForSelector { get; init; }
+    public int? Delay { get; init; }
+}
+
+public class ScreenshotAPI : IDisposable
+{
+    private readonly HttpClient _client;
+    private readonly string _baseUrl;
+
+    public ScreenshotAPI(string apiKey, string baseUrl = "https://screenshotapi.to")
+    {
+        _baseUrl = baseUrl;
+        _client = new HttpClient();
+        _client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+    }
+
+    public async Task<ScreenshotResult> CaptureAsync(ScreenshotOptions options)
+    {
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["url"] = options.Url;
+
+        if (options.Width.HasValue) query["width"] = options.Width.Value.ToString();
+        if (options.Height.HasValue) query["height"] = options.Height.Value.ToString();
+        if (options.FullPage) query["fullPage"] = "true";
+        if (options.Format != "png") query["type"] = options.Format;
+        if (options.Quality.HasValue) query["quality"] = options.Quality.Value.ToString();
+        if (options.ColorScheme is not null) query["colorScheme"] = options.ColorScheme;
+        if (options.WaitUntil is not null) query["waitUntil"] = options.WaitUntil;
+        if (options.WaitForSelector is not null) query["waitForSelector"] = options.WaitForSelector;
+        if (options.Delay.HasValue) query["delay"] = options.Delay.Value.ToString();
+
+        var response = await _client.GetAsync($"{_baseUrl}/api/v1/screenshot?{query}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Screenshot failed ({(int)response.StatusCode}): {error}");
+        }
+
+        int GetHeader(string name) =>
+            int.TryParse(
+                response.Headers.TryGetValues(name, out var vals) ? vals.First() : "0",
+                out var v) ? v : 0;
+
+        string GetHeaderStr(string name) =>
+            response.Headers.TryGetValues(name, out var vals) ? vals.First() : "";
+
+        return new ScreenshotResult(
+            Content: await response.Content.ReadAsByteArrayAsync(),
+            ContentType: response.Content.Headers.ContentType?.MediaType ?? "image/png",
+            CreditsRemaining: GetHeader("x-credits-remaining"),
+            ScreenshotId: GetHeaderStr("x-screenshot-id"),
+            DurationMs: GetHeader("x-duration-ms")
+        );
+    }
+
+    public void Dispose() => _client.Dispose();
+}
+```
+
+### Usage
+
+```csharp
+using var api = new ScreenshotAPI(Environment.GetEnvironmentVariable("SCREENSHOTAPI_KEY")!);
+
+var result = await api.CaptureAsync(new ScreenshotOptions
+{
+    Url = "https://github.com",
+    Width = 1280,
+    Height = 720,
+    Format = "webp",
+    Quality = 85
+});
+
+await File.WriteAllBytesAsync("github.webp", result.Content);
+Console.WriteLine($"Credits remaining: {result.CreditsRemaining}");
+Console.WriteLine($"Duration: {result.DurationMs}ms");
+```
+
+## Common Patterns
+
+### Batch Screenshots
+
+Capture multiple URLs concurrently:
+
+```csharp
+var urls = new[] {
+    "https://example.com",
+    "https://github.com",
+    "https://news.ycombinator.com"
+};
+
+var tasks = urls.Select(async (url, i) =>
+{
+    try
+    {
+        var result = await api.CaptureAsync(new ScreenshotOptions { Url = url });
+        await File.WriteAllBytesAsync($"screenshot-{i}.png", result.Content);
+        Console.WriteLine($"✓ {url}");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"✗ {url}: {ex.Message}");
+    }
+});
+
+await Task.WhenAll(tasks);
+```
+
+### ASP.NET Minimal API
+
+Serve screenshots in an ASP.NET application:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+using var screenshotApi = new ScreenshotAPI(
+    Environment.GetEnvironmentVariable("SCREENSHOTAPI_KEY")!);
+
+app.MapGet("/screenshot", async (string url) =>
+{
+    try
+    {
+        var result = await screenshotApi.CaptureAsync(new ScreenshotOptions
+        {
+            Url = url,
+            Format = "webp",
+            Quality = 80
+        });
+
+        return Results.File(result.Content, result.ContentType);
+    }
+    catch
+    {
+        return Results.Problem("Screenshot failed", statusCode: 502);
+    }
+});
+
+app.Run();
+```
+
+### ASP.NET Controller
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+[ApiController]
+[Route("[controller]")]
+public class ScreenshotController : ControllerBase
+{
+    private readonly ScreenshotAPI _api;
+
+    public ScreenshotController()
+    {
+        _api = new ScreenshotAPI(Environment.GetEnvironmentVariable("SCREENSHOTAPI_KEY")!);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Get([FromQuery] string url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return BadRequest(new { error = "url is required" });
+
+        try
+        {
+            var result = await _api.CaptureAsync(new ScreenshotOptions
+            {
+                Url = url,
+                Format = "webp",
+                Quality = 80
+            });
+
+            Response.Headers["Cache-Control"] = "public, max-age=3600";
+            return File(result.Content, result.ContentType);
+        }
+        catch
+        {
+            return StatusCode(502, new { error = "Screenshot failed" });
+        }
+    }
+}
+```
+
+## Error Handling
+
+```csharp
+try
+{
+    var result = await api.CaptureAsync(new ScreenshotOptions { Url = "https://example.com" });
+}
+catch (HttpRequestException ex)
+{
+    if (ex.Message.Contains("402"))
+        Console.Error.WriteLine("Out of credits — purchase more at screenshotapi.to");
+    else if (ex.Message.Contains("403"))
+        Console.Error.WriteLine("Invalid API key — check your configuration");
+    else
+        Console.Error.WriteLine($"Screenshot failed: {ex.Message}");
+}
+```
