@@ -187,16 +187,6 @@ function Footer() {
 						<ul className="mt-3 space-y-2">
 							<li>
 								<a
-									href="https://github.com/miketromba/screenshot-service"
-									target="_blank"
-									rel="noopener noreferrer"
-									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-								>
-									GitHub
-								</a>
-							</li>
-							<li>
-								<a
 									href="mailto:support@screenshotapi.to"
 									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
 								>
