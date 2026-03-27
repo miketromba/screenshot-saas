@@ -1,6 +1,6 @@
 ---
 title: Webhooks
-description: Receive real-time notifications when screenshots complete, and learn how ScreenshotAPI processes payment webhooks.
+description: Receive real-time notifications when screenshots complete.
 ---
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
@@ -8,16 +8,7 @@ import { Callout } from 'fumadocs-ui/components/callout'
 
 ## Overview
 
-ScreenshotAPI supports two kinds of webhooks:
-
-1. **Customer webhooks** — You register endpoints to receive real-time notifications (e.g., when a screenshot completes).
-2. **Payment webhooks** — Internal Polar webhooks that process credit purchases and subscription events.
-
----
-
-## Customer Webhooks
-
-Register your own HTTP endpoints to receive event notifications from ScreenshotAPI. This is useful for asynchronous workflows where you want to be notified when a screenshot is ready rather than polling for results.
+Register your own HTTP endpoints to receive real-time event notifications from ScreenshotAPI. This is useful for asynchronous workflows where you want to be notified when a screenshot is ready rather than polling for results.
 
 ### Register a Webhook Endpoint
 
@@ -155,82 +146,3 @@ def verify_webhook(body: bytes, signature: str, secret: str) -> bool:
 Always verify the signature before processing a webhook delivery to prevent spoofed requests.
 </Callout>
 
----
-
-## Payment Webhooks (Polar)
-
-## Webhook Endpoint
-
-```
-POST /api/webhooks/polar
-```
-
-This endpoint receives events from Polar. All events are verified using the [Standard Webhooks](https://www.standardwebhooks.com/) signature verification method with the `webhook-id`, `webhook-timestamp`, and `webhook-signature` headers.
-
-## Handled Events
-
-### `checkout.updated`
-
-Fired when a checkout session is updated. We process this event when the checkout `status` becomes `succeeded`.
-
-**Processing logic:**
-
-1. Verify the webhook signature using the Polar webhook secret.
-2. Check that the event type is `checkout.updated` and status is `succeeded`.
-3. Extract `userId`, `credits`, and `packId` from the checkout metadata.
-4. Add the specified number of credits to the user's account.
-5. Record a `purchase` transaction in the credit history.
-
-## Security
-
-### Signature Verification
-
-Every incoming webhook request is verified using the Standard Webhooks specification. The following headers are validated:
-
-```
-webhook-id: msg_abc123
-webhook-timestamp: 1234567890
-webhook-signature: v1,abc123def456...
-```
-
-If the signature is invalid, the webhook returns a `403` error and the event is discarded. This prevents replay attacks and ensures events genuinely originate from Polar.
-
-### Error Responses
-
-| Status | Body | Description |
-|---|---|---|
-| `403` | `{"error": "Invalid webhook signature"}` | Signature verification failed |
-
-### Success Response
-
-```json
-{
-  "received": true
-}
-```
-
-## Webhook Flow
-
-Here's the complete payment flow involving webhooks:
-
-1. User selects a credit pack in the dashboard.
-2. Frontend calls `POST /api/v1/credits/purchase` with the `packId`.
-3. Server creates a Polar Checkout session with user metadata.
-4. User is redirected to Polar Checkout to complete payment.
-5. After successful payment, Polar sends a `checkout.updated` event to our webhook.
-6. Webhook handler verifies the signature, extracts the metadata, and adds credits.
-7. User is redirected back to the dashboard where their updated balance is visible.
-
-## Testing Webhooks Locally
-
-If you're developing against the ScreenshotAPI platform or running it locally, you can use a tunneling service like ngrok to forward webhook events:
-
-```bash
-ngrok http 3001
-```
-
-Then register the ngrok URL as your webhook endpoint in the Polar dashboard (e.g., `https://your-id.ngrok.io/api/webhooks/polar`). Set the `POLAR_WEBHOOK_SECRET` environment variable to match the secret configured in Polar.
-
-## Idempotency
-
-Webhook handlers are designed to be idempotent. If the same event is delivered multiple times (which Polar may do for reliability), credits are only added once because each transaction references the unique Polar checkout ID.
