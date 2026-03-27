@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LogoIcon } from '@/components/logo'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useUser } from '@/hooks/use-queries'
 import { createClient } from '@/lib/supabase/client'
 
@@ -92,6 +93,7 @@ export default function DashboardLayout({
 							{user?.email ?? '...'}
 						</p>
 					</div>
+					<ThemeToggle />
 					<button
 						type="button"
 						onClick={handleSignOut}

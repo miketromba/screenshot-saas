@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Logo } from '@/components/logo'
+import { MarketingNav } from '@/components/marketing/nav'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 function Header() {
 	return (
@@ -8,40 +10,12 @@ function Header() {
 			<div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
 				<div className="flex items-center gap-8">
 					<Logo />
-					<nav className="hidden items-center gap-6 md:flex">
-						<Link
-							href="/use-cases"
-							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Use Cases
-						</Link>
-						<Link
-							href="/compare"
-							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Compare
-						</Link>
-						<Link
-							href="/integrations"
-							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Integrations
-						</Link>
-						<Link
-							href="/pricing"
-							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Pricing
-						</Link>
-						<Link
-							href="/docs"
-							className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Docs
-						</Link>
+					<nav className="hidden md:block">
+						<MarketingNav />
 					</nav>
 				</div>
 				<div className="flex items-center gap-3">
+					<ThemeToggle />
 					<Link
 						href="/sign-in"
 						className="cursor-pointer text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
