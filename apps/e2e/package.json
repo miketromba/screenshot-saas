@@ -1,0 +1,11 @@
+{
+	"name": "@screenshot-saas/e2e",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"e2e": "bun test src/"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.11"
+	}
+}

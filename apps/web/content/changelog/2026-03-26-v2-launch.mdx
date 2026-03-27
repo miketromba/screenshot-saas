@@ -1,0 +1,56 @@
+---
+title: "ScreenshotAPI v2: Competitive Pricing, Feature Parity, and DX-Driven Differentiation"
+description: "Complete product overhaul — new subscription pricing, 15+ new features, comprehensive documentation, and the best developer experience in the screenshot API market."
+lastUpdated: "2026-03-26"
+breadcrumbs:
+  - label: Home
+    href: /
+  - label: Changelog
+    href: /changelog
+  - label: v2 Launch
+---
+
+### New Pricing Model
+
+- **Free tier increased from 5 to 200 screenshots/month** — generous enough to build and demo a full integration
+- **Subscription tiers**: Starter ($19/mo), Growth ($49/mo), Scale ($149/mo) with annual billing at 20% off
+- **Credit packs retained** as a secondary option for irregular usage at dramatically reduced prices
+- **Overage billing** on all subscription plans — never get cut off mid-workflow
+- **Polar integration** for seamless subscription management and metered billing
+
+### New Capture Features
+
+- **Ad blocking** — removes ads from pages before capture
+- **Cookie banner removal** — auto-dismisses cookie consent dialogs
+- **PDF export** — `type=pdf` for A4 PDF generation
+- **HTML rendering** — render raw HTML via POST body
+- **Stealth mode** — masks headless browser fingerprints for bot-protected sites
+- **CSS/JS injection** — custom stylesheets and scripts before capture
+- **Retina/HiDPI** — 2x and 3x device pixel ratio support
+- **Timezone emulation** — capture sites as they appear in specific timezones
+- **Locale emulation** — set Accept-Language for localized captures
+- **Google Fonts preloading** — ensures accurate font rendering by preloading all Google Fonts
+- **Element removal** — remove specific elements by CSS selector before capture
+- **Popup/overlay removal** — automatic removal of modals, popups, and overlays
+- **Device mockup frames** — wrap screenshots in browser, iPhone, or MacBook frames
+- **IP geolocation** — set the browser's reported geolocation for location-aware captures
+
+### Infrastructure & Integration
+
+- **Response caching** — cache by URL + options hash with configurable TTL
+- **Webhooks** — async screenshot completion notifications with HMAC signatures
+- **S3 upload** — direct-to-S3 with user-provided credentials
+- **Signed URLs** — HMAC-signed request URLs for secure client-side usage
+
+### Developer Experience
+
+- **Interactive API explorer** in documentation — try every parameter live
+- **Sharable playground URLs** — serialize configuration into URL query params
+- **Public status page** with real-time health monitoring
+- **Public changelog** (you're reading it)
+- **34 framework integration guides** — Next.js, React, Vue, Django, Rails, Laravel, and more
+- **16 competitor comparison pages** with detailed feature-by-feature analysis
+- **32 blog posts** covering screenshot API use cases and best practices
+- **10 use-case pages** with complete implementation guides
+- **Error messages with fix suggestions** — every error includes actionable remediation steps
+- **Single source of truth** for pricing, features, and competitor data in `@screenshot-saas/config`

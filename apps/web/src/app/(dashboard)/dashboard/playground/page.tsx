@@ -1,8 +1,15 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ImageIcon, Loader2, Play } from 'lucide-react'
-import { useState } from 'react'
+import {
+	AlertTriangle,
+	Check,
+	ImageIcon,
+	Loader2,
+	Play,
+	Share2
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { useCredits, useUser } from '@/hooks/use-queries'
 
 interface ScreenshotResult {
@@ -13,10 +20,8 @@ interface ScreenshotResult {
 	usageSource: string | null
 }
 
-export default function PlaygroundPage() {
-	const { data: credits } = useCredits()
-	const { data: user } = useUser()
-	const queryClient = useQueryClient()
+function usePlaygroundParams() {
+	const [initialized, setInitialized] = useState(false)
 
 	const [url, setUrl] = useState('')
 	const [width, setWidth] = useState('1280')
@@ -36,24 +41,53 @@ export default function PlaygroundPage() {
 	const [devicePixelRatio, setDevicePixelRatio] = useState('')
 	const [timezone, setTimezone] = useState('')
 	const [locale, setLocale] = useState('')
+	const [preloadFonts, setPreloadFonts] = useState(false)
+	const [removeElements, setRemoveElements] = useState('')
+	const [removePopups, setRemovePopups] = useState(false)
+	const [mockupDevice, setMockupDevice] = useState('')
 
-	const [loading, setLoading] = useState(false)
-	const [result, setResult] = useState<ScreenshotResult | null>(null)
-	const [error, setError] = useState<string | null>(null)
+	useEffect(() => {
+		if (initialized) return
+		const params = new URLSearchParams(window.location.search)
+		if (params.get('url')) setUrl(params.get('url')!)
+		if (params.get('width')) setWidth(params.get('width')!)
+		if (params.get('height')) setHeight(params.get('height')!)
+		if (params.get('type'))
+			setFormat(params.get('type') as 'png' | 'jpeg' | 'webp' | 'pdf')
+		if (params.get('quality')) setQuality(params.get('quality')!)
+		if (params.get('fullPage') === 'true') setFullPage(true)
+		if (params.get('colorScheme'))
+			setColorScheme(params.get('colorScheme') as 'light' | 'dark')
+		if (params.get('waitUntil')) setWaitUntil(params.get('waitUntil')!)
+		if (params.get('waitForSelector'))
+			setWaitForSelector(params.get('waitForSelector')!)
+		if (params.get('delay')) setDelay(params.get('delay')!)
+		if (params.get('blockAds') === 'true') setBlockAds(true)
+		if (params.get('removeCookieBanners') === 'true')
+			setRemoveCookieBanners(true)
+		if (params.get('stealthMode') === 'true') setStealthMode(true)
+		if (params.get('cssInject')) setCssInject(params.get('cssInject')!)
+		if (params.get('jsInject')) setJsInject(params.get('jsInject')!)
+		if (params.get('devicePixelRatio'))
+			setDevicePixelRatio(params.get('devicePixelRatio')!)
+		if (params.get('timezone')) setTimezone(params.get('timezone')!)
+		if (params.get('locale')) setLocale(params.get('locale')!)
+		if (params.get('preloadFonts') === 'true') setPreloadFonts(true)
+		if (params.get('removeElements'))
+			setRemoveElements(params.get('removeElements')!)
+		if (params.get('removePopups') === 'true') setRemovePopups(true)
+		if (params.get('mockupDevice'))
+			setMockupDevice(params.get('mockupDevice')!)
+		setInitialized(true)
+	}, [initialized])
 
-	const sub = user?.subscription
-
-	async function handleSubmit(e: React.FormEvent) {
-		e.preventDefault()
-		setLoading(true)
-		setError(null)
-		setResult(null)
-
-		const params = new URLSearchParams({ url })
-		if (width) params.set('width', width)
-		if (height) params.set('height', height)
-		if (format) params.set('type', format)
-		if (quality && format !== 'png' && format !== 'pdf')
+	const buildShareUrl = useCallback(() => {
+		const params = new URLSearchParams()
+		if (url) params.set('url', url)
+		if (width && width !== '1280') params.set('width', width)
+		if (height && height !== '720') params.set('height', height)
+		if (format !== 'png') params.set('type', format)
+		if (quality && quality !== '80' && format !== 'png' && format !== 'pdf')
 			params.set('quality', quality)
 		if (fullPage) params.set('fullPage', 'true')
 		if (colorScheme) params.set('colorScheme', colorScheme)
@@ -68,10 +102,192 @@ export default function PlaygroundPage() {
 		if (devicePixelRatio) params.set('devicePixelRatio', devicePixelRatio)
 		if (timezone) params.set('timezone', timezone)
 		if (locale) params.set('locale', locale)
+		if (preloadFonts) params.set('preloadFonts', 'true')
+		if (removeElements) params.set('removeElements', removeElements)
+		if (removePopups) params.set('removePopups', 'true')
+		if (mockupDevice) params.set('mockupDevice', mockupDevice)
+		const qs = params.toString()
+		return `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ''}`
+	}, [
+		url,
+		width,
+		height,
+		format,
+		quality,
+		fullPage,
+		colorScheme,
+		waitUntil,
+		waitForSelector,
+		delay,
+		blockAds,
+		removeCookieBanners,
+		stealthMode,
+		cssInject,
+		jsInject,
+		devicePixelRatio,
+		timezone,
+		locale,
+		preloadFonts,
+		removeElements,
+		removePopups,
+		mockupDevice
+	])
+
+	useEffect(() => {
+		if (!initialized) return
+		const shareUrl = buildShareUrl()
+		const currentUrl =
+			window.location.origin +
+			window.location.pathname +
+			window.location.search
+		if (shareUrl !== currentUrl) {
+			window.history.replaceState(null, '', shareUrl)
+		}
+	}, [initialized, buildShareUrl])
+
+	return {
+		url,
+		setUrl,
+		width,
+		setWidth,
+		height,
+		setHeight,
+		format,
+		setFormat,
+		quality,
+		setQuality,
+		fullPage,
+		setFullPage,
+		colorScheme,
+		setColorScheme,
+		waitUntil,
+		setWaitUntil,
+		waitForSelector,
+		setWaitForSelector,
+		delay,
+		setDelay,
+		blockAds,
+		setBlockAds,
+		removeCookieBanners,
+		setRemoveCookieBanners,
+		stealthMode,
+		setStealthMode,
+		cssInject,
+		setCssInject,
+		jsInject,
+		setJsInject,
+		devicePixelRatio,
+		setDevicePixelRatio,
+		timezone,
+		setTimezone,
+		locale,
+		setLocale,
+		preloadFonts,
+		setPreloadFonts,
+		removeElements,
+		setRemoveElements,
+		removePopups,
+		setRemovePopups,
+		mockupDevice,
+		setMockupDevice,
+		buildShareUrl
+	}
+}
+
+export default function PlaygroundPage() {
+	const { data: credits } = useCredits()
+	const { data: user } = useUser()
+	const queryClient = useQueryClient()
+
+	const params = usePlaygroundParams()
+	const {
+		url,
+		setUrl,
+		width,
+		setWidth,
+		height,
+		setHeight,
+		format,
+		setFormat,
+		quality,
+		setQuality,
+		fullPage,
+		setFullPage,
+		colorScheme,
+		setColorScheme,
+		waitUntil,
+		setWaitUntil,
+		waitForSelector,
+		setWaitForSelector,
+		delay,
+		setDelay,
+		blockAds,
+		setBlockAds,
+		removeCookieBanners,
+		setRemoveCookieBanners,
+		stealthMode,
+		setStealthMode,
+		cssInject,
+		setCssInject,
+		jsInject,
+		setJsInject,
+		devicePixelRatio,
+		setDevicePixelRatio,
+		timezone,
+		setTimezone,
+		locale,
+		setLocale,
+		preloadFonts,
+		setPreloadFonts,
+		removeElements,
+		setRemoveElements,
+		removePopups,
+		setRemovePopups,
+		mockupDevice,
+		setMockupDevice,
+		buildShareUrl
+	} = params
+
+	const [loading, setLoading] = useState(false)
+	const [result, setResult] = useState<ScreenshotResult | null>(null)
+	const [error, setError] = useState<string | null>(null)
+	const [copied, setCopied] = useState(false)
+
+	const sub = user?.subscription
+
+	async function handleSubmit(e: React.FormEvent) {
+		e.preventDefault()
+		setLoading(true)
+		setError(null)
+		setResult(null)
+
+		const qp = new URLSearchParams({ url })
+		if (width) qp.set('width', width)
+		if (height) qp.set('height', height)
+		if (format) qp.set('type', format)
+		if (quality && format !== 'png' && format !== 'pdf')
+			qp.set('quality', quality)
+		if (fullPage) qp.set('fullPage', 'true')
+		if (colorScheme) qp.set('colorScheme', colorScheme)
+		if (waitUntil) qp.set('waitUntil', waitUntil)
+		if (waitForSelector) qp.set('waitForSelector', waitForSelector)
+		if (delay) qp.set('delay', delay)
+		if (blockAds) qp.set('blockAds', 'true')
+		if (removeCookieBanners) qp.set('removeCookieBanners', 'true')
+		if (stealthMode) qp.set('stealthMode', 'true')
+		if (cssInject) qp.set('cssInject', cssInject)
+		if (jsInject) qp.set('jsInject', jsInject)
+		if (devicePixelRatio) qp.set('devicePixelRatio', devicePixelRatio)
+		if (timezone) qp.set('timezone', timezone)
+		if (locale) qp.set('locale', locale)
+		if (preloadFonts) qp.set('preloadFonts', 'true')
+		if (removeElements) qp.set('removeElements', removeElements)
+		if (removePopups) qp.set('removePopups', 'true')
+		if (mockupDevice) qp.set('mockupDevice', mockupDevice)
 
 		try {
 			const response = await fetch(
-				`/api/v1/playground/screenshot?${params.toString()}`
+				`/api/v1/playground/screenshot?${qp.toString()}`
 			)
 
 			if (!response.ok) {
@@ -101,6 +317,13 @@ export default function PlaygroundPage() {
 		} finally {
 			setLoading(false)
 		}
+	}
+
+	function handleShare() {
+		const shareUrl = buildShareUrl()
+		navigator.clipboard.writeText(shareUrl)
+		setCopied(true)
+		setTimeout(() => setCopied(false), 2000)
 	}
 
 	const inputClass =
@@ -164,6 +387,18 @@ export default function PlaygroundPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={handleShare}
+						className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+					>
+						{copied ? (
+							<Check className="h-3.5 w-3.5" />
+						) : (
+							<Share2 className="h-3.5 w-3.5" />
+						)}
+						{copied ? 'Copied!' : 'Share'}
+					</button>
 					{sub && (
 						<div className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm">
 							<span className="text-muted-foreground">
@@ -311,9 +546,19 @@ export default function PlaygroundPage() {
 							label="Remove Cookie Banners"
 						/>
 						<Toggle
+							checked={removePopups}
+							onChange={setRemovePopups}
+							label="Remove Popups & Overlays"
+						/>
+						<Toggle
 							checked={stealthMode}
 							onChange={setStealthMode}
 							label="Stealth Mode"
+						/>
+						<Toggle
+							checked={preloadFonts}
+							onChange={setPreloadFonts}
+							label="Preload Google Fonts"
 						/>
 
 						<div>
@@ -427,6 +672,30 @@ export default function PlaygroundPage() {
 							</div>
 							<div>
 								<label
+									htmlFor="pg-mockup"
+									className={labelClass}
+								>
+									Device Mockup
+								</label>
+								<select
+									id="pg-mockup"
+									value={mockupDevice}
+									onChange={e =>
+										setMockupDevice(e.target.value)
+									}
+									className={selectClass}
+								>
+									<option value="">None</option>
+									<option value="browser">Browser</option>
+									<option value="iphone">iPhone</option>
+									<option value="macbook">MacBook</option>
+								</select>
+							</div>
+						</div>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div>
+								<label
 									htmlFor="pg-timezone"
 									className={labelClass}
 								>
@@ -441,19 +710,40 @@ export default function PlaygroundPage() {
 									className={inputClass}
 								/>
 							</div>
+							<div>
+								<label
+									htmlFor="pg-locale"
+									className={labelClass}
+								>
+									Locale
+								</label>
+								<input
+									id="pg-locale"
+									type="text"
+									value={locale}
+									onChange={e => setLocale(e.target.value)}
+									placeholder="en-US"
+									className={inputClass}
+								/>
+							</div>
 						</div>
 
 						<div>
-							<label htmlFor="pg-locale" className={labelClass}>
-								Locale
+							<label
+								htmlFor="pg-remove-elements"
+								className={labelClass}
+							>
+								Remove Elements (comma-separated selectors)
 							</label>
 							<input
-								id="pg-locale"
+								id="pg-remove-elements"
 								type="text"
-								value={locale}
-								onChange={e => setLocale(e.target.value)}
-								placeholder="en-US"
-								className={inputClass}
+								value={removeElements}
+								onChange={e =>
+									setRemoveElements(e.target.value)
+								}
+								placeholder=".popup, #banner, .newsletter-signup"
+								className={`${inputClass} font-(family-name:--font-geist-mono)`}
 							/>
 						</div>
 

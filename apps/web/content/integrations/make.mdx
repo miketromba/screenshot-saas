@@ -234,6 +234,45 @@ Make plans have operation limits. Each module execution counts as one operation.
 
 When passing screenshots between modules, Make handles binary data natively. No base64 encoding or decoding needed for storage and email modules.
 
+## Webhook-Based Integration
+
+ScreenshotAPI supports [webhooks](/docs/api/webhooks) that push events to your Make scenario when screenshots complete. This enables non-blocking, event-driven workflows.
+
+### Setup with Make Webhooks Module
+
+1. **Add a Webhooks module** to your scenario: Custom Webhook > Create a webhook. Copy the webhook URL.
+2. **Register the webhook** with ScreenshotAPI via the [Webhooks API](/docs/api/webhooks):
+
+```bash
+curl -X POST "https://screenshotapi.to/api/v1/webhooks" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
+  -d '{
+    "url": "https://hook.make.com/YOUR_HOOK_ID",
+    "events": ["screenshot.completed"]
+  }'
+```
+
+3. **Take screenshots** via the API as usual. Each completed screenshot triggers a `screenshot.completed` event sent to your Make webhook.
+
+### Webhook Payload
+
+```json
+{
+  "event": "screenshot.completed",
+  "payload": {
+    "screenshotId": "abc123",
+    "url": "https://example.com",
+    "durationMs": 2340,
+    "source": "plan"
+  }
+}
+```
+
+### Verifying Signatures
+
+Every webhook delivery includes an `x-webhook-signature` header containing an HMAC-SHA256 signature. Use Make's HTTP module or a custom function to verify the signature matches the secret returned when you registered the endpoint.
+
 <FreeTierBanner />
 
 ## Further Reading
@@ -241,3 +280,4 @@ When passing screenshots between modules, Make handles binary data natively. No 
 - The [Zapier integration](/integrations/zapier) covers an alternative no-code platform.
 - See the [n8n integration](/integrations/n8n) for a self-hosted option.
 - The [API documentation](/docs) has the full parameter reference for all endpoints.
+- The [Webhooks documentation](/docs/api/webhooks) has full webhook setup instructions.

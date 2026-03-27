@@ -1,5 +1,6 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx'
 import type { MDXComponents } from 'mdx/types'
+import { ApiExplorer } from '@/components/api-explorer'
 import {
 	CompetitorComparison,
 	CreditPackTable,
@@ -15,7 +16,8 @@ const marketingComponents = {
 	FreeTierBanner,
 	FeatureList,
 	CompetitorComparison,
-	PricingSummary
+	PricingSummary,
+	ApiExplorer
 } satisfies MDXComponents
 
 export function getMDXComponents(components?: MDXComponents) {

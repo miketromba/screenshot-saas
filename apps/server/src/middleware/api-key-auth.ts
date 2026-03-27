@@ -1,9 +1,18 @@
 import { and, db, eq, isNull, schema } from '@screenshot-saas/db'
 import { Elysia } from 'elysia'
 import { hashApiKey } from '../lib/crypto'
+import { resolveE2EAuth } from '../services/e2e'
 
 export const apiKeyAuth = new Elysia({ name: 'api-key-auth' })
 	.derive({ as: 'scoped' }, async ({ request }) => {
+		const e2e = await resolveE2EAuth(request)
+		if (e2e) {
+			return {
+				apiKey: e2e.apiKey,
+				apiKeyUserId: e2e.userId
+			}
+		}
+
 		const authHeader = request.headers.get('authorization')
 		const xApiKey = request.headers.get('x-api-key')
 		const rawKey = xApiKey ?? authHeader?.replace('Bearer ', '')

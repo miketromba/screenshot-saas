@@ -27,6 +27,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			changeFrequency: 'weekly',
 			priority: 0.8
 		},
+		{
+			url: `${BASE_URL}/terms`,
+			lastModified: now,
+			changeFrequency: 'monthly',
+			priority: 0.3
+		},
+		{
+			url: `${BASE_URL}/privacy`,
+			lastModified: now,
+			changeFrequency: 'monthly',
+			priority: 0.3
+		},
+		{
+			url: `${BASE_URL}/changelog`,
+			lastModified: now,
+			changeFrequency: 'weekly',
+			priority: 0.6
+		},
+		{
+			url: `${BASE_URL}/status`,
+			lastModified: now,
+			changeFrequency: 'daily',
+			priority: 0.5
+		},
 		...sections.map(s => ({
 			url: `${BASE_URL}/${s}`,
 			lastModified: now,

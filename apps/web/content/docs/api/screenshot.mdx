@@ -54,6 +54,13 @@ Include your API key in one of these headers:
 | `timezone` | `string` | — | Timezone emulation (e.g. `"America/New_York"`). Overrides the browser's default timezone for the capture. |
 | `locale` | `string` | — | Locale and Accept-Language emulation (e.g. `"en-US"`). Controls the language used by the browser during the capture. |
 | `cacheTtl` | `number` | `0` | Response cache TTL in seconds. When set to a value greater than `0`, identical requests within the TTL window return a cached response. Set to `0` to disable caching. |
+| `preloadFonts` | `boolean` | `false` | Preload all Google Fonts on the page before capture. Ensures accurate font rendering by explicitly loading every font discovered in the page's stylesheets. |
+| `removeElements` | `string` | — | Comma-separated CSS selectors for elements to remove before capture. Example: `".popup, #banner, .newsletter-signup"`. Each matching element is removed from the DOM. |
+| `removePopups` | `boolean` | `false` | Automatically remove common popups, modals, overlays, and interstitials before capture. Targets elements with `position: fixed`/`sticky` and high z-index that match popup-like class names. |
+| `mockupDevice` | `string` | — | Wrap the screenshot in a device frame. Values: `"browser"` (macOS chrome), `"iphone"` (iPhone with Dynamic Island), `"macbook"` (MacBook with bezel). Output is always PNG. |
+| `geoLatitude` | `number` | — | Latitude for browser geolocation override. Must be used together with `geoLongitude`. |
+| `geoLongitude` | `number` | — | Longitude for browser geolocation override. Must be used together with `geoLatitude`. |
+| `geoAccuracy` | `number` | `100` | Accuracy in meters for the geolocation override. Only applies when `geoLatitude` and `geoLongitude` are set. |
 
 ### POST-only Body Parameters
 

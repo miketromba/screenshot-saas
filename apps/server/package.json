@@ -9,7 +9,7 @@
 	"scripts": {
 		"dev": "bun --watch src/index.ts",
 		"typecheck": "tsc --noEmit",
-		"test": "bun test",
+		"test": "bun test src/",
 		"test:integration": "bun test __integration__/",
 		"test:all": "bun run test && bun run test:integration"
 	},

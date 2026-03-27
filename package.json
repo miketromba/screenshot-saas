@@ -15,6 +15,7 @@
 		"format": "biome format --write .",
 		"typecheck": "turbo typecheck",
 		"test": "turbo test",
+		"e2e": "bun test apps/e2e/src/",
 		"db:generate": "turbo db:generate",
 		"db:generate:custom": "turbo db:generate:custom",
 		"db:migrate": "turbo db:migrate",

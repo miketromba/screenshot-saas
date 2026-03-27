@@ -150,6 +150,22 @@ function Footer() {
 						<ul className="mt-3 space-y-2">
 							<li>
 								<Link
+									href="/changelog"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Changelog
+								</Link>
+							</li>
+							<li>
+								<Link
+									href="/status"
+									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+								>
+									Status
+								</Link>
+							</li>
+							<li>
+								<Link
 									href="/terms"
 									className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
 								>

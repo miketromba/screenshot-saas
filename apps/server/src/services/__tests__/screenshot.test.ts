@@ -15,6 +15,13 @@ const mockSetExtraHTTPHeaders = mock(() => Promise.resolve())
 const mockEmulateTimezone = mock(() => Promise.resolve())
 const mockAddStyleTag = mock(() => Promise.resolve())
 const mockSetContent = mock(() => Promise.resolve())
+const mockSetGeolocation = mock(() => Promise.resolve())
+const mockPageClose = mock(() => Promise.resolve())
+const mockDollar = mock(() => Promise.resolve(null))
+const mockOverridePermissions = mock(() => Promise.resolve())
+const mockDefaultBrowserContext = mock(() => ({
+	overridePermissions: mockOverridePermissions
+}))
 const mockNewPage = mock(() =>
 	Promise.resolve({
 		setViewport: mockSetViewport,
@@ -31,12 +38,19 @@ const mockNewPage = mock(() =>
 		setExtraHTTPHeaders: mockSetExtraHTTPHeaders,
 		emulateTimezone: mockEmulateTimezone,
 		addStyleTag: mockAddStyleTag,
-		setContent: mockSetContent
+		setContent: mockSetContent,
+		setGeolocation: mockSetGeolocation,
+		close: mockPageClose,
+		$: mockDollar
 	})
 )
 const mockClose = mock(() => Promise.resolve())
 const mockLaunch = mock(() =>
-	Promise.resolve({ newPage: mockNewPage, close: mockClose })
+	Promise.resolve({
+		newPage: mockNewPage,
+		close: mockClose,
+		defaultBrowserContext: mockDefaultBrowserContext
+	})
 )
 
 mock.module('puppeteer-core', () => ({
@@ -73,6 +87,11 @@ describe('takeScreenshot', () => {
 		mockEmulateTimezone.mockReset()
 		mockAddStyleTag.mockReset()
 		mockSetContent.mockReset()
+		mockSetGeolocation.mockReset()
+		mockPageClose.mockReset()
+		mockDollar.mockReset()
+		mockOverridePermissions.mockReset()
+		mockDefaultBrowserContext.mockReset()
 
 		mockScreenshot.mockReturnValue(Promise.resolve(Buffer.from('fake-png')))
 		mockEvaluate.mockReturnValue(Promise.resolve())
@@ -88,6 +107,13 @@ describe('takeScreenshot', () => {
 		mockEmulateTimezone.mockReturnValue(Promise.resolve())
 		mockAddStyleTag.mockReturnValue(Promise.resolve())
 		mockSetContent.mockReturnValue(Promise.resolve())
+		mockSetGeolocation.mockReturnValue(Promise.resolve())
+		mockPageClose.mockReturnValue(Promise.resolve())
+		mockDollar.mockReturnValue(Promise.resolve(null))
+		mockOverridePermissions.mockReturnValue(Promise.resolve())
+		mockDefaultBrowserContext.mockReturnValue({
+			overridePermissions: mockOverridePermissions
+		})
 		mockNewPage.mockReturnValue(
 			Promise.resolve({
 				setViewport: mockSetViewport,
@@ -104,12 +130,19 @@ describe('takeScreenshot', () => {
 				setExtraHTTPHeaders: mockSetExtraHTTPHeaders,
 				emulateTimezone: mockEmulateTimezone,
 				addStyleTag: mockAddStyleTag,
-				setContent: mockSetContent
+				setContent: mockSetContent,
+				setGeolocation: mockSetGeolocation,
+				close: mockPageClose,
+				$: mockDollar
 			})
 		)
 		mockClose.mockReturnValue(Promise.resolve())
 		mockLaunch.mockReturnValue(
-			Promise.resolve({ newPage: mockNewPage, close: mockClose })
+			Promise.resolve({
+				newPage: mockNewPage,
+				close: mockClose,
+				defaultBrowserContext: mockDefaultBrowserContext
+			})
 		)
 
 		process.env.VERCEL = '1'
@@ -510,6 +543,194 @@ describe('takeScreenshot', () => {
 		it('does NOT call setExtraHTTPHeaders when locale is not provided', async () => {
 			await takeScreenshot({ url: 'https://example.com' })
 			expect(mockSetExtraHTTPHeaders).not.toHaveBeenCalled()
+		})
+	})
+
+	describe('Google Fonts preloading', () => {
+		it('calls page.evaluate with font loading logic when preloadFonts is true', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				preloadFonts: true
+			})
+			const evaluateCalls = mockEvaluate.mock.calls
+			expect(evaluateCalls.length).toBeGreaterThanOrEqual(2)
+		})
+
+		it('still calls document.fonts.ready even when preloadFonts is false', async () => {
+			await takeScreenshot({ url: 'https://example.com' })
+			expect(mockEvaluate).toHaveBeenCalled()
+		})
+	})
+
+	describe('element removal', () => {
+		it('calls page.evaluate with selectors when removeElements is provided', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				removeElements: ['.popup', '#banner']
+			})
+			const evaluateCalls = mockEvaluate.mock.calls
+			const hasRemoveCall = evaluateCalls.some(
+				(call: unknown[]) =>
+					Array.isArray(call[1]) &&
+					call[1].includes('.popup') &&
+					call[1].includes('#banner')
+			)
+			expect(hasRemoveCall).toBe(true)
+		})
+
+		it('does NOT add element removal when removeElements is empty', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				removeElements: []
+			})
+			const evaluateCalls = mockEvaluate.mock.calls
+			const hasRemoveCall = evaluateCalls.some(
+				(call: unknown[]) =>
+					Array.isArray(call[1]) && call[1].includes('.popup')
+			)
+			expect(hasRemoveCall).toBe(false)
+		})
+
+		it('does NOT add element removal when removeElements is not provided', async () => {
+			await takeScreenshot({ url: 'https://example.com' })
+			const evaluateCalls = mockEvaluate.mock.calls
+			const hasRemoveCall = evaluateCalls.some(
+				(call: unknown[]) =>
+					Array.isArray(call[1]) && call[1].includes('.popup')
+			)
+			expect(hasRemoveCall).toBe(false)
+		})
+	})
+
+	describe('popup removal', () => {
+		it('calls page.addStyleTag with popup CSS when removePopups is true', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				removePopups: true
+			})
+			expect(mockAddStyleTag).toHaveBeenCalledWith(
+				expect.objectContaining({
+					content: expect.stringContaining('modal')
+				})
+			)
+		})
+
+		it('calls page.evaluate with popup selectors when removePopups is true', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				removePopups: true
+			})
+			const evaluateCalls = mockEvaluate.mock.calls
+			const hasPopupCall = evaluateCalls.some(
+				(call: unknown[]) =>
+					Array.isArray(call[1]) &&
+					call[1].some(
+						(s: string) =>
+							typeof s === 'string' && s.includes('modal')
+					)
+			)
+			expect(hasPopupCall).toBe(true)
+		})
+
+		it('does NOT add popup removal when removePopups is false', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				removePopups: false
+			})
+			const addStyleCalls = mockAddStyleTag.mock.calls
+			const hasPopupCss = addStyleCalls.some(
+				(call: unknown[]) =>
+					typeof (call[0] as { content?: string })?.content ===
+						'string' &&
+					(call[0] as { content: string }).content.includes('modal')
+			)
+			expect(hasPopupCss).toBe(false)
+		})
+	})
+
+	describe('geolocation', () => {
+		it('calls page.setGeolocation when geoLocation is provided', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				geoLocation: { latitude: 40.7128, longitude: -74.006 }
+			})
+			expect(mockSetGeolocation).toHaveBeenCalledWith({
+				latitude: 40.7128,
+				longitude: -74.006,
+				accuracy: 100
+			})
+		})
+
+		it('overrides permissions when geoLocation is provided', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				geoLocation: { latitude: 51.5074, longitude: -0.1278 }
+			})
+			expect(mockOverridePermissions).toHaveBeenCalledWith(
+				'https://example.com',
+				['geolocation']
+			)
+		})
+
+		it('uses custom accuracy when provided', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				geoLocation: {
+					latitude: 35.6762,
+					longitude: 139.6503,
+					accuracy: 50
+				}
+			})
+			expect(mockSetGeolocation).toHaveBeenCalledWith({
+				latitude: 35.6762,
+				longitude: 139.6503,
+				accuracy: 50
+			})
+		})
+
+		it('does NOT call setGeolocation when geoLocation is not provided', async () => {
+			await takeScreenshot({ url: 'https://example.com' })
+			expect(mockSetGeolocation).not.toHaveBeenCalled()
+		})
+	})
+
+	describe('device mockup frames', () => {
+		it('creates a second page for browser mockup rendering', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				mockupDevice: 'browser'
+			})
+			expect(mockNewPage.mock.calls.length).toBeGreaterThanOrEqual(2)
+		})
+
+		it('creates a second page for iphone mockup rendering', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				mockupDevice: 'iphone'
+			})
+			expect(mockNewPage.mock.calls.length).toBeGreaterThanOrEqual(2)
+		})
+
+		it('creates a second page for macbook mockup rendering', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				mockupDevice: 'macbook'
+			})
+			expect(mockNewPage.mock.calls.length).toBeGreaterThanOrEqual(2)
+		})
+
+		it('does NOT create a second page when no mockupDevice', async () => {
+			await takeScreenshot({ url: 'https://example.com' })
+			expect(mockNewPage).toHaveBeenCalledTimes(1)
+		})
+
+		it('does NOT apply mockup for PDF type', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				type: 'pdf',
+				mockupDevice: 'browser'
+			})
+			expect(mockNewPage).toHaveBeenCalledTimes(1)
 		})
 	})
 })

@@ -37,9 +37,22 @@ beforeAll(() => {
 <div id="injected">Hidden element</div>
 <div id="timezone-display"></div>
 <div id="locale-display"></div>
+<div id="geo-display"></div>
+<div class="modal-overlay" role="dialog" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;">
+    <div class="modal-content" style="background:white;padding:40px;border-radius:8px;">Subscribe to our newsletter!</div>
+</div>
+<div class="remove-me" id="remove-target">This should be removed</div>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
 <script>
 document.getElementById('timezone-display').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
 document.getElementById('locale-display').textContent = navigator.language;
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        document.getElementById('geo-display').textContent = pos.coords.latitude + ',' + pos.coords.longitude;
+    }, function() {
+        document.getElementById('geo-display').textContent = 'denied';
+    });
+}
 </script>
 </body></html>`,
 					{ headers: { 'Content-Type': 'text/html' } }
@@ -345,4 +358,149 @@ describe('generateCacheKey', () => {
 		})
 		expect(key1).not.toBe(key2)
 	})
+})
+
+describe('element removal', () => {
+	it(
+		'completes successfully with removeElements',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				removeElements: ['.remove-me', '#remove-target']
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
+})
+
+describe('popup removal', () => {
+	it(
+		'completes successfully with removePopups enabled',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				removePopups: true
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
+})
+
+describe('Google Fonts preloading', () => {
+	it(
+		'completes successfully with preloadFonts enabled',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				preloadFonts: true
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
+})
+
+describe('geolocation', () => {
+	it(
+		'completes successfully with geoLocation set',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				geoLocation: { latitude: 40.7128, longitude: -74.006 }
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
+
+	it(
+		'completes with custom accuracy',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				geoLocation: {
+					latitude: 51.5074,
+					longitude: -0.1278,
+					accuracy: 10
+				}
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
+})
+
+describe('device mockup frames', () => {
+	it(
+		'renders browser mockup frame',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				width: 400,
+				height: 300,
+				mockupDevice: 'browser'
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+			expect(result.contentType).toBe('image/png')
+		},
+		CHROME_TIMEOUT * 2
+	)
+
+	it(
+		'renders iphone mockup frame',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				width: 390,
+				height: 844,
+				mockupDevice: 'iphone'
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+			expect(result.contentType).toBe('image/png')
+		},
+		CHROME_TIMEOUT * 2
+	)
+
+	it(
+		'renders macbook mockup frame',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				width: 400,
+				height: 300,
+				mockupDevice: 'macbook'
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+			expect(result.contentType).toBe('image/png')
+		},
+		CHROME_TIMEOUT * 2
+	)
+})
+
+describe('combined new features', () => {
+	it(
+		'handles multiple new features simultaneously',
+		async () => {
+			const result = await takeScreenshot({
+				url: testUrl,
+				preloadFonts: true,
+				removePopups: true,
+				removeElements: ['.ad-container'],
+				geoLocation: { latitude: 48.8566, longitude: 2.3522 }
+			})
+			expect(result.buffer).toBeInstanceOf(Buffer)
+			expect(result.buffer.length).toBeGreaterThan(0)
+		},
+		CHROME_TIMEOUT
+	)
 })

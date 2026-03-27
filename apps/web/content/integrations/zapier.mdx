@@ -200,6 +200,49 @@ Enable Zapier's built-in error handling to retry failed screenshots. Add a "Path
 
 If your Zap processes many URLs, add a Delay step between webhook calls to avoid hitting rate limits. Zapier's built-in delay supports 1 second to 1 hour intervals.
 
+## Webhook-Based Integration
+
+ScreenshotAPI supports [webhooks](/docs/api/webhooks) that notify your Zapier workflow when a screenshot completes. This enables **truly asynchronous** workflows where you don't have to wait for the screenshot to render.
+
+### How It Works
+
+1. **Create a Zapier webhook trigger** (Webhooks by Zapier > Catch Hook) and copy the webhook URL
+2. **Register the Zapier URL as a webhook endpoint** in the [ScreenshotAPI dashboard](/dashboard/settings) or via the [Webhooks API](/docs/api/webhooks)
+3. **Take screenshots** via the API — when each screenshot completes, ScreenshotAPI sends a `screenshot.completed` event to your Zapier webhook
+4. **Process the event** in Zapier — the payload includes the screenshot ID, URL, duration, and usage source
+
+### Webhook Payload
+
+Each `screenshot.completed` event includes:
+
+```json
+{
+  "event": "screenshot.completed",
+  "payload": {
+    "screenshotId": "abc123",
+    "url": "https://example.com",
+    "durationMs": 2340,
+    "source": "plan"
+  }
+}
+```
+
+### Registering a Webhook Endpoint
+
+Use the API to register your Zapier Catch Hook URL:
+
+```bash
+curl -X POST "https://screenshotapi.to/api/v1/webhooks" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
+  -d '{
+    "url": "https://hooks.zapier.com/hooks/catch/YOUR_HOOK_ID",
+    "events": ["screenshot.completed"]
+  }'
+```
+
+The response includes a `secret` field — store this to verify webhook signatures using the `x-webhook-signature` header.
+
 <FreeTierBanner />
 
 ## Further Reading
@@ -207,3 +250,4 @@ If your Zap processes many URLs, add a Delay step between webhook calls to avoid
 - The [n8n integration](/integrations/n8n) covers open-source workflow automation as an alternative.
 - See the [Make integration](/integrations/make) for another no-code option.
 - The [API documentation](/docs) has the full parameter reference for all endpoints.
+- The [Webhooks documentation](/docs/api/webhooks) has full webhook setup instructions.

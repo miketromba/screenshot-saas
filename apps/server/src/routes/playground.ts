@@ -1,6 +1,7 @@
 import { db, eq, schema } from '@screenshot-saas/db'
 import { Elysia, t } from 'elysia'
 import { sessionAuth } from '../middleware/session-auth'
+import { isE2ERequest } from '../services/e2e'
 import { polar } from '../services/polar'
 import { type ScreenshotOptions, takeScreenshot } from '../services/screenshot'
 import {
@@ -15,7 +16,8 @@ export const playgroundRoutes = new Elysia({
 	.use(sessionAuth)
 	.get(
 		'/screenshot',
-		async ({ query, user, set }) => {
+		async ({ query, user, set, request }) => {
+			const e2eTest = isE2ERequest(request)
 			const allowance = await checkScreenshotAllowance(user.id)
 			if (!allowance.allowed) {
 				set.status = 402
@@ -47,7 +49,17 @@ export const playgroundRoutes = new Elysia({
 					? Number(query.devicePixelRatio)
 					: undefined,
 				timezone: query.timezone ?? undefined,
-				locale: query.locale ?? undefined
+				locale: query.locale ?? undefined,
+				preloadFonts: query.preloadFonts === 'true',
+				removeElements: query.removeElements
+					? query.removeElements.split(',').map(s => s.trim())
+					: undefined,
+				removePopups: query.removePopups === 'true',
+				mockupDevice: query.mockupDevice as
+					| 'browser'
+					| 'iphone'
+					| 'macbook'
+					| undefined
 			}
 
 			let screenshotId: string | undefined
@@ -83,13 +95,15 @@ export const playgroundRoutes = new Elysia({
 						.execute()
 				}
 
-				polar
-					.ingestScreenshotEvent({
-						userId: user.id,
-						screenshotId,
-						url: options.url
-					})
-					.catch(() => {})
+				if (!e2eTest) {
+					polar
+						.ingestScreenshotEvent({
+							userId: user.id,
+							screenshotId,
+							url: options.url
+						})
+						.catch(() => {})
+				}
 
 				const newAllowance = await checkScreenshotAllowance(user.id)
 
@@ -137,7 +151,11 @@ export const playgroundRoutes = new Elysia({
 				stealthMode: t.Optional(t.String()),
 				devicePixelRatio: t.Optional(t.String()),
 				timezone: t.Optional(t.String()),
-				locale: t.Optional(t.String())
+				locale: t.Optional(t.String()),
+				preloadFonts: t.Optional(t.String()),
+				removeElements: t.Optional(t.String()),
+				removePopups: t.Optional(t.String()),
+				mockupDevice: t.Optional(t.String())
 			})
 		}
 	)

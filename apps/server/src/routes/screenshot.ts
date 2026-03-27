@@ -2,8 +2,10 @@ import { db, eq, schema } from '@screenshot-saas/db'
 import { Elysia, t } from 'elysia'
 import { apiKeyAuth } from '../middleware/api-key-auth'
 import { getCachedScreenshot, setCachedScreenshot } from '../services/cache'
+import { isE2ERequest } from '../services/e2e'
 import { polar } from '../services/polar'
 import {
+	type GeoLocationOptions,
 	generateCacheKey,
 	type ScreenshotOptions,
 	takeScreenshot
@@ -21,7 +23,8 @@ export const screenshotRoutes = new Elysia({
 	.use(apiKeyAuth)
 	.get(
 		'/',
-		async ({ query, apiKey, apiKeyUserId, set }) => {
+		async ({ query, apiKey, apiKeyUserId, set, request }) => {
+			const e2eTest = isE2ERequest(request)
 			const allowance = await checkScreenshotAllowance(apiKeyUserId)
 			if (!allowance.allowed) {
 				set.status = 402
@@ -30,6 +33,17 @@ export const screenshotRoutes = new Elysia({
 					message: allowance.reason,
 					remainingInPlan: 0,
 					creditBalance: allowance.creditBalance
+				}
+			}
+
+			let geoLocation: GeoLocationOptions | undefined
+			if (query.geoLatitude && query.geoLongitude) {
+				geoLocation = {
+					latitude: Number(query.geoLatitude),
+					longitude: Number(query.geoLongitude),
+					accuracy: query.geoAccuracy
+						? Number(query.geoAccuracy)
+						: undefined
 				}
 			}
 
@@ -55,7 +69,18 @@ export const screenshotRoutes = new Elysia({
 					: undefined,
 				timezone: query.timezone ?? undefined,
 				locale: query.locale ?? undefined,
-				cacheTtl: query.cacheTtl ? Number(query.cacheTtl) : undefined
+				cacheTtl: query.cacheTtl ? Number(query.cacheTtl) : undefined,
+				preloadFonts: query.preloadFonts === 'true',
+				removeElements: query.removeElements
+					? query.removeElements.split(',').map(s => s.trim())
+					: undefined,
+				removePopups: query.removePopups === 'true',
+				mockupDevice: query.mockupDevice as
+					| 'browser'
+					| 'iphone'
+					| 'macbook'
+					| undefined,
+				geoLocation
 			}
 
 			const cacheKey = generateCacheKey(options)
@@ -131,24 +156,26 @@ export const screenshotRoutes = new Elysia({
 					}).catch(() => {})
 				}
 
-				polar
-					.ingestScreenshotEvent({
-						userId: apiKeyUserId,
-						screenshotId,
-						url: options.url
-					})
-					.catch(() => {})
+				if (!e2eTest) {
+					polar
+						.ingestScreenshotEvent({
+							userId: apiKeyUserId,
+							screenshotId,
+							url: options.url
+						})
+						.catch(() => {})
 
-				dispatchWebhookEvent({
-					userId: apiKeyUserId,
-					event: 'screenshot.completed',
-					payload: {
-						screenshotId,
-						url: options.url,
-						durationMs,
-						source: usage.source
-					}
-				}).catch(() => {})
+					dispatchWebhookEvent({
+						userId: apiKeyUserId,
+						event: 'screenshot.completed',
+						payload: {
+							screenshotId,
+							url: options.url,
+							durationMs,
+							source: usage.source
+						}
+					}).catch(() => {})
+				}
 
 				const newAllowance =
 					await checkScreenshotAllowance(apiKeyUserId)
@@ -204,13 +231,21 @@ export const screenshotRoutes = new Elysia({
 				devicePixelRatio: t.Optional(t.String()),
 				timezone: t.Optional(t.String()),
 				locale: t.Optional(t.String()),
-				cacheTtl: t.Optional(t.String())
+				cacheTtl: t.Optional(t.String()),
+				preloadFonts: t.Optional(t.String()),
+				removeElements: t.Optional(t.String()),
+				removePopups: t.Optional(t.String()),
+				mockupDevice: t.Optional(t.String()),
+				geoLatitude: t.Optional(t.String()),
+				geoLongitude: t.Optional(t.String()),
+				geoAccuracy: t.Optional(t.String())
 			})
 		}
 	)
 	.post(
 		'/',
-		async ({ body, apiKey, apiKeyUserId, set }) => {
+		async ({ body, apiKey, apiKeyUserId, set, request }) => {
+			const e2eTest = isE2ERequest(request)
 			const allowance = await checkScreenshotAllowance(apiKeyUserId)
 			if (!allowance.allowed) {
 				set.status = 402
@@ -242,7 +277,16 @@ export const screenshotRoutes = new Elysia({
 				devicePixelRatio: body.devicePixelRatio,
 				timezone: body.timezone,
 				locale: body.locale,
-				cacheTtl: body.cacheTtl
+				cacheTtl: body.cacheTtl,
+				preloadFonts: body.preloadFonts,
+				removeElements: body.removeElements,
+				removePopups: body.removePopups,
+				mockupDevice: body.mockupDevice as
+					| 'browser'
+					| 'iphone'
+					| 'macbook'
+					| undefined,
+				geoLocation: body.geoLocation
 			}
 
 			const startTime = Date.now()
@@ -276,13 +320,15 @@ export const screenshotRoutes = new Elysia({
 
 				await recordScreenshotUsage(apiKeyUserId)
 
-				polar
-					.ingestScreenshotEvent({
-						userId: apiKeyUserId,
-						screenshotId,
-						url: options.url || 'html-render'
-					})
-					.catch(() => {})
+				if (!e2eTest) {
+					polar
+						.ingestScreenshotEvent({
+							userId: apiKeyUserId,
+							screenshotId,
+							url: options.url || 'html-render'
+						})
+						.catch(() => {})
+				}
 
 				set.headers['content-type'] = contentType
 				set.headers['x-screenshot-id'] = screenshotId ?? ''
@@ -330,7 +376,18 @@ export const screenshotRoutes = new Elysia({
 				devicePixelRatio: t.Optional(t.Number()),
 				timezone: t.Optional(t.String()),
 				locale: t.Optional(t.String()),
-				cacheTtl: t.Optional(t.Number())
+				cacheTtl: t.Optional(t.Number()),
+				preloadFonts: t.Optional(t.Boolean()),
+				removeElements: t.Optional(t.Array(t.String())),
+				removePopups: t.Optional(t.Boolean()),
+				mockupDevice: t.Optional(t.String()),
+				geoLocation: t.Optional(
+					t.Object({
+						latitude: t.Number(),
+						longitude: t.Number(),
+						accuracy: t.Optional(t.Number())
+					})
+				)
 			})
 		}
 	)
