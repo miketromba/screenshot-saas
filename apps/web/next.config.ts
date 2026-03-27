@@ -7,7 +7,15 @@ const nextConfig: NextConfig = {
 		'@screenshot-saas/db',
 		'@screenshot-saas/config'
 	],
-	serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium']
+	serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+	async rewrites() {
+		return [
+			{
+				source: '/docs/:path*.md',
+				destination: '/llms.md/docs/:path*'
+			}
+		]
+	}
 }
 
 const withMDX = createMDX()

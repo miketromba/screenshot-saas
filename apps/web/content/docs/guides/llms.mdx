@@ -1,0 +1,72 @@
+---
+title: LLMs & AI Agents
+description: Machine-readable documentation resources for AI agents, LLMs, and automated tooling.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+## Overview
+
+ScreenshotAPI provides machine-readable documentation in multiple formats so AI coding assistants and automated tools can easily consume our API reference. If you're using an AI agent (Cursor, Copilot, Windsurf, Cline, etc.) to integrate ScreenshotAPI, you can point it directly at these resources.
+
+## Available Resources
+
+### `/llms.txt` — Documentation Index
+
+A top-level overview of ScreenshotAPI with links to all documentation pages. This follows the [llms.txt standard](https://llmstxt.org) for making websites AI-friendly.
+
+```
+https://screenshotapi.to/llms.txt
+```
+
+Use this as an entry point when you want your agent to understand what ScreenshotAPI offers and where to find specific documentation.
+
+### `/llms-full.txt` — Full Documentation
+
+The complete contents of every documentation page, concatenated into a single text file. Ideal for loading the entire API reference into an LLM context window.
+
+```
+https://screenshotapi.to/llms-full.txt
+```
+
+This is also available at `/docs/llms.txt`.
+
+<Callout type="info">
+This file can be large. If you only need specific pages, use the per-page markdown endpoints below instead.
+</Callout>
+
+### Per-Page Markdown — `/docs/*.md`
+
+Every documentation page is available as clean Markdown by appending `.md` to the URL. For example:
+
+| Page | Markdown URL |
+|---|---|
+| [Introduction](/docs) | `https://screenshotapi.to/docs.md` |
+| [Screenshot API](/docs/api/screenshot) | `https://screenshotapi.to/docs/api/screenshot.md` |
+| [Authentication](/docs/authentication) | `https://screenshotapi.to/docs/authentication.md` |
+| [JavaScript SDK](/docs/sdks/javascript) | `https://screenshotapi.to/docs/sdks/javascript.md` |
+| [Credits](/docs/credits) | `https://screenshotapi.to/docs/credits.md` |
+
+This works for any page under `/docs`. Just add `.md` to the path.
+
+## Usage with AI Agents
+
+### Cursor / Copilot / Windsurf
+
+When asking your AI assistant to integrate ScreenshotAPI, include the relevant documentation URL in your prompt:
+
+```
+Use @https://screenshotapi.to/docs/llms.txt to integrate ScreenshotAPI
+into my Next.js app. I need to capture screenshots of user-submitted URLs.
+```
+
+Or for a specific topic:
+
+```
+Read @https://screenshotapi.to/docs/api/screenshot.md and implement
+a screenshot endpoint with dark mode and full-page capture.
+```
+
+### Automated Tooling
+
+If you're building tools that consume our docs programmatically, the `.md` endpoints return `text/markdown` with a `Content-Type` header, making them easy to parse.

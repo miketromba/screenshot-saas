@@ -1,4 +1,4 @@
 {
 	"title": "Guides",
-	"pages": ["vercel-integration", "og-images", "pdf-screenshots", "dark-mode"]
+	"pages": ["vercel-integration", "og-images", "pdf-screenshots", "dark-mode", "llms"]
 }
