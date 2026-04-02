@@ -333,20 +333,22 @@ export const screenshotRoutes = new Elysia({
 				}
 
 				if (cacheTtl && cacheTtl > 0) {
-					setCachedScreenshot({
-						cacheKey,
-						userId: apiKeyUserId,
-						buffer,
-						contentType,
-						url: options.url,
-						optionsHash: cacheKey,
-						ttlSeconds: cacheTtl
-					}).catch(error => {
+					try {
+						await setCachedScreenshot({
+							cacheKey,
+							userId: apiKeyUserId,
+							buffer,
+							contentType,
+							url: options.url,
+							optionsHash: cacheKey,
+							ttlSeconds: cacheTtl
+						})
+					} catch (error) {
 						console.error(
 							'Failed to cache screenshot response',
 							error
 						)
-					})
+					}
 				}
 
 				if (!e2eTest) {
@@ -561,20 +563,22 @@ export const screenshotRoutes = new Elysia({
 				await recordScreenshotUsage(apiKeyUserId)
 
 				if (cacheTtl && cacheTtl > 0) {
-					setCachedScreenshot({
-						cacheKey,
-						userId: apiKeyUserId,
-						buffer,
-						contentType,
-						url: options.url,
-						optionsHash: cacheKey,
-						ttlSeconds: cacheTtl
-					}).catch(error => {
+					try {
+						await setCachedScreenshot({
+							cacheKey,
+							userId: apiKeyUserId,
+							buffer,
+							contentType,
+							url: options.url,
+							optionsHash: cacheKey,
+							ttlSeconds: cacheTtl
+						})
+					} catch (error) {
 						console.error(
 							'Failed to cache screenshot response',
 							error
 						)
-					})
+					}
 				}
 
 				if (!e2eTest) {

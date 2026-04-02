@@ -7,13 +7,10 @@ const nextConfig: NextConfig = {
 		'@screenshot-saas/db',
 		'@screenshot-saas/config'
 	],
-	serverExternalPackages: [
-		'puppeteer-core',
-		'@sparticuz/chromium',
-		'puppeteer-extra',
-		'puppeteer-extra-plugin-stealth',
-		'puppeteer-extra-plugin-adblocker'
-	],
+	// Keep only native/heavy deps external. puppeteer-extra + plugins must be
+	// bundled: Vercel's Bun copyfile layout leaves broken paths under
+	// node_modules/.bun/... for transitive requires (e.g. kind-of) when external.
+	serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
 	async rewrites() {
 		return [
 			{
