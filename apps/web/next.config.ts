@@ -7,7 +7,13 @@ const nextConfig: NextConfig = {
 		'@screenshot-saas/db',
 		'@screenshot-saas/config'
 	],
-	serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+	serverExternalPackages: [
+		'puppeteer-core',
+		'@sparticuz/chromium',
+		'puppeteer-extra',
+		'puppeteer-extra-plugin-stealth',
+		'puppeteer-extra-plugin-adblocker'
+	],
 	async rewrites() {
 		return [
 			{
