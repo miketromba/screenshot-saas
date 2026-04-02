@@ -609,25 +609,26 @@ describe('takeScreenshot', () => {
 			process.env.VERCEL = '1'
 		})
 
-		it('does not use puppeteer-extra for stealth — only puppeteer-core', async () => {
+		it('uses puppeteer-extra stealth plugin on serverless', async () => {
 			await takeScreenshot({
 				url: 'https://example.com',
 				stealthMode: true
 			})
-			expect(mockAddExtra).not.toHaveBeenCalled()
-			expect(mockStealthPluginFactory).not.toHaveBeenCalled()
-			expect(mockLaunch).toHaveBeenCalled()
+			expect(mockAddExtra).toHaveBeenCalled()
+			expect(mockStealthPluginFactory).toHaveBeenCalled()
+			expect(mockPluginLaunch).toHaveBeenCalled()
 		})
 
-		it('does not use puppeteer-extra for blockAds — uses request interception', async () => {
+		it('uses puppeteer-extra adblocker on serverless when blockAds is true', async () => {
 			await takeScreenshot({
 				url: 'https://example.com',
 				blockAds: true
 			})
-			expect(mockAddExtra).not.toHaveBeenCalled()
-			expect(mockAdblockerPluginFactory).not.toHaveBeenCalled()
-			expect(mockSetRequestInterception).toHaveBeenCalledWith(true)
-			expect(mockOn).toHaveBeenCalledWith('request', expect.any(Function))
+			expect(mockAddExtra).toHaveBeenCalled()
+			expect(mockAdblockerPluginFactory).toHaveBeenCalledWith({
+				blockTrackers: true
+			})
+			expect(mockPluginLaunch).toHaveBeenCalled()
 		})
 	})
 

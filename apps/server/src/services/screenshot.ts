@@ -111,55 +111,6 @@ const POPUP_REMOVE_SELECTORS = [
 	'[class*="subscribe-popup"]'
 ]
 
-/** Used on Vercel/Lambda only — puppeteer-extra adblocker is not loaded there. */
-const SERVERLESS_AD_HOST_SUBSTRINGS = [
-	'doubleclick.net',
-	'googlesyndication.com',
-	'googleadservices.com',
-	'adservice.google',
-	'pagead2.googlesyndication',
-	'ads.yahoo.com',
-	'advertising.com',
-	'adnxs.com',
-	'adsafeprotected.com',
-	'amazon-adsystem.com',
-	'scorecardresearch.com',
-	'quantserve.com',
-	'moatads.com',
-	'hotjar.com',
-	'segment.io',
-	'segment.com',
-	'clarity.ms',
-	'bat.bing.com',
-	'facebook.net/tr',
-	'connect.facebook.net'
-] as const
-
-const SERVERLESS_AD_PATH_SUBSTRINGS = [
-	'/ads/',
-	'/adserver',
-	'/banner',
-	'/tracking',
-	'/pixel'
-] as const
-
-function isLikelyAdRequestUrl(url: string): boolean {
-	try {
-		const u = new URL(url)
-		const host = u.hostname.toLowerCase()
-		const path = `${u.pathname}${u.search}`.toLowerCase()
-		for (const s of SERVERLESS_AD_HOST_SUBSTRINGS) {
-			if (host.includes(s)) return true
-		}
-		for (const s of SERVERLESS_AD_PATH_SUBSTRINGS) {
-			if (path.includes(s)) return true
-		}
-		return false
-	} catch {
-		return false
-	}
-}
-
 function getMockupSourceMime(contentType: string): string {
 	switch (contentType) {
 		case 'image/jpeg':
@@ -526,13 +477,9 @@ async function removePopupElements(page: Page): Promise<void> {
 async function launchBrowser(
 	launchOptions: LaunchOptions = {}
 ): Promise<Browser> {
-	const isServerless = !!(
-		process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
-	)
-	const usePuppeteerExtraPlugins =
-		(launchOptions.stealth || launchOptions.blockAds) && !isServerless
+	const needsPlugins = launchOptions.stealth || launchOptions.blockAds
 
-	if (isServerless) {
+	if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
 		const chromium = (await import('@sparticuz/chromium')).default
 		const puppeteerCore = (await import('puppeteer-core')).default
 
@@ -541,8 +488,29 @@ async function launchBrowser(
 			args.push(STEALTH_CHROME_ARG)
 		}
 
-		// puppeteer-extra + plugins pull CJS deps that Turbopack/Next do not
-		// ship correctly for Node require() from serverless chunks (e.g. is-plain-object).
+		if (needsPlugins) {
+			const { addExtra } = await import('puppeteer-extra')
+			const puppeteer = addExtra(puppeteerCore)
+			if (launchOptions.stealth) {
+				const stealthPlugin = await import(
+					'puppeteer-extra-plugin-stealth'
+				)
+				puppeteer.use(stealthPlugin.default())
+			}
+			if (launchOptions.blockAds) {
+				const adblockerPlugin = await import(
+					'puppeteer-extra-plugin-adblocker'
+				)
+				puppeteer.use(adblockerPlugin.default({ blockTrackers: true }))
+			}
+			return puppeteer.launch({
+				args,
+				defaultViewport: null,
+				executablePath: await chromium.executablePath(),
+				headless: chromium.headless
+			})
+		}
+
 		return puppeteerCore.launch({
 			args,
 			defaultViewport: null,
@@ -565,7 +533,7 @@ async function launchBrowser(
 		baseArgs.push(STEALTH_CHROME_ARG)
 	}
 
-	if (usePuppeteerExtraPlugins) {
+	if (needsPlugins) {
 		const { addExtra } = await import('puppeteer-extra')
 		const puppeteer = addExtra(puppeteerCore)
 		if (launchOptions.stealth) {
@@ -626,13 +594,6 @@ export async function takeScreenshot(
 		blockAds: options.blockAds
 	})
 	const resolutionCache = new Map<string, Promise<void>>()
-	const isServerless = !!(
-		process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
-	)
-	const needSsrInterception = !shouldAllowPrivateNetworkAccess()
-	const needServerlessAdInterception = Boolean(
-		options.blockAds && isServerless
-	)
 
 	try {
 		const page = await browser.newPage()
@@ -641,7 +602,7 @@ export async function takeScreenshot(
 			await assertSafeTargetUrl(options.url, resolutionCache)
 		}
 
-		if (needSsrInterception || needServerlessAdInterception) {
+		if (!shouldAllowPrivateNetworkAccess()) {
 			await page.setRequestInterception(true)
 			page.on('request', request => {
 				void (async () => {
@@ -649,28 +610,17 @@ export async function takeScreenshot(
 
 					const url = request.url()
 
-					if (needSsrInterception) {
-						try {
-							await assertSafeTargetUrl(url, resolutionCache)
-						} catch (error) {
-							if (error instanceof UnsafeTargetError) {
-								if (!request.isInterceptResolutionHandled()) {
-									await request.abort()
-								}
-								return
+					try {
+						await assertSafeTargetUrl(url, resolutionCache)
+					} catch (error) {
+						if (error instanceof UnsafeTargetError) {
+							if (!request.isInterceptResolutionHandled()) {
+								await request.abort()
 							}
-
-							throw error
+							return
 						}
-					}
 
-					if (
-						needServerlessAdInterception &&
-						isLikelyAdRequestUrl(url) &&
-						!request.isInterceptResolutionHandled()
-					) {
-						await request.abort()
-						return
+						throw error
 					}
 
 					if (!request.isInterceptResolutionHandled()) {

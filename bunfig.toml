@@ -1,0 +1,4 @@
+# Hoisted linker: puppeteer-extra plugins use runtime require() for transitive
+# CJS deps (e.g. is-plain-object). Isolated/.bun layouts break that on Vercel.
+[install]
+linker = "hoisted"

@@ -11,9 +11,15 @@ const nextConfig: NextConfig = {
 		'@screenshot-saas/db',
 		'@screenshot-saas/config'
 	],
-	// Native/heavy binaries only. puppeteer-extra is bundled for local dev;
-	// production serverless uses puppeteer-core only (see launchBrowser).
-	serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+	// Keep Chromium + puppeteer-extra tree external so Node resolves plugin
+	// transitive CJS deps at runtime (see bunfig.toml linker = hoisted).
+	serverExternalPackages: [
+		'puppeteer-core',
+		'@sparticuz/chromium',
+		'puppeteer-extra',
+		'puppeteer-extra-plugin-stealth',
+		'puppeteer-extra-plugin-adblocker'
+	],
 	async rewrites() {
 		return [
 			{

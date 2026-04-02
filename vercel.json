@@ -1,6 +1,6 @@
 {
 	"$schema": "https://openapi.vercel.sh/vercel.json",
-	"installCommand": "bun install --backend=copyfile",
+	"installCommand": "bun install --linker hoisted --backend=copyfile",
 	"crons": [
 		{
 			"path": "/api/cron/cache-cleanup",
