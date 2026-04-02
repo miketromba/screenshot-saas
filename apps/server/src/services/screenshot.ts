@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import 'is-plain-object'
 import type { Browser, Page } from 'puppeteer-core'
 import {
 	assertSafeTargetUrl,
