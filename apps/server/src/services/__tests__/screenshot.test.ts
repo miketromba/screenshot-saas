@@ -220,7 +220,8 @@ describe('takeScreenshot', () => {
 			name: 'adblocker-plugin'
 		})
 
-		process.env.VERCEL = '1'
+		delete process.env.VERCEL
+		delete process.env.AWS_LAMBDA_FUNCTION_NAME
 	})
 
 	it('returns buffer and content type', async () => {
@@ -600,6 +601,33 @@ describe('takeScreenshot', () => {
 			expect(mockStealthPluginFactory).toHaveBeenCalled()
 			expect(mockAdblockerPluginFactory).toHaveBeenCalled()
 			expect(mockPluginUse).toHaveBeenCalledTimes(2)
+		})
+	})
+
+	describe('serverless (Vercel / Lambda)', () => {
+		beforeEach(() => {
+			process.env.VERCEL = '1'
+		})
+
+		it('does not use puppeteer-extra for stealth — only puppeteer-core', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				stealthMode: true
+			})
+			expect(mockAddExtra).not.toHaveBeenCalled()
+			expect(mockStealthPluginFactory).not.toHaveBeenCalled()
+			expect(mockLaunch).toHaveBeenCalled()
+		})
+
+		it('does not use puppeteer-extra for blockAds — uses request interception', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				blockAds: true
+			})
+			expect(mockAddExtra).not.toHaveBeenCalled()
+			expect(mockAdblockerPluginFactory).not.toHaveBeenCalled()
+			expect(mockSetRequestInterception).toHaveBeenCalledWith(true)
+			expect(mockOn).toHaveBeenCalledWith('request', expect.any(Function))
 		})
 	})
 
