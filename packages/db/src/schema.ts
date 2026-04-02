@@ -245,11 +245,15 @@ export const screenshotCache = pgTable(
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
 		cacheKey: text('cache_key').notNull(),
-		imageData: text('image_data').notNull(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => profiles.id, { onDelete: 'cascade' }),
+		storagePath: text('storage_path').notNull(),
 		contentType: text('content_type').notNull(),
 		url: text('url').notNull(),
 		optionsHash: text('options_hash').notNull(),
 		ttlSeconds: integer('ttl_seconds').notNull().default(86400),
+		imageSizeBytes: integer('image_size_bytes'),
 		expiresAt: timestamp('expires_at', {
 			mode: 'date',
 			withTimezone: true
@@ -263,7 +267,8 @@ export const screenshotCache = pgTable(
 	},
 	table => [
 		uniqueIndex('screenshot_cache_key_idx').on(table.cacheKey),
-		index('screenshot_cache_expires_idx').on(table.expiresAt)
+		index('screenshot_cache_expires_idx').on(table.expiresAt),
+		index('screenshot_cache_user_idx').on(table.userId)
 	]
 )
 

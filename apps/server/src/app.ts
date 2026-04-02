@@ -9,6 +9,7 @@ import { usageRoutes } from './routes/usage'
 import { userRoutes } from './routes/user'
 import { webhookEndpointRoutes } from './routes/webhook-endpoints'
 import { webhookRoutes } from './routes/webhooks'
+import { cleanExpiredCache } from './services/cache'
 
 export const app = new Elysia({ prefix: '/api' })
 	.use(cors())
@@ -16,6 +17,19 @@ export const app = new Elysia({ prefix: '/api' })
 		status: 'ok',
 		timestamp: new Date().toISOString()
 	}))
+	.post('/cache/cleanup', async ({ set, request }) => {
+		const secret = process.env.CACHE_CLEANUP_SECRET
+		const token = request.headers
+			.get('authorization')
+			?.replace('Bearer ', '')
+		if (!secret || token !== secret) {
+			set.status = 401
+			return { error: 'Unauthorized' }
+		}
+
+		const deleted = await cleanExpiredCache()
+		return { deleted, timestamp: new Date().toISOString() }
+	})
 	.group('/v1', app =>
 		app
 			.use(screenshotRoutes)

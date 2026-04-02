@@ -5,11 +5,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { generateCacheKey, takeScreenshot } from '../src/services/screenshot'
 
 const CHROME_TIMEOUT = 30_000
+const originalAllowPrivateNetwork = process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK
 
 let testServer: ReturnType<typeof Bun.serve>
 let testUrl: string
 
 beforeAll(() => {
+	process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK = 'true'
 	testServer = Bun.serve({
 		port: 0,
 		fetch(req) {
@@ -72,6 +74,12 @@ if (navigator.geolocation) {
 
 afterAll(() => {
 	testServer?.stop()
+	if (originalAllowPrivateNetwork === undefined) {
+		delete process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK
+	} else {
+		process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK =
+			originalAllowPrivateNetwork
+	}
 })
 
 describe('basic screenshot', () => {
@@ -340,22 +348,33 @@ describe('color scheme', () => {
 })
 
 describe('generateCacheKey', () => {
-	it('produces the same key for identical options', () => {
-		const opts = { url: 'https://example.com', width: 800, height: 600 }
-		const key1 = generateCacheKey(opts)
-		const key2 = generateCacheKey(opts)
+	it('produces the same key for identical options and user', () => {
+		const options = {
+			url: 'https://example.com',
+			width: 800,
+			height: 600
+		}
+		const key1 = generateCacheKey({ userId: 'user-1', options })
+		const key2 = generateCacheKey({ userId: 'user-1', options })
 		expect(key1).toBe(key2)
 	})
 
 	it('produces different keys for different options', () => {
 		const key1 = generateCacheKey({
-			url: 'https://example.com',
-			width: 800
+			userId: 'user-1',
+			options: { url: 'https://example.com', width: 800 }
 		})
 		const key2 = generateCacheKey({
-			url: 'https://example.com',
-			width: 1024
+			userId: 'user-1',
+			options: { url: 'https://example.com', width: 1024 }
 		})
+		expect(key1).not.toBe(key2)
+	})
+
+	it('produces different keys for different users', () => {
+		const options = { url: 'https://example.com' }
+		const key1 = generateCacheKey({ userId: 'user-1', options })
+		const key2 = generateCacheKey({ userId: 'user-2', options })
 		expect(key1).not.toBe(key2)
 	})
 })

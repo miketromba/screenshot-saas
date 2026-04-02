@@ -1,4 +1,11 @@
-import type { Browser } from 'puppeteer-core'
+import { createHash } from 'node:crypto'
+import type { Browser, Page } from 'puppeteer-core'
+import {
+	assertSafeTargetUrl,
+	shouldAllowPrivateNetworkAccess,
+	UnsafeTargetError
+} from '../lib/network-safety'
+import { buildAcceptLanguageHeader } from '../lib/screenshot-options'
 
 export interface GeoLocationOptions {
 	latitude: number
@@ -36,41 +43,51 @@ export interface ScreenshotOptions {
 
 const STEALTH_CHROME_ARG = '--disable-blink-features=AutomationControlled'
 
-const STEALTH_USER_AGENT =
-	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-
-const COOKIE_BANNER_HIDE_CSS = `[class*="cookie"], [id*="cookie"], [class*="consent"], [id*="consent"],
-[class*="CookieBanner"], [class*="cookie-banner"], [class*="gdpr"],
-[id*="gdpr"], .cc-banner, .cc-window, #onetrust-banner-sdk,
-.onetrust-pc-dark-filter, #CybotCookiebotDialog, .cookieConsent,
-[aria-label*="cookie"], [aria-label*="consent"]
+const COOKIE_BANNER_HIDE_CSS = `#onetrust-banner-sdk, #onetrust-consent-sdk,
+.onetrust-pc-dark-filter, #CybotCookiebotDialog,
+#CybotCookiebotDialogBodyUnderlay, .cc-window, .cc-banner,
+.cookieConsent, [data-cookiebanner], [data-consent-banner],
+[aria-label*="cookie"], [aria-label*="consent"],
+[class*="cookie-banner"], [class*="cookie-consent"],
+[class*="consent-banner"], [id*="cookie-banner"],
+[id*="cookie-consent"], [id*="consent-banner"]
 { display: none !important; visibility: hidden !important; }`
 
 const COOKIE_ACCEPT_SELECTORS = [
+	'#onetrust-accept-btn-handler',
+	'#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+	'button[data-cookieconsent="accept"]',
+	'.cc-btn.cc-dismiss',
+	'[data-testid*="accept"]',
+	'[aria-label*="accept"]',
 	'[class*="cookie"] button[class*="accept"]',
 	'[class*="cookie"] button[class*="agree"]',
 	'[id*="cookie"] button',
-	'#onetrust-accept-btn-handler',
-	'.cc-btn.cc-dismiss',
-	'button[data-cookieconsent="accept"]',
-	'#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll'
+	'[class*="consent"] button[class*="accept"]',
+	'[class*="consent"] button[class*="agree"]'
 ]
 
-const AD_URL_BLOCK_SUBSTRINGS = [
-	'doubleclick.net',
-	'googlesyndication.com',
-	'googleadservices.com',
-	'google-analytics.com',
-	'facebook.net/tr',
-	'analytics',
-	'adservice',
-	'pagead',
-	'ads'
+const COOKIE_ACCEPT_TEXT_PATTERNS = [
+	'accept',
+	'accept all',
+	'agree',
+	'allow all',
+	'allow cookies',
+	'got it',
+	'ok',
+	'continue',
+	'aceptar',
+	'aceitar',
+	'akzeptieren',
+	'alle akzeptieren',
+	'tout accepter',
+	'j accepte',
+	'accepter'
 ] as const
 
-function isBlockedAdUrl(url: string): boolean {
-	const lower = url.toLowerCase()
-	return AD_URL_BLOCK_SUBSTRINGS.some(sub => lower.includes(sub))
+interface LaunchOptions {
+	stealth?: boolean
+	blockAds?: boolean
 }
 
 const POPUP_HIDE_CSS = `[role="dialog"], [role="alertdialog"],
@@ -94,7 +111,23 @@ const POPUP_REMOVE_SELECTORS = [
 	'[class*="subscribe-popup"]'
 ]
 
-function getBrowserMockupHtml(dataUri: string, w: number, h: number): string {
+function getMockupSourceMime(contentType: string): string {
+	switch (contentType) {
+		case 'image/jpeg':
+			return 'image/jpeg'
+		case 'image/webp':
+			return 'image/webp'
+		default:
+			return 'image/png'
+	}
+}
+
+function getBrowserMockupHtml(
+	dataUri: string,
+	w: number,
+	h: number,
+	label: string
+): string {
 	return `<!DOCTYPE html><html><head><style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#f0f0f0;display:flex;justify-content:center;padding:32px;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
@@ -107,7 +140,7 @@ body{background:#f0f0f0;display:flex;justify-content:center;padding:32px;font-fa
 .content img{display:block;width:${w}px;height:${h}px}
 </style></head><body>
 <div id="device-mockup" class="frame">
-<div class="chrome"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="bar">example.com</div></div>
+<div class="chrome"><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div><div class="bar">${label}</div></div>
 <div class="content"><img src="${dataUri}"/></div>
 </div></body></html>`
 }
@@ -119,7 +152,7 @@ body{background:#f0f0f0;display:flex;justify-content:center;padding:32px}
 .phone{background:#1a1a1a;border-radius:44px;padding:12px;box-shadow:0 12px 48px rgba(0,0,0,.3);display:inline-block}
 .inner{position:relative;border-radius:32px;overflow:hidden;background:#000}
 .island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:90px;height:24px;background:#1a1a1a;border-radius:12px;z-index:1}
-.screen img{display:block;width:${w}px;height:${h}px;object-fit:cover}
+.screen img{display:block;width:${w}px;height:${h}px;object-fit:contain;background:#000}
 .home{display:flex;justify-content:center;padding:8px 0 4px}
 .indicator{width:100px;height:4px;background:#666;border-radius:2px}
 </style></head><body>
@@ -150,17 +183,19 @@ body{background:#f0f0f0;display:flex;justify-content:center;align-items:center;p
 async function applyDeviceMockup(
 	browser: Browser,
 	screenshotBuffer: Buffer,
+	contentType: string,
 	device: 'browser' | 'iphone' | 'macbook',
 	width: number,
-	height: number
+	height: number,
+	label: string
 ): Promise<{ buffer: Buffer; contentType: string }> {
 	const base64 = screenshotBuffer.toString('base64')
-	const dataUri = `data:image/png;base64,${base64}`
+	const dataUri = `data:${getMockupSourceMime(contentType)};base64,${base64}`
 
 	let html: string
 	switch (device) {
 		case 'browser':
-			html = getBrowserMockupHtml(dataUri, width, height)
+			html = getBrowserMockupHtml(dataUri, width, height, label)
 			break
 		case 'iphone':
 			html = getIphoneMockupHtml(dataUri, width, height)
@@ -198,19 +233,293 @@ async function applyDeviceMockup(
 	return { buffer: buf, contentType: 'image/png' }
 }
 
-async function launchBrowser(): Promise<Browser> {
+function getBrowserLabel(url: string): string {
+	try {
+		const parsed = new URL(url)
+		return parsed.hostname
+	} catch {
+		return 'Rendered capture'
+	}
+}
+
+function stableSerialize(value: unknown): string {
+	if (value === null || value === undefined) {
+		return JSON.stringify(value)
+	}
+	if (Array.isArray(value)) {
+		return `[${value.map(item => stableSerialize(item)).join(',')}]`
+	}
+	if (typeof value === 'object') {
+		const entries = Object.entries(value as Record<string, unknown>)
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(
+				([key, nestedValue]) =>
+					`${JSON.stringify(key)}:${stableSerialize(nestedValue)}`
+			)
+
+		return `{${entries.join(',')}}`
+	}
+	return JSON.stringify(value)
+}
+
+async function applyLocale(page: Page, locale: string): Promise<void> {
+	await page.setExtraHTTPHeaders({
+		'Accept-Language': buildAcceptLanguageHeader(locale)
+	})
+
+	try {
+		const session = await page.createCDPSession()
+		await session.send('Emulation.setLocaleOverride', { locale })
+		await page.evaluateOnNewDocument(currentLocale => {
+			Object.defineProperty(navigator, 'language', {
+				get: () => currentLocale
+			})
+
+			Object.defineProperty(navigator, 'languages', {
+				get: () => {
+					const baseLanguage = currentLocale.split('-')[0]
+					return baseLanguage && baseLanguage !== currentLocale
+						? [currentLocale, baseLanguage]
+						: [currentLocale]
+				}
+			})
+		}, locale)
+	} catch (error) {
+		console.error('Failed to apply locale override', error)
+	}
+}
+
+async function removeCookieBanners(page: Page): Promise<void> {
+	await page.addStyleTag({ content: COOKIE_BANNER_HIDE_CSS })
+
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await page.evaluate(
+			(selectors, acceptTextPatterns) => {
+				function normalizeText(
+					value: string | null | undefined
+				): string {
+					return (value ?? '')
+						.toLowerCase()
+						.normalize('NFKD')
+						.replace(/[^\w\s]/g, ' ')
+						.replace(/\s+/g, ' ')
+						.trim()
+				}
+
+				function getRoots(): (Document | ShadowRoot)[] {
+					const roots: (Document | ShadowRoot)[] = [document]
+					const seen = new Set<ShadowRoot>()
+
+					for (const element of document.querySelectorAll('*')) {
+						const shadowRoot = (element as HTMLElement).shadowRoot
+						if (shadowRoot && !seen.has(shadowRoot)) {
+							seen.add(shadowRoot)
+							roots.push(shadowRoot)
+						}
+					}
+
+					return roots
+				}
+
+				function isBannerCandidate(element: Element): boolean {
+					const htmlElement =
+						element instanceof HTMLElement ? element : null
+					if (!htmlElement) return false
+
+					const text = normalizeText(htmlElement.textContent)
+					const attrs = normalizeText(
+						[
+							htmlElement.id,
+							htmlElement.className,
+							htmlElement.getAttribute('aria-label'),
+							htmlElement.getAttribute('data-testid')
+						]
+							.filter(Boolean)
+							.join(' ')
+					)
+					const style = window.getComputedStyle(htmlElement)
+					const isOverlayLike =
+						style.position === 'fixed' ||
+						style.position === 'sticky' ||
+						Number.parseInt(style.zIndex || '0', 10) > 999
+
+					return (
+						isOverlayLike &&
+						(attrs.includes('cookie') ||
+							attrs.includes('consent') ||
+							attrs.includes('gdpr') ||
+							text.includes('cookie') ||
+							text.includes('consent'))
+					)
+				}
+
+				function clickCandidate(element: Element) {
+					if (element instanceof HTMLElement) {
+						element.click()
+					}
+				}
+
+				const roots = getRoots()
+				for (const root of roots) {
+					for (const selector of selectors) {
+						for (const element of root.querySelectorAll(selector)) {
+							clickCandidate(element)
+						}
+					}
+
+					for (const element of root.querySelectorAll(
+						'button, [role="button"], input[type="button"], input[type="submit"], a'
+					)) {
+						const text = normalizeText(
+							element.textContent ??
+								(element instanceof HTMLInputElement
+									? element.value
+									: '')
+						)
+						if (
+							acceptTextPatterns.some(pattern =>
+								text.includes(pattern)
+							)
+						) {
+							const bannerAncestor = element.closest(
+								'[id*="cookie"], [class*="cookie"], [id*="consent"], [class*="consent"], [id*="gdpr"], [class*="gdpr"], #onetrust-banner-sdk, #CybotCookiebotDialog'
+							)
+
+							if (bannerAncestor || isBannerCandidate(element)) {
+								clickCandidate(element)
+							}
+						}
+					}
+
+					for (const element of root.querySelectorAll('*')) {
+						if (
+							isBannerCandidate(element) &&
+							element instanceof HTMLElement
+						) {
+							element.style.setProperty(
+								'display',
+								'none',
+								'important'
+							)
+							element.style.setProperty(
+								'visibility',
+								'hidden',
+								'important'
+							)
+						}
+					}
+				}
+			},
+			COOKIE_ACCEPT_SELECTORS,
+			COOKIE_ACCEPT_TEXT_PATTERNS
+		)
+
+		await new Promise(resolve => setTimeout(resolve, 250))
+	}
+}
+
+async function removePopupElements(page: Page): Promise<void> {
+	await page.addStyleTag({ content: POPUP_HIDE_CSS })
+	await page.evaluate(selectors => {
+		const viewportArea = window.innerWidth * window.innerHeight
+
+		function shouldRemove(element: Element): boolean {
+			if (!(element instanceof HTMLElement)) {
+				return false
+			}
+
+			const style = window.getComputedStyle(element)
+			if (style.display === 'none' || style.visibility === 'hidden') {
+				return false
+			}
+
+			const rect = element.getBoundingClientRect()
+			if (rect.width < 120 || rect.height < 80) {
+				return false
+			}
+
+			const zIndex = Number.parseInt(style.zIndex || '0', 10)
+			const area = rect.width * rect.height
+			const coversViewport = area / viewportArea > 0.25
+			const keywordSource =
+				`${element.id} ${element.className} ${element.getAttribute('role') ?? ''}`.toLowerCase()
+			const looksLikePopup =
+				keywordSource.includes('modal') ||
+				keywordSource.includes('popup') ||
+				keywordSource.includes('overlay') ||
+				keywordSource.includes('lightbox') ||
+				keywordSource.includes('interstitial') ||
+				keywordSource.includes('newsletter') ||
+				keywordSource.includes('subscribe') ||
+				element.getAttribute('role') === 'dialog' ||
+				element.getAttribute('role') === 'alertdialog'
+
+			const positioned =
+				style.position === 'fixed' ||
+				style.position === 'sticky' ||
+				style.position === 'absolute'
+
+			return (
+				looksLikePopup && positioned && (coversViewport || zIndex > 999)
+			)
+		}
+
+		for (const selector of selectors) {
+			for (const element of document.querySelectorAll(selector)) {
+				if (shouldRemove(element)) {
+					element.remove()
+				}
+			}
+		}
+	}, POPUP_REMOVE_SELECTORS)
+}
+
+async function launchBrowser(
+	launchOptions: LaunchOptions = {}
+): Promise<Browser> {
+	const needsPlugins = launchOptions.stealth || launchOptions.blockAds
+
 	if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
 		const chromium = (await import('@sparticuz/chromium')).default
-		const puppeteer = (await import('puppeteer-core')).default
-		return puppeteer.launch({
-			args: chromium.args,
+		const puppeteerCore = (await import('puppeteer-core')).default
+
+		const args = [...chromium.args]
+		if (launchOptions.stealth) {
+			args.push(STEALTH_CHROME_ARG)
+		}
+
+		if (needsPlugins) {
+			const { addExtra } = await import('puppeteer-extra')
+			const puppeteer = addExtra(puppeteerCore)
+			if (launchOptions.stealth) {
+				const stealthPlugin = await import(
+					'puppeteer-extra-plugin-stealth'
+				)
+				puppeteer.use(stealthPlugin.default())
+			}
+			if (launchOptions.blockAds) {
+				const adblockerPlugin = await import(
+					'puppeteer-extra-plugin-adblocker'
+				)
+				puppeteer.use(adblockerPlugin.default({ blockTrackers: true }))
+			}
+			return puppeteer.launch({
+				args,
+				defaultViewport: null,
+				executablePath: await chromium.executablePath(),
+				headless: chromium.headless
+			})
+		}
+
+		return puppeteerCore.launch({
+			args,
 			defaultViewport: null,
 			executablePath: await chromium.executablePath(),
 			headless: chromium.headless
 		})
 	}
 
-	const puppeteer = (await import('puppeteer-core')).default
+	const puppeteerCore = (await import('puppeteer-core')).default
 	const possiblePaths = [
 		'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 		'/usr/bin/google-chrome-stable',
@@ -219,14 +528,44 @@ async function launchBrowser(): Promise<Browser> {
 		'/usr/bin/chromium'
 	]
 
-	for (const path of possiblePaths) {
-		try {
-			return await puppeteer.launch({
-				executablePath: path,
-				headless: true,
-				args: ['--no-sandbox', '--disable-setuid-sandbox']
-			})
-		} catch {}
+	const baseArgs = ['--no-sandbox', '--disable-setuid-sandbox']
+	if (launchOptions.stealth) {
+		baseArgs.push(STEALTH_CHROME_ARG)
+	}
+
+	if (needsPlugins) {
+		const { addExtra } = await import('puppeteer-extra')
+		const puppeteer = addExtra(puppeteerCore)
+		if (launchOptions.stealth) {
+			const stealthPlugin = await import('puppeteer-extra-plugin-stealth')
+			puppeteer.use(stealthPlugin.default())
+		}
+		if (launchOptions.blockAds) {
+			const adblockerPlugin = await import(
+				'puppeteer-extra-plugin-adblocker'
+			)
+			puppeteer.use(adblockerPlugin.default({ blockTrackers: true }))
+		}
+
+		for (const path of possiblePaths) {
+			try {
+				return await puppeteer.launch({
+					executablePath: path,
+					headless: true,
+					args: baseArgs
+				})
+			} catch {}
+		}
+	} else {
+		for (const path of possiblePaths) {
+			try {
+				return await puppeteerCore.launch({
+					executablePath: path,
+					headless: true,
+					args: baseArgs
+				})
+			} catch {}
+		}
 	}
 
 	throw new Error(
@@ -234,88 +573,60 @@ async function launchBrowser(): Promise<Browser> {
 	)
 }
 
-async function launchBrowserStealth(): Promise<Browser> {
-	if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-		const chromium = (await import('@sparticuz/chromium')).default
-		const puppeteer = (await import('puppeteer-core')).default
-		return puppeteer.launch({
-			args: [...chromium.args, STEALTH_CHROME_ARG],
-			defaultViewport: null,
-			executablePath: await chromium.executablePath(),
-			headless: chromium.headless
-		})
-	}
-
-	const puppeteer = (await import('puppeteer-core')).default
-	const possiblePaths = [
-		'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-		'/usr/bin/google-chrome-stable',
-		'/usr/bin/google-chrome',
-		'/usr/bin/chromium-browser',
-		'/usr/bin/chromium'
-	]
-
-	for (const path of possiblePaths) {
-		try {
-			return await puppeteer.launch({
-				executablePath: path,
-				headless: true,
-				args: [
-					'--no-sandbox',
-					'--disable-setuid-sandbox',
-					STEALTH_CHROME_ARG
-				]
-			})
-		} catch {}
-	}
-
-	throw new Error(
-		'No Chrome/Chromium found. Install Chrome or set VERCEL env.'
-	)
-}
-
-export function generateCacheKey(options: ScreenshotOptions): string {
+export function generateCacheKey({
+	userId,
+	options
+}: {
+	userId: string
+	options: ScreenshotOptions
+}): string {
 	const { cacheTtl, ...rest } = options
 	void cacheTtl
-	const sorted = JSON.stringify(rest, Object.keys(rest).sort())
-	let hash = 0
-	for (let i = 0; i < sorted.length; i++) {
-		const char = sorted.charCodeAt(i)
-		hash = (hash << 5) - hash + char
-		hash |= 0
-	}
-	return `sc_${Math.abs(hash).toString(36)}`
+	const payload = stableSerialize({ userId, ...rest })
+	return `sc_${createHash('sha256').update(payload).digest('hex')}`
 }
 
 export async function takeScreenshot(
 	options: ScreenshotOptions
 ): Promise<{ buffer: Buffer; contentType: string }> {
-	const browser = await (options.stealthMode
-		? launchBrowserStealth()
-		: launchBrowser())
+	const browser = await launchBrowser({
+		stealth: options.stealthMode,
+		blockAds: options.blockAds
+	})
+	const resolutionCache = new Map<string, Promise<void>>()
 
 	try {
 		const page = await browser.newPage()
 
-		if (options.stealthMode) {
-			await page.evaluateOnNewDocument(() => {
-				Object.defineProperty(navigator, 'webdriver', {
-					get: () => false
-				})
-			})
-			await page.setUserAgent(STEALTH_USER_AGENT)
+		if (options.html === undefined) {
+			await assertSafeTargetUrl(options.url, resolutionCache)
 		}
 
-		if (options.blockAds) {
+		if (!shouldAllowPrivateNetworkAccess()) {
 			await page.setRequestInterception(true)
 			page.on('request', request => {
-				const url = request.url()
-				const blocked = isBlockedAdUrl(url)
-				if (blocked) {
-					void request.abort()
-				} else {
-					void request.continue()
-				}
+				void (async () => {
+					if (request.isInterceptResolutionHandled()) return
+
+					const url = request.url()
+
+					try {
+						await assertSafeTargetUrl(url, resolutionCache)
+					} catch (error) {
+						if (error instanceof UnsafeTargetError) {
+							if (!request.isInterceptResolutionHandled()) {
+								await request.abort()
+							}
+							return
+						}
+
+						throw error
+					}
+
+					if (!request.isInterceptResolutionHandled()) {
+						await request.continue()
+					}
+				})()
 			})
 		}
 
@@ -336,7 +647,12 @@ export async function takeScreenshot(
 						: new URL(options.url).origin
 				const context = browser.defaultBrowserContext()
 				await context.overridePermissions(origin, ['geolocation'])
-			} catch {}
+			} catch (error) {
+				console.error(
+					'Failed to override geolocation permissions',
+					error
+				)
+			}
 			await page.setGeolocation({
 				latitude: options.geoLocation.latitude,
 				longitude: options.geoLocation.longitude,
@@ -349,9 +665,7 @@ export async function takeScreenshot(
 		}
 
 		if (options.locale) {
-			await page.setExtraHTTPHeaders({
-				'Accept-Language': options.locale
-			})
+			await applyLocale(page, options.locale)
 		}
 
 		if (options.colorScheme) {
@@ -375,46 +689,37 @@ export async function takeScreenshot(
 		}
 
 		if (options.removeCookieBanners) {
-			await page.addStyleTag({ content: COOKIE_BANNER_HIDE_CSS })
-			await page.evaluate(selectors => {
-				for (const sel of selectors) {
-					const el = document.querySelector(sel)
-					if (el instanceof HTMLElement) {
-						el.click()
-						return
-					}
-				}
-			}, COOKIE_ACCEPT_SELECTORS)
-			await new Promise(resolve => setTimeout(resolve, 500))
+			await removeCookieBanners(page)
 		}
 
 		if (options.removePopups) {
-			await page.addStyleTag({ content: POPUP_HIDE_CSS })
-			await page.evaluate(selectors => {
-				for (const sel of selectors) {
-					for (const el of document.querySelectorAll(sel)) {
-						const style = window.getComputedStyle(el)
-						const zIndex = Number.parseInt(style.zIndex, 10)
-						if (
-							style.position === 'fixed' ||
-							style.position === 'sticky' ||
-							(!Number.isNaN(zIndex) && zIndex > 999)
-						) {
-							el.remove()
-						}
-					}
-				}
-			}, POPUP_REMOVE_SELECTORS)
+			await removePopupElements(page)
 		}
 
 		if (options.removeElements?.length) {
-			await page.evaluate(selectors => {
-				for (const sel of selectors) {
-					for (const el of document.querySelectorAll(sel)) {
-						el.remove()
+			const invalidSelectors = await page.evaluate(selectors => {
+				const invalid: string[] = []
+
+				for (const selector of selectors) {
+					try {
+						for (const element of document.querySelectorAll(
+							selector
+						)) {
+							element.remove()
+						}
+					} catch {
+						invalid.push(selector)
 					}
 				}
+
+				return invalid
 			}, options.removeElements)
+
+			if ((invalidSelectors ?? []).length > 0) {
+				throw new Error(
+					`removeElements contains invalid selector: ${(invalidSelectors ?? [])[0]}`
+				)
+			}
 		}
 
 		if (options.cssInject) {
@@ -424,7 +729,13 @@ export async function takeScreenshot(
 		if (options.jsInject) {
 			try {
 				await page.evaluate(options.jsInject)
-			} catch {}
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: 'Unknown jsInject error'
+				throw new Error(`jsInject failed: ${message}`)
+			}
 		}
 
 		if (options.waitForSelector) {
@@ -474,9 +785,11 @@ export async function takeScreenshot(
 			const mockup = await applyDeviceMockup(
 				browser,
 				buffer,
+				contentType,
 				options.mockupDevice,
 				width,
-				height
+				height,
+				getBrowserLabel(options.url)
 			)
 			buffer = mockup.buffer
 			contentType = mockup.contentType

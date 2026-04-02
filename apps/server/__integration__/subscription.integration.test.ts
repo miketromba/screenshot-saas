@@ -23,8 +23,7 @@ const {
 const { getBalance, initializeCredits, addCredits } = await import(
 	'../src/services/credits'
 )
-const { getCachedScreenshot, setCachedScreenshot, cleanExpiredCache } =
-	await import('../src/services/cache')
+const { cleanExpiredCache } = await import('../src/services/cache')
 
 const testUserId = crypto.randomUUID()
 
@@ -338,66 +337,77 @@ describe(
 )
 
 describe(
-	'cache service',
+	'cache service (metadata layer)',
 	() => {
-		it('getCachedScreenshot returns null for non-existent key', async () => {
-			const result = await getCachedScreenshot('nonexistent-key')
-			expect(result).toBeNull()
-		})
-
-		it('setCachedScreenshot stores data and getCachedScreenshot retrieves it', async () => {
-			await setCachedScreenshot({
-				cacheKey: 'test-cache-key',
-				imageData: 'base64-image-data',
-				contentType: 'image/png',
-				url: 'https://example.com',
-				optionsHash: 'hash123',
-				ttlSeconds: 3600
-			})
-
-			const result = await getCachedScreenshot('test-cache-key')
-			expect(result).not.toBeNull()
-			expect(result!.imageData).toBe('base64-image-data')
-			expect(result!.contentType).toBe('image/png')
-		})
-
-		it('expired cache entries are not returned', async () => {
-			await setCachedScreenshot({
-				cacheKey: 'expiring-key',
-				imageData: 'ephemeral-data',
-				contentType: 'image/png',
-				url: 'https://example.com',
-				optionsHash: 'hash456',
-				ttlSeconds: 1
-			})
-
-			const before = await getCachedScreenshot('expiring-key')
-			expect(before).not.toBeNull()
-
-			await new Promise(resolve => setTimeout(resolve, 2000))
-
-			const after = await getCachedScreenshot('expiring-key')
-			expect(after).toBeNull()
-		})
-
-		it('cleanExpiredCache removes expired entries', async () => {
+		it('cleanExpiredCache removes expired DB rows', async () => {
 			await testDb.insert(schema.screenshotCache).values({
 				cacheKey: 'expired-clean-key',
-				imageData: 'old-data',
+				userId: testUserId,
+				storagePath: `${testUserId}/expired-clean-key`,
 				contentType: 'image/png',
 				url: 'https://example.com',
 				optionsHash: 'hash789',
 				ttlSeconds: 1,
+				imageSizeBytes: 1024,
 				expiresAt: new Date(Date.now() - 60_000)
 			})
-
-			const count = await cleanExpiredCache()
-			expect(count).toBeGreaterThanOrEqual(1)
 
 			const row = await testDb.query.screenshotCache.findFirst({
 				where: eq(schema.screenshotCache.cacheKey, 'expired-clean-key')
 			})
-			expect(row).toBeUndefined()
+			expect(row).toBeDefined()
+
+			const count = await cleanExpiredCache()
+			expect(count).toBeGreaterThanOrEqual(1)
+
+			const afterRow = await testDb.query.screenshotCache.findFirst({
+				where: eq(schema.screenshotCache.cacheKey, 'expired-clean-key')
+			})
+			expect(afterRow).toBeUndefined()
+		})
+
+		it('non-expired entries are preserved during cleanup', async () => {
+			await testDb.insert(schema.screenshotCache).values({
+				cacheKey: 'fresh-key',
+				userId: testUserId,
+				storagePath: `${testUserId}/fresh-key`,
+				contentType: 'image/png',
+				url: 'https://example.com',
+				optionsHash: 'hash-fresh',
+				ttlSeconds: 3600,
+				imageSizeBytes: 2048,
+				expiresAt: new Date(Date.now() + 3600_000)
+			})
+
+			await cleanExpiredCache()
+
+			const row = await testDb.query.screenshotCache.findFirst({
+				where: eq(schema.screenshotCache.cacheKey, 'fresh-key')
+			})
+			expect(row).toBeDefined()
+			expect(row!.userId).toBe(testUserId)
+			expect(row!.storagePath).toBe(`${testUserId}/fresh-key`)
+		})
+
+		it('cache entries are scoped by userId', async () => {
+			await testDb.insert(schema.screenshotCache).values({
+				cacheKey: 'user-scoped-key',
+				userId: testUserId,
+				storagePath: `${testUserId}/user-scoped-key`,
+				contentType: 'image/webp',
+				url: 'https://example.com',
+				optionsHash: 'hash-scoped',
+				ttlSeconds: 3600,
+				imageSizeBytes: 512,
+				expiresAt: new Date(Date.now() + 3600_000)
+			})
+
+			const row = await testDb.query.screenshotCache.findFirst({
+				where: eq(schema.screenshotCache.cacheKey, 'user-scoped-key')
+			})
+			expect(row).toBeDefined()
+			expect(row!.userId).toBe(testUserId)
+			expect(row!.imageSizeBytes).toBe(512)
 		})
 	},
 	{ timeout: 30_000 }

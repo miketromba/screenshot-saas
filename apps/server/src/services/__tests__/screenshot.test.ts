@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 
+const mockLookup = mock(() =>
+	Promise.resolve([{ address: '93.184.216.34', family: 4 }])
+)
 const mockScreenshot = mock(() => Promise.resolve(Buffer.from('fake-png')))
 const mockEvaluate = mock(() => Promise.resolve())
 const mockSetViewport = mock(() => Promise.resolve())
@@ -16,6 +19,12 @@ const mockEmulateTimezone = mock(() => Promise.resolve())
 const mockAddStyleTag = mock(() => Promise.resolve())
 const mockSetContent = mock(() => Promise.resolve())
 const mockSetGeolocation = mock(() => Promise.resolve())
+const mockCdpSend = mock(() => Promise.resolve())
+const mockCreateCDPSession = mock(() =>
+	Promise.resolve({
+		send: mockCdpSend
+	})
+)
 const mockPageClose = mock(() => Promise.resolve())
 const mockDollar = mock(() => Promise.resolve(null))
 const mockOverridePermissions = mock(() => Promise.resolve())
@@ -40,6 +49,7 @@ const mockNewPage = mock(() =>
 		addStyleTag: mockAddStyleTag,
 		setContent: mockSetContent,
 		setGeolocation: mockSetGeolocation,
+		createCDPSession: mockCreateCDPSession,
 		close: mockPageClose,
 		$: mockDollar
 	})
@@ -52,9 +62,39 @@ const mockLaunch = mock(() =>
 		defaultBrowserContext: mockDefaultBrowserContext
 	})
 )
+const mockPluginUse = mock(() => undefined)
+const mockPluginLaunch = mock(() =>
+	Promise.resolve({
+		newPage: mockNewPage,
+		close: mockClose,
+		defaultBrowserContext: mockDefaultBrowserContext
+	})
+)
+const mockAddExtra = mock(() => ({
+	use: mockPluginUse,
+	launch: mockPluginLaunch
+}))
+const mockStealthPluginFactory = mock(() => ({ name: 'stealth-plugin' }))
+const mockAdblockerPluginFactory = mock(() => ({ name: 'adblocker-plugin' }))
+
+mock.module('node:dns/promises', () => ({
+	lookup: mockLookup
+}))
 
 mock.module('puppeteer-core', () => ({
 	default: { launch: mockLaunch }
+}))
+
+mock.module('puppeteer-extra', () => ({
+	addExtra: mockAddExtra
+}))
+
+mock.module('puppeteer-extra-plugin-stealth', () => ({
+	default: mockStealthPluginFactory
+}))
+
+mock.module('puppeteer-extra-plugin-adblocker', () => ({
+	default: mockAdblockerPluginFactory
 }))
 
 mock.module('@sparticuz/chromium', () => ({
@@ -69,6 +109,8 @@ const { takeScreenshot } = await import('../screenshot')
 
 describe('takeScreenshot', () => {
 	beforeEach(() => {
+		delete process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK
+		mockLookup.mockReset()
 		mockScreenshot.mockReset()
 		mockSetViewport.mockReset()
 		mockGoto.mockReset()
@@ -78,6 +120,11 @@ describe('takeScreenshot', () => {
 		mockNewPage.mockReset()
 		mockClose.mockReset()
 		mockLaunch.mockReset()
+		mockPluginUse.mockReset()
+		mockPluginLaunch.mockReset()
+		mockAddExtra.mockReset()
+		mockStealthPluginFactory.mockReset()
+		mockAdblockerPluginFactory.mockReset()
 		mockPdf.mockReset()
 		mockSetRequestInterception.mockReset()
 		mockOn.mockReset()
@@ -88,11 +135,16 @@ describe('takeScreenshot', () => {
 		mockAddStyleTag.mockReset()
 		mockSetContent.mockReset()
 		mockSetGeolocation.mockReset()
+		mockCdpSend.mockReset()
+		mockCreateCDPSession.mockReset()
 		mockPageClose.mockReset()
 		mockDollar.mockReset()
 		mockOverridePermissions.mockReset()
 		mockDefaultBrowserContext.mockReset()
 
+		mockLookup.mockReturnValue(
+			Promise.resolve([{ address: '93.184.216.34', family: 4 }])
+		)
 		mockScreenshot.mockReturnValue(Promise.resolve(Buffer.from('fake-png')))
 		mockEvaluate.mockReturnValue(Promise.resolve())
 		mockSetViewport.mockReturnValue(Promise.resolve())
@@ -108,6 +160,12 @@ describe('takeScreenshot', () => {
 		mockAddStyleTag.mockReturnValue(Promise.resolve())
 		mockSetContent.mockReturnValue(Promise.resolve())
 		mockSetGeolocation.mockReturnValue(Promise.resolve())
+		mockCdpSend.mockReturnValue(Promise.resolve())
+		mockCreateCDPSession.mockReturnValue(
+			Promise.resolve({
+				send: mockCdpSend
+			})
+		)
 		mockPageClose.mockReturnValue(Promise.resolve())
 		mockDollar.mockReturnValue(Promise.resolve(null))
 		mockOverridePermissions.mockReturnValue(Promise.resolve())
@@ -132,6 +190,7 @@ describe('takeScreenshot', () => {
 				addStyleTag: mockAddStyleTag,
 				setContent: mockSetContent,
 				setGeolocation: mockSetGeolocation,
+				createCDPSession: mockCreateCDPSession,
 				close: mockPageClose,
 				$: mockDollar
 			})
@@ -144,6 +203,22 @@ describe('takeScreenshot', () => {
 				defaultBrowserContext: mockDefaultBrowserContext
 			})
 		)
+		mockPluginUse.mockReturnValue(undefined)
+		mockPluginLaunch.mockReturnValue(
+			Promise.resolve({
+				newPage: mockNewPage,
+				close: mockClose,
+				defaultBrowserContext: mockDefaultBrowserContext
+			})
+		)
+		mockAddExtra.mockReturnValue({
+			use: mockPluginUse,
+			launch: mockPluginLaunch
+		})
+		mockStealthPluginFactory.mockReturnValue({ name: 'stealth-plugin' })
+		mockAdblockerPluginFactory.mockReturnValue({
+			name: 'adblocker-plugin'
+		})
 
 		process.env.VERCEL = '1'
 	})
@@ -152,6 +227,27 @@ describe('takeScreenshot', () => {
 		const result = await takeScreenshot({ url: 'https://example.com' })
 		expect(result.buffer).toBeInstanceOf(Buffer)
 		expect(result.contentType).toBe('image/png')
+	})
+
+	it('rejects unsafe targets before navigation', async () => {
+		mockLookup.mockReturnValue(
+			Promise.resolve([{ address: '127.0.0.1', family: 4 }])
+		)
+
+		await expect(
+			takeScreenshot({ url: 'http://localhost:3000' })
+		).rejects.toThrow('Local and internal hostnames are not allowed.')
+		expect(mockGoto).not.toHaveBeenCalled()
+	})
+
+	it('allows private targets when explicitly enabled', async () => {
+		process.env.SCREENSHOT_ALLOW_PRIVATE_NETWORK = 'true'
+
+		await takeScreenshot({ url: 'http://localhost:3000' })
+		expect(mockGoto).toHaveBeenCalledWith('http://localhost:3000', {
+			waitUntil: 'networkidle2',
+			timeout: 30_000
+		})
 	})
 
 	it('uses default viewport of 1440x900', async () => {
@@ -308,27 +404,28 @@ describe('takeScreenshot', () => {
 	})
 
 	describe('ad blocking', () => {
-		it('calls page.setRequestInterception(true) when blockAds is true', async () => {
+		it('registers the adblocker plugin when blockAds is true', async () => {
 			await takeScreenshot({ url: 'https://example.com', blockAds: true })
-			expect(mockSetRequestInterception).toHaveBeenCalledWith(true)
+			expect(mockAddExtra).toHaveBeenCalled()
+			expect(mockAdblockerPluginFactory).toHaveBeenCalledWith({
+				blockTrackers: true
+			})
+			expect(mockPluginUse).toHaveBeenCalledWith({
+				name: 'adblocker-plugin'
+			})
 		})
 
-		it('registers a request event listener when blockAds is true', async () => {
-			await takeScreenshot({ url: 'https://example.com', blockAds: true })
-			expect(mockOn).toHaveBeenCalledWith('request', expect.any(Function))
-		})
-
-		it('does NOT call setRequestInterception when blockAds is false', async () => {
+		it('does NOT register adblocker plugin when blockAds is false', async () => {
 			await takeScreenshot({
 				url: 'https://example.com',
 				blockAds: false
 			})
-			expect(mockSetRequestInterception).not.toHaveBeenCalled()
+			expect(mockAdblockerPluginFactory).not.toHaveBeenCalled()
 		})
 
-		it('does NOT call setRequestInterception when blockAds is undefined', async () => {
+		it('still enables request interception for network safety', async () => {
 			await takeScreenshot({ url: 'https://example.com' })
-			expect(mockSetRequestInterception).not.toHaveBeenCalled()
+			expect(mockSetRequestInterception).toHaveBeenCalledWith(true)
 		})
 	})
 
@@ -453,45 +550,56 @@ describe('takeScreenshot', () => {
 			expect(hasJsCall).toBe(true)
 		})
 
-		it('does not throw when JS injection errors', async () => {
+		it('throws a descriptive error when JS injection errors', async () => {
 			mockEvaluate.mockImplementation((arg: unknown) => {
 				if (typeof arg === 'string') {
 					return Promise.reject(new Error('JS error'))
 				}
 				return Promise.resolve()
 			})
-			const result = await takeScreenshot({
-				url: 'https://example.com',
-				jsInject: 'throw new Error("boom")'
-			})
-			expect(result.buffer).toBeInstanceOf(Buffer)
+
+			await expect(
+				takeScreenshot({
+					url: 'https://example.com',
+					jsInject: 'throw new Error("boom")'
+				})
+			).rejects.toThrow('jsInject failed: JS error')
 		})
 	})
 
 	describe('stealth mode', () => {
-		it('calls page.evaluateOnNewDocument when stealthMode is true', async () => {
+		it('uses puppeteer-extra with stealth plugin when stealthMode is true', async () => {
 			await takeScreenshot({
 				url: 'https://example.com',
 				stealthMode: true
 			})
-			expect(mockEvaluateOnNewDocument).toHaveBeenCalled()
-		})
-
-		it('calls page.setUserAgent when stealthMode is true', async () => {
-			await takeScreenshot({
-				url: 'https://example.com',
-				stealthMode: true
+			expect(mockAddExtra).toHaveBeenCalled()
+			expect(mockStealthPluginFactory).toHaveBeenCalled()
+			expect(mockPluginUse).toHaveBeenCalledWith({
+				name: 'stealth-plugin'
 			})
-			expect(mockSetUserAgent).toHaveBeenCalledWith(expect.any(String))
+			expect(mockPluginLaunch).toHaveBeenCalled()
 		})
 
-		it('does NOT call evaluateOnNewDocument or setUserAgent when stealthMode is false', async () => {
+		it('does NOT use puppeteer-extra when stealthMode is false and blockAds is false', async () => {
 			await takeScreenshot({
 				url: 'https://example.com',
 				stealthMode: false
 			})
-			expect(mockEvaluateOnNewDocument).not.toHaveBeenCalled()
-			expect(mockSetUserAgent).not.toHaveBeenCalled()
+			expect(mockAddExtra).not.toHaveBeenCalled()
+			expect(mockPluginLaunch).not.toHaveBeenCalled()
+		})
+
+		it('uses both stealth and adblocker plugins together', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				stealthMode: true,
+				blockAds: true
+			})
+			expect(mockAddExtra).toHaveBeenCalled()
+			expect(mockStealthPluginFactory).toHaveBeenCalled()
+			expect(mockAdblockerPluginFactory).toHaveBeenCalled()
+			expect(mockPluginUse).toHaveBeenCalledTimes(2)
 		})
 	})
 
@@ -536,8 +644,21 @@ describe('takeScreenshot', () => {
 				locale: 'fr-FR'
 			})
 			expect(mockSetExtraHTTPHeaders).toHaveBeenCalledWith({
-				'Accept-Language': 'fr-FR'
+				'Accept-Language': 'fr-FR,fr;q=0.9'
 			})
+		})
+
+		it('calls CDP locale override when locale is provided', async () => {
+			await takeScreenshot({
+				url: 'https://example.com',
+				locale: 'fr-FR'
+			})
+
+			expect(mockCreateCDPSession).toHaveBeenCalled()
+			expect(mockCdpSend).toHaveBeenCalledWith(
+				'Emulation.setLocaleOverride',
+				{ locale: 'fr-FR' }
+			)
 		})
 
 		it('does NOT call setExtraHTTPHeaders when locale is not provided', async () => {
@@ -599,6 +720,29 @@ describe('takeScreenshot', () => {
 					Array.isArray(call[1]) && call[1].includes('.popup')
 			)
 			expect(hasRemoveCall).toBe(false)
+		})
+
+		it('throws when removeElements includes an invalid selector', async () => {
+			mockEvaluate.mockImplementation(
+				(_arg: unknown, selectors: unknown) => {
+					if (
+						Array.isArray(selectors) &&
+						selectors.includes('[broken')
+					) {
+						return Promise.resolve(['[broken'])
+					}
+					return Promise.resolve()
+				}
+			)
+
+			await expect(
+				takeScreenshot({
+					url: 'https://example.com',
+					removeElements: ['[broken']
+				})
+			).rejects.toThrow(
+				'removeElements contains invalid selector: [broken'
+			)
 		})
 	})
 

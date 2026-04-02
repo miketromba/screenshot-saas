@@ -1,250 +1,314 @@
-# Feature Quality Audit Plan
+# Screenshot Engine Feature Quality Audit Plan
 
 ## Purpose
 
-This document is the operating plan for a full quality audit of every feature this product offers, exposes, or publicly claims to support.
+This document defines the process for auditing the **implementation quality of the screenshot engine itself**.
 
-The goal is not to do a shallow review. The goal is to determine, for every feature:
+This is not a broad product audit.
 
-- whether it actually works
-- whether it is implemented well
-- whether it is safe, maintainable, and testable
-- whether the docs and marketing accurately describe it
-- whether the current implementation is the highest-quality version of that feature we should ship
+The focus is the domain-specific feature set of the rendering engine:
 
-This is an audit plan, not the audit itself.
+- how each screenshot feature is implemented
+- how robust and reliable that implementation is
+- how well it handles real-world websites
+- what classes of sites or behaviors it fails on
+- whether the current solution is naive, acceptable, strong, or best-in-class
+- what a higher-quality implementation would look like
+
+If a feature exists mainly in the screenshot pipeline, this document covers it.
+
+If a feature is primarily billing, auth, dashboard UX, docs, or marketing, it is out of scope unless it directly affects screenshot-engine behavior.
+
+---
+
+## What This Audit Is
+
+This audit is about questions like:
+
+- Is our cookie-banner removal strategy actually good?
+- Is our popup removal logic robust or brittle?
+- Are our wait strategies sufficient for modern JS-heavy apps?
+- Is our ad blocking approach too simplistic?
+- Is stealth mode meaningfully useful or mostly cosmetic?
+- Is our full-page capture reliable on long and lazy-loaded pages?
+- Is our caching design sound for screenshot rendering?
+
+This audit is **not** mainly about:
+
+- whether a route exists
+- whether pricing copy matches implementation
+- whether the dashboard has the right buttons
+- whether billing is wired correctly
+
+Those things matter, but they are not the core target of this document.
 
 ---
 
 ## Instructions For The Facilitator Agent
 
-You are the orchestrator, not the primary reviewer.
+You are the orchestrator, not the implementation reviewer.
 
-Your job is to preserve your context window by breaking this audit into bounded tasks and delegating the deep work to subagents. You should coordinate, consolidate, prioritize, and track findings, but you should not personally perform the detailed code review, runtime QA, or exhaustive feature verification except when a tiny tie-breaker is needed.
+Your job is to preserve your context window by delegating each feature review to narrowly scoped subagents. You should coordinate the review sequence, enforce the evaluation standard, consolidate findings, and build the remediation backlog.
+
+You should **not** personally do the deep analysis for every feature.
 
 ### Operating Rules
 
 1. Read this file completely before starting.
-2. Read the repo instructions in `AGENTS.md`.
-3. For runtime verification work, read and follow:
-   - `.agents/skills/qa-testing/SKILL.md`
-   - `.agents/skills/agent-browser/SKILL.md`
-4. Delegate every substantial review task to a subagent.
-5. Keep each subagent narrowly scoped to one feature family or one verification objective.
-6. Run independent subagents in parallel whenever possible.
-7. Do not let one agent review the whole product end to end.
-8. Do not let browser QA happen in the facilitator's own context unless absolutely necessary.
-9. Prefer `generalPurpose` subagents for deep reviews and QA flows.
-10. For broad codebase mapping, prefer `explore` subagents.
-11. For browser-based QA in this repo, use a `generalPurpose` subagent that follows the `qa-testing` skill and uses `agent-browser`. Do not use `browser-use` for this workflow.
-12. Require evidence from every delegated task. No hand-wavy conclusions.
-13. Do not edit code during the audit unless explicitly asked in a separate task.
-14. Track anything that is partially implemented, misleadingly marketed, or only present as internal scaffolding.
+2. Read `AGENTS.md`.
+3. Use subagents for every substantial review task.
+4. Keep each subagent focused on one feature or one tight feature family.
+5. Run independent subagents in parallel whenever possible.
+6. Do not assign the entire screenshot engine to a single subagent.
+7. Require concrete evidence and implementation critique, not summaries.
+8. Prefer `generalPurpose` subagents for deep feature audits.
+9. Use `explore` subagents only when first mapping code paths or locating related files.
+10. Use browser/runtime verification only when it materially helps evaluate implementation quality.
+11. Do not edit code during the audit unless explicitly asked in a separate task.
+12. Distinguish clearly between:
+    - feature exists
+    - feature works
+    - feature is high quality
+13. Make subagents compare the current implementation against stronger alternative designs when relevant.
+14. Treat "good enough for a demo" and "production-grade implementation" as different ratings.
 
-### Required Deliverable Format For Every Subagent
+### What Every Subagent Must Return
 
-Every delegated task must return:
+Every delegated review must return:
 
-- `Scope reviewed`
-- `What was verified`
-- `Findings` ordered by severity
-- `Evidence` with file paths, routes, commands run, and screenshots/readbacks where relevant
-- `Gaps not verified`
-- `Recommended follow-up`
-- `Suggested owner` if obvious
+- `Feature reviewed`
+- `Problem this feature is trying to solve`
+- `Current implementation strategy`
+- `Strengths`
+- `Weaknesses`
+- `Failure modes and edge cases`
+- `Comparison to stronger approaches`
+- `Quality rating`
+- `Evidence`
+- `Recommended improvements`
 
-### Severity Levels
+### Quality Rating Scale
 
-- `Critical`: security issue, billing breakage, data loss, major false marketing claim, core feature unusable
-- `High`: broken major workflow, incorrect quota/billing behavior, incorrect auth, missing required error handling
-- `Medium`: unreliable edge case, weak UX, inconsistent docs, flaky or incomplete test coverage
-- `Low`: polish, wording mismatch, minor performance or maintainability concerns
+Use this exact scale:
+
+- `1/5 - naive`
+- `2/5 - weak`
+- `3/5 - acceptable`
+- `4/5 - strong`
+- `5/5 - best in class`
+
+Subagents must justify the rating.
 
 ### Evidence Standard
 
-A feature is not considered audited until the delegated reviewer has checked all applicable layers:
+A feature is not considered audited until the reviewer has inspected all applicable layers:
 
-- implementation quality
-- API or UI behavior
-- edge cases and negative cases
-- test coverage and missing tests
-- docs/marketing alignment
-- security and abuse angle
-- observability and debugging support
+- implementation details in code
+- related tests
+- real-world behavior assumptions
+- edge-case handling
+- failure handling
+- performance implications
+- abuse/security implications
+- maintainability and extensibility
 
-If a reviewer cannot verify something, they must say exactly why.
+If runtime verification is used, it should support the implementation critique, not replace it.
 
 ---
 
-## Audit Method
+## Core Audit Method
 
-Every feature family should be reviewed in the same order:
+Every screenshot-engine feature should be reviewed in the same sequence:
 
-1. Inventory the exact user-facing promise.
-2. Trace the implementation path in code.
-3. Verify the happy path.
-4. Verify failure modes and edge cases.
-5. Verify quota, auth, and billing interactions if applicable.
-6. Verify UI and API ergonomics.
-7. Verify docs, examples, pricing copy, and positioning claims.
-8. Evaluate implementation quality:
-   - correctness
-   - clarity
-   - maintainability
-   - extensibility
-   - testability
-   - performance
-   - security
-9. Record findings and recommended changes.
+1. Define the problem the feature is solving.
+2. Identify the exact implementation strategy currently used.
+3. Trace the code path end to end.
+4. Identify the assumptions baked into the implementation.
+5. Identify the classes of sites/pages/scenarios it is likely to handle well.
+6. Identify the classes of sites/pages/scenarios it is likely to fail on.
+7. Evaluate whether the chosen approach is simplistic, reasonable, or advanced.
+8. Compare it against better-known or more robust implementation patterns.
+9. Assess test coverage quality.
+10. Produce a rating and concrete upgrade recommendations.
 
-For each feature family, the facilitator should ask subagents to answer:
+### Required Questions For Every Feature
 
-- Does this feature truly work?
-- Is the current implementation the best reasonable version of it?
-- Is the public promise accurate?
-- What would break under load, misuse, strange input, or real customer behavior?
-- What is missing that a high-quality implementation should include?
+Every reviewer must answer:
+
+- What exact strategy did we choose?
+- Why does this strategy work at all?
+- Where is it brittle?
+- What real-world scenarios will break it?
+- What would a stronger implementation do differently?
+- Are we missing observability that would tell us whether the feature is working in production?
+- Do current tests prove quality, or do they only prove the happy path?
+- If a competitor built this feature well, what would they probably add beyond our version?
+
+---
+
+## Evaluation Dimensions
+
+Each feature review should score or comment on all of these dimensions:
+
+- `Correctness`
+- `Robustness`
+- `Coverage breadth`
+- `Real-world reliability`
+- `Performance cost`
+- `Abuse/security risk`
+- `Maintainability`
+- `Extensibility`
+- `Test quality`
+- `Observability`
+
+If a dimension is not relevant, the reviewer should say so explicitly.
+
+---
+
+## Review Artifact Template
+
+Every feature review should be written using this template:
+
+### Feature reviewed
+
+`[feature name]`
+
+### Problem this feature is trying to solve
+
+- What customer problem does it solve?
+- What does "good" look like for this feature?
+
+### Current implementation strategy
+
+- Where is it implemented?
+- What exact tactics does it use?
+- What heuristics, selectors, or browser APIs does it rely on?
+
+### Strengths
+
+- What is good about the current approach?
+
+### Weaknesses
+
+- What is simplistic, brittle, incomplete, or risky?
+
+### Failure modes and edge cases
+
+- What scenarios will break it?
+- What site patterns are poorly handled?
+- What race conditions or timing issues exist?
+
+### Comparison to stronger approaches
+
+- What would a stronger implementation do?
+- What would a best-in-class implementation likely add?
+
+### Quality rating
+
+- `X/5`
+- Why this score?
+
+### Evidence
+
+- file paths
+- functions
+- tests
+- runtime behavior if used
+
+### Recommended improvements
+
+- Immediate upgrades
+- Structural upgrades
+- Tests or observability needed
 
 ---
 
 ## Audit Phases
 
-## Phase 0: Audit Setup
+## Phase 0: Engine Mapping And Setup
 
 ### Objective
 
-Create a clean baseline before reviewing feature quality.
+Create a precise map of the screenshot engine before auditing feature quality.
 
 ### Delegate
 
-- One subagent for environment and baseline health
-- One subagent for feature inventory and source-of-truth mapping
+- one subagent for engine code map
+- one subagent for feature inventory
 
 ### Tasks
 
-1. Verify the repo installs and runs with the expected toolchain.
-2. Identify required env vars, external services, and local blockers.
-3. Run baseline quality gates:
-   - `bun check`
-   - relevant tests
-   - full test suite if feasible
-4. Confirm which apps/packages are involved in each customer-facing feature.
-5. Build a feature map linking:
-   - feature name
-   - code paths
-   - API routes
-   - UI pages
-   - docs pages
-   - pricing/marketing claims
+1. Identify all screenshot-engine entry points.
+2. Identify all core services, helpers, and related tests.
+3. Build a feature inventory from code, not marketing copy.
+4. Group features into implementation families.
+5. Identify shared cross-cutting concerns:
+   - browser lifecycle
+   - page navigation
+   - DOM manipulation
+   - caching
+   - post-processing
+   - quota hooks only where they influence engine behavior
 
 ### Output
 
-- Baseline health report
-- Feature inventory matrix
-- Blocker list
-- Audit execution order recommendation
+- screenshot engine map
+- feature inventory
+- audit grouping proposal
 
 ---
 
-## Phase 1: Public API Surface Audit
+## Phase 1: Base Capture Pipeline Audit
 
 ### Objective
 
-Audit every externally exposed API route for contract quality, correctness, safety, and documentation accuracy.
+Evaluate the core rendering pipeline before layering on feature-specific behavior.
 
 ### Delegate
 
-Split into parallel subagents by route family:
+- one subagent for browser lifecycle and navigation
+- one subagent for base capture and output formats
+- one subagent for HTML rendering path
 
-- screenshot API
-- API keys API
-- credits API
-- subscription API
-- usage API
-- user API
-- webhook endpoint API
-- public health endpoint
-- incoming Polar webhook handler
+### Features To Audit
 
-### Review Criteria
-
-- request validation quality
-- auth behavior
-- status codes
-- error body quality
-- response headers
-- quota/billing side effects
-- backward compatibility risk
-- missing contract guarantees
-- test coverage depth
-- docs parity
-
-### Required Route Checklist
-
-Audit all of these explicitly:
-
-- `GET /api/health`
-- `GET /api/v1/screenshot`
-- `POST /api/v1/screenshot`
-- `GET /api/v1/playground/screenshot`
-- `GET /api/v1/api-keys`
-- `POST /api/v1/api-keys`
-- `DELETE /api/v1/api-keys/:id`
-- `GET /api/v1/credits/packs`
-- `GET /api/v1/credits`
-- `GET /api/v1/credits/transactions`
-- `POST /api/v1/credits/purchase`
-- `POST /api/v1/credits/initialize`
-- `GET /api/v1/subscription/plans`
-- `GET /api/v1/subscription`
-- `POST /api/v1/subscription/checkout`
-- `POST /api/v1/subscription/upgrade`
-- `POST /api/v1/subscription/cancel`
-- `GET /api/v1/subscription/portal`
-- `GET /api/v1/usage`
-- `GET /api/v1/usage/stats`
-- `GET /api/v1/user/me`
-- `GET /api/v1/webhooks`
-- `POST /api/v1/webhooks`
-- `DELETE /api/v1/webhooks/:id`
-- `POST /api/webhooks/polar`
-
----
-
-## Phase 2: Screenshot Engine Feature Audit
-
-### Objective
-
-Review every capture capability individually and in combination, including whether the implementation is robust, secure, and production-grade.
-
-### Delegate
-
-Break this into multiple subagents, each with a narrow slice:
-
-- base capture and formats
-- rendering/wait controls
-- cleanup/injection features
-- environment emulation
-- output enhancements
-- caching behavior
-- failure handling and browser lifecycle
-
-### Features To Audit Individually
-
-#### Base Capture
-
-- URL capture
-- raw HTML rendering via POST
+- browser launch strategy
+- local vs hosted Chromium behavior
+- browser/page lifecycle cleanup
+- URL navigation
+- raw HTML rendering
+- viewport sizing
+- full-page capture
 - PNG output
 - JPEG output
 - WebP output
 - PDF output
-- custom width
-- custom height
-- full-page capture
-- quality control
+- quality handling
 
-#### Rendering And Timing
+### Required Questions
+
+- Is the base pipeline structurally sound?
+- Are browser resources managed correctly?
+- Does the system rely on fragile defaults?
+- Does full-page capture handle long or lazy-loaded pages well?
+- Is PDF handled as a first-class path or just a branch?
+- Are format-specific tradeoffs handled well?
+
+---
+
+## Phase 2: Timing, Readiness, And Render Stability Audit
+
+### Objective
+
+Evaluate whether the engine knows when a page is actually ready to capture.
+
+### Delegate
+
+- one subagent for wait strategies
+- one subagent for selector-based readiness and delay behavior
+- one subagent for font/render completeness
+
+### Features To Audit
 
 - `waitUntil=load`
 - `waitUntil=domcontentloaded`
@@ -252,524 +316,375 @@ Break this into multiple subagents, each with a narrow slice:
 - `waitUntil=networkidle2`
 - `waitForSelector`
 - `delay`
-- font readiness behavior
-- Google font preloading
+- `document.fonts.ready`
+- font preloading
 
-#### Visual And Page-State Controls
+### Required Questions
 
-- light mode capture
-- dark mode capture
+- Does this work on modern client-rendered apps?
+- Which site types are likely to capture too early?
+- Is delay a weak fallback or a reliable control?
+- Are fonts handled in a robust way?
+- What would a more resilient render-readiness system look like?
+
+---
+
+## Phase 3: Content Cleanup And DOM Intervention Audit
+
+### Objective
+
+Deeply evaluate all features that try to manipulate the page before capture.
+
+### Delegate
+
+Assign separate subagents for each feature whenever possible:
+
+- cookie banner removal
+- popup removal
+- element removal
+- ad blocking
 - CSS injection
 - JS injection
-- element removal by selector
-- popup removal
-- cookie banner removal
-- ad blocking
 
-#### Environment Emulation
+### Features To Audit
+
+#### Cookie Banner Removal
+
+- selector coverage
+- CMP-specific handling
+- click-vs-hide strategy
+- delayed banners
+- localized banners
+- overlays and backdrops
+- iframe cases
+- shadow DOM cases
+- persistence side effects
+
+#### Popup Removal
+
+- heuristic quality
+- false positives
+- z-index and fixed-position assumptions
+- modals vs legitimate dialogs
+- late-appearing popups
+
+#### Element Removal
+
+- reliability of selector-based removal
+- safety of user-supplied selectors
+- observability when removal fails
+
+#### Ad Blocking
+
+- request interception strategy
+- blocklist quality
+- overblocking risk
+- underblocking risk
+- third-party script side effects
+
+#### CSS Injection
+
+- timing
+- flexibility
+- escape hatches
+- conflict with page layout
+
+#### JS Injection
+
+- timing
+- safety
+- debuggability
+- usefulness vs unpredictability
+
+### Required Questions
+
+- Is the approach heuristic-only, or does it have feature-aware logic?
+- How often will it work on real customer targets?
+- What major classes of cookie banners/popups/ads will it miss?
+- Is the implementation likely to create false positives?
+- What would a stronger multi-stage implementation look like?
+
+---
+
+## Phase 4: Environment Emulation And Anti-Detection Audit
+
+### Objective
+
+Evaluate how well the engine simulates user context and avoids detection.
+
+### Delegate
+
+- one subagent for stealth mode
+- one subagent for color scheme and locale/timezone
+- one subagent for DPR and geolocation
+
+### Features To Audit
 
 - stealth mode
-- device pixel ratio / retina capture
+- user-agent override
+- webdriver masking
+- color scheme emulation
+- device pixel ratio
 - timezone emulation
 - locale emulation
 - geolocation override
 
-#### Presentation Enhancements
+### Required Questions
 
-- browser mockup frame
-- iPhone mockup frame
-- MacBook mockup frame
+- Is this feature meaningful or mostly superficial?
+- Which detection surfaces are still uncovered?
+- How realistic is the emulation?
+- Which websites will still detect automation?
+- Is the implementation enough for the claim we are making?
 
-#### Caching
+---
 
-- cache key generation
+## Phase 5: Output Enhancement And Post-Processing Audit
+
+### Objective
+
+Evaluate features that transform, wrap, or reuse the capture result after rendering.
+
+### Delegate
+
+- one subagent for device mockups
+- one subagent for caching
+- one subagent for output metadata/headers if relevant to engine behavior
+
+### Features To Audit
+
+- browser mockup
+- iPhone mockup
+- MacBook mockup
+- cache key design
 - cache TTL behavior
-- cache hit correctness
-- cache miss correctness
-- cache + billing interaction
-- cache + varying options interaction
-
-### Required Quality Questions
-
-Every screenshot feature reviewer must answer:
-
-- Does it work for real inputs, not just synthetic tests?
-- What are the bad inputs?
-- What combinations produce surprising behavior?
-- Is the implementation overly permissive or unsafe?
-- Are timeouts and resource cleanup adequate?
-- Are errors actionable for customers?
-- Is the docs copy precise?
-- Is test coverage meaningful or superficial?
-
-### Special Security Questions
-
-Audit the screenshot engine for:
-
-- SSRF risk
-- internal network access risk
-- unsafe HTML or script execution assumptions
-- browser escape or filesystem assumptions
-- abuse potential from long pages, long delays, or pathological inputs
-- denial-of-service and cost explosion risk
-
----
-
-## Phase 3: Auth, Identity, And Access Audit
-
-### Objective
-
-Validate that authentication and authorization are correct across both the API product and the dashboard.
-
-### Delegate
-
-- one subagent for API key auth
-- one subagent for session auth and dashboard access
-- one subagent for auth-related edge cases and abuse cases
-
-### Features To Audit
-
-- API key required behavior
-- bearer token support
-- revoked key behavior
-- `lastUsedAt` updates
-- cross-user access isolation
-- session-protected route coverage
-- sign-in flow
-- sign-up flow
-- sign-out flow
-- user bootstrap via `/user/me`
-- QA bypass boundaries in non-production environments
+- cache reuse semantics
+- cache storage design
+- cache invalidation and cleanup
 
 ### Required Questions
 
-- Can one user access another user's data?
-- Are there missing ownership checks?
-- Are auth failures consistent and safe?
-- Are secrets or raw credentials leaked anywhere?
-- Are docs and legal pages accurate about auth and key handling?
+- Are mockups high quality or just decorative wrappers?
+- Do they preserve fidelity and sizing correctly?
+- Is caching architecturally sound for screenshot rendering?
+- Can caching produce incorrect or misleading outputs?
+- What stronger caching architecture would exist?
 
 ---
 
-## Phase 4: Billing, Plans, Credits, And Quota Audit
+## Phase 6: Cross-Cutting Engine Architecture Audit
 
 ### Objective
 
-Determine whether monetization and usage accounting are correct, defensible, and aligned with public pricing claims.
+Evaluate the screenshot engine as a system, beyond any one feature.
 
 ### Delegate
 
-- one subagent for subscription lifecycle
-- one subagent for credits and transactions
-- one subagent for quota enforcement and overage logic
-- one subagent for Polar integration flows
-- one subagent for pricing/marketing parity
-
-### Features To Audit
-
-#### Plans And Entitlements
-
-- free tier provisioning
-- monthly usage reset logic
-- monthly vs annual billing cycle behavior
-- plan changes
-- cancellation behavior
-- uncancel/revoke behavior from webhooks
-- overage behavior for paid plans
-
-#### Credits
-
-- credit balance initialization
-- credit pack listing
-- credit purchase flow
-- credit consumption on screenshot usage
-- transaction logging
-- fallback from subscription allowance to credits
-
-#### Checkout And Billing Operations
-
-- subscription checkout
-- upgrade flow
-- cancel flow
-- customer portal flow
-- Polar product ID mapping
-- webhook-driven state changes
-
-#### Public Promise Audit
-
-Explicitly verify whether each of these is:
-
-- fully shipped
-- partially implemented
-- internal only
-- marketed but not really available
-
-Items to verify carefully:
-
-- signed URLs
-- S3 upload
-- auto top-up
-- signup bonus
-- feature gating by plan
-- overage billing semantics
-
-### Required Questions
-
-- Can usage be miscounted?
-- Can customers be overcharged or undercharged?
-- Do plan tables match real enforcement?
-- Do purchased credits always land?
-- Are there race conditions around balance or usage updates?
-- Are the support expectations implied by pricing realistic?
-
----
-
-## Phase 5: Webhooks And External Integration Audit
-
-### Objective
-
-Audit both outgoing customer webhooks and incoming provider webhooks.
-
-### Delegate
-
-- one subagent for outbound webhook endpoint management
-- one subagent for outbound delivery behavior
-- one subagent for incoming Polar webhook correctness
-- one subagent for integration quality of any publicly claimed but not fully exposed feature
-
-### Features To Audit
-
-- webhook endpoint creation
-- webhook endpoint listing
-- webhook endpoint deletion/deactivation
-- secret generation
-- HMAC signature correctness
-- event filtering
-- `screenshot.completed` dispatch
-- delivery logging
-- network failure handling
-- response truncation behavior
-- delivery retry strategy or lack thereof
-- idempotency expectations
-
-### Required Questions
-
-- Can a customer rely on webhook delivery?
-- Is the webhook contract clear enough?
-- Are there replay, spoofing, or signature validation concerns?
-- Is delivery observability sufficient?
-- Are missing retries or dead-letter behavior a real product gap?
-
----
-
-## Phase 6: Dashboard And UX Audit
-
-### Objective
-
-Review every authenticated and public UI surface for workflow quality, clarity, resilience, and alignment with the underlying product.
-
-### Delegate
-
-Split by UI area:
-
-- auth pages
-- dashboard overview and navigation
-- API keys page
-- billing page
-- credits page
-- usage page
-- playground page
-- settings page
-- marketing homepage and pricing
-- docs explorer and docs navigation
-- status page
-
-### Review Criteria
-
-- can a real user complete the intended task?
-- loading states
-- error states
-- empty states
-- destructive action clarity
-- copy quality
-- accessibility
-- mobile responsiveness
-- visual correctness
-- consistency with billing and backend behavior
-
-### Required User Flows
-
-Audit these end-to-end:
-
-- sign up
-- sign in
-- sign out
-- first-time arrival to dashboard
-- create an API key and use it successfully
-- inspect usage history
-- inspect usage stats
-- view and use the screenshot playground
-- start a subscription checkout
-- purchase a credit pack
-- view pricing and understand the offer
-- read docs and successfully make a first API call
-
-### Playground-Specific Questions
-
-- Does the playground expose the right options?
-- Are there missing capture parameters?
-- Does it return helpful feedback?
-- Does it correctly reflect balance/quota?
-- Does it encourage successful first use?
-
----
-
-## Phase 7: Docs, SDK, And DX Audit
-
-### Objective
-
-Audit the developer experience promised by the product, not just the runtime behavior.
-
-### Delegate
-
-- one subagent for docs/API reference
-- one subagent for SDK parity
-- one subagent for code samples and quickstart quality
-- one subagent for marketing/docs consistency
-
-### Surfaces To Audit
-
-- docs homepage
-- authentication docs
-- screenshot API docs
-- credits docs
-- usage docs
-- API keys docs
-- webhooks docs
-- API explorer
-- guides
-- integration pages
-- use-case pages
-- comparison pages
-- changelog
-- official SDK directories:
-  - JavaScript
-  - Python
-  - Go
-  - Ruby
-  - PHP
-
-### Required Questions
-
-- Can a developer get to first successful screenshot quickly?
-- Are sample requests valid right now?
-- Do SDKs expose the same important options as the API?
-- Are examples outdated?
-- Are docs precise about auth, headers, errors, and quota?
-- Are comparison and pricing pages fair and accurate?
-- Are there features documented that the product does not truly expose?
-
----
-
-## Phase 8: Data Model, Persistence, And Consistency Audit
-
-### Objective
-
-Review whether the database layer correctly supports the product and whether the data model creates hidden quality risks.
-
-### Delegate
-
-- one subagent for schema and index review
-- one subagent for transactionality and race conditions
-- one subagent for data retention and cleanup concerns
-
-### Areas To Audit
-
-- profiles
-- API keys
-- subscriptions
-- credit balances
-- credit transactions
-- credit packs
-- auto top-up config
-- screenshots log
-- screenshot cache
-- webhook endpoints
-- webhook deliveries
-
-### Required Questions
-
-- Are indexes sufficient for expected usage?
-- Are uniqueness guarantees correct?
-- Are counters updated safely?
-- Are stale rows cleaned up?
-- Are unused tables or partially wired tables creating confusion?
-- Are schema enums aligned with live product behavior?
-
----
-
-## Phase 9: Reliability, Performance, And Operations Audit
-
-### Objective
-
-Determine how production-ready the system is under normal load, error conditions, and operational stress.
-
-### Delegate
-
-- one subagent for browser runtime reliability
+- one subagent for security and abuse resistance
 - one subagent for performance and resource usage
-- one subagent for observability and operability
+- one subagent for reliability and observability
 
 ### Areas To Audit
 
-- browser launch strategy
-- local vs hosted runtime differences
-- timeout handling
-- screenshot duration tracking
-- cache effectiveness
-- failure logging
-- webhook logging
-- health checks
-- alertability gaps
-- operational visibility for billing and quota issues
+- SSRF exposure
+- unsafe protocols and internal network access
+- resource exhaustion risk
+- unbounded inputs
+- browser launch cost
+- concurrency model
+- timeout design
+- failure reporting
+- logging and metrics
+- debuggability
+- feature interaction complexity
+- code organization
 
 ### Required Questions
 
-- What fails first under load?
-- What is hard to debug in production?
-- Which failures would silently hurt customers?
-- Are there background tasks that can fail without visibility?
-- Are there missing dashboards or alerts that should exist?
+- What are the engine’s biggest architectural weaknesses?
+- What will fail first under real customer load?
+- Which features interact badly with each other?
+- Which parts are hard to extend safely?
+- Where are we blind in production?
 
 ---
 
-## Phase 10: Marketing, Packaging, And Promise Audit
+## Phase 7: Test Quality And Validation Audit
 
 ### Objective
 
-Verify that what the company says it offers matches what the product actually delivers.
+Determine whether tests actually prove engine quality.
 
 ### Delegate
 
-- one subagent for pricing and feature claims
-- one subagent for comparison/use-case pages
-- one subagent for legal/support promise alignment
+- one subagent for unit test quality
+- one subagent for integration test quality
+- one subagent for missing scenario coverage
 
 ### Areas To Audit
 
-- homepage feature claims
-- pricing page claims
-- subscription tier feature lists
-- credit pack messaging
-- status page implication
-- changelog claims
-- blog and integration claims
-- legal pages that mention API keys, auth, or customer obligations
+- unit tests for screenshot options
+- integration tests for live rendering
+- feature combination coverage
+- adversarial input coverage
+- real-world site pattern coverage
+- regression test quality
 
 ### Required Questions
 
-- Are we overselling anything?
-- Are there features presented as available that are only partial?
-- Are plan-tier distinctions real or just marketing copy?
-- Are support claims, reliability implications, and customer expectations aligned?
+- Do tests prove the implementation is robust, or only that code paths exist?
+- Which features have shallow tests?
+- Which features need fixture sites or scenario matrices?
+- Where do we need benchmark-style tests instead of simple assertions?
 
 ---
 
-## Phase 11: Synthesis And Backlog Creation
+## Phase 8: Feature-By-Feature Synthesis
 
 ### Objective
 
-Turn raw audit findings into a prioritized action plan.
+Produce a final quality assessment for each screenshot-engine feature.
 
 ### Delegate
 
-Use one subagent to normalize and cluster findings if the list is large, but the facilitator should own the final synthesis.
+The facilitator should own the final synthesis, but may use one normalization subagent if needed.
 
 ### Final Consolidation Tasks
 
-1. De-duplicate findings from all subagents.
-2. Group by:
-   - broken features
-   - risky features
-   - misleading promises
-   - missing tests
-   - maintainability problems
-   - performance/operability gaps
-3. Rank by severity and customer impact.
-4. Produce a recommended execution order for remediation.
-5. Separate:
-   - immediate fixes
-   - strategic refactors
-   - docs/marketing corrections
-   - postponed enhancements
+For each feature, produce:
 
-### Final Output
+- feature name
+- current implementation summary
+- quality rating
+- biggest weaknesses
+- best-in-class gap
+- recommended next step
 
-The final audit package should include:
+Then produce:
 
-- executive summary
-- feature-by-feature findings index
-- top critical issues
-- top false-promise mismatches
-- missing-test inventory
-- recommended remediation roadmap
-- unresolved questions
+- top 5 weakest engine features
+- top 5 strongest engine features
+- top 5 highest-leverage improvements
+- foundational architectural fixes that improve multiple features at once
 
 ---
 
-## Delegation Template
+## Feature Inventory To Audit
 
-Use a prompt like this when assigning a feature review:
+This is the minimum screenshot-engine feature set to review.
 
-```text
-Review only the assigned scope. Do not review the whole product.
+### Capture Core
 
-Scope:
-- [insert narrow feature family]
+- URL capture
+- raw HTML rendering
+- viewport width
+- viewport height
+- full-page capture
+- PNG
+- JPEG
+- WebP
+- PDF
+- quality control
 
-Objective:
-- determine whether the feature truly works
-- assess implementation quality
-- assess security, billing, DX, and docs implications where relevant
-- identify missing tests and misleading public claims
+### Timing And Stability
 
-Rules:
-- do not edit code
-- gather concrete evidence
-- if runtime verification is needed, follow `.agents/skills/qa-testing/SKILL.md`
-- for browser QA in this repo, use `agent-browser` through a `generalPurpose` workflow
-- check both code and user-visible behavior
-- call out anything partially implemented or only internally scaffolded
+- `waitUntil`
+- `waitForSelector`
+- `delay`
+- font readiness
+- font preloading
 
-Required output:
-- Scope reviewed
-- What was verified
-- Findings by severity
-- Evidence
-- Gaps not verified
-- Recommended follow-up
-```
+### Content Cleanup And Manipulation
+
+- cookie banner removal
+- popup removal
+- element removal
+- ad blocking
+- CSS injection
+- JS injection
+
+### Environment Emulation
+
+- color scheme
+- stealth mode
+- device pixel ratio
+- timezone
+- locale
+- geolocation
+
+### Output Enhancements
+
+- browser mockup
+- iPhone mockup
+- MacBook mockup
+- caching
+
+### Cross-Cutting Engine Concerns
+
+- browser lifecycle
+- navigation safety
+- timeout model
+- error quality
+- logging and observability
+- performance
+- security hardening
 
 ---
 
-## Recommended Execution Order
+## Recommended Delegation Order
 
 Run the audit in this order:
 
-1. Phase 0 setup and feature inventory
-2. Phase 1 public API audit
-3. Phase 2 screenshot engine audit
-4. Phase 3 auth audit
-5. Phase 4 billing and quota audit
-6. Phase 5 webhooks and integrations audit
-7. Phase 6 dashboard and UX audit
-8. Phase 7 docs and SDK audit
-9. Phase 8 data model audit
-10. Phase 9 reliability and operations audit
-11. Phase 10 marketing/promise audit
-12. Phase 11 synthesis and backlog creation
+1. Phase 0 engine mapping
+2. Phase 1 base capture pipeline
+3. Phase 2 timing and readiness
+4. Phase 3 content cleanup and DOM intervention
+5. Phase 4 environment emulation and anti-detection
+6. Phase 5 output enhancement and post-processing
+7. Phase 6 cross-cutting architecture
+8. Phase 7 test quality
+9. Phase 8 synthesis
 
-This order is intentional. The screenshot API, auth, and billing model are the product core. Public promises should be audited only after the real implementation has been mapped and verified.
+This order matters. You need to understand the underlying capture pipeline before judging cleanup, stealth, or caching quality.
+
+---
+
+## Delegation Prompt Template
+
+Use a prompt like this for each feature review:
+
+```text
+Review only the assigned screenshot-engine feature.
+
+Feature:
+- [insert one feature or one tight feature family]
+
+Objective:
+- determine how the feature is currently implemented
+- evaluate how good that implementation is
+- identify strengths, weaknesses, and brittleness
+- compare it to stronger implementation patterns
+- rate it on a 1/5 to 5/5 quality scale
+
+Rules:
+- do not edit code
+- gather evidence from implementation and tests
+- runtime verification is optional and should support implementation critique
+- focus on implementation quality, not generic product commentary
+- identify what a best-in-class solution would add
+
+Required output:
+- Feature reviewed
+- Problem this feature is trying to solve
+- Current implementation strategy
+- Strengths
+- Weaknesses
+- Failure modes and edge cases
+- Comparison to stronger approaches
+- Quality rating
+- Evidence
+- Recommended improvements
+```
 
 ---
 
@@ -777,11 +692,11 @@ This order is intentional. The screenshot API, auth, and billing model are the p
 
 This audit is complete only when:
 
-- every shipped or claimed feature has been reviewed
-- every major route and workflow has evidence-backed findings
-- runtime verification has been performed where applicable
-- docs and pricing claims have been compared against real implementation
-- partial or misleading features have been explicitly flagged
-- a prioritized remediation backlog exists
+- every screenshot-engine feature has been reviewed individually or in a tightly scoped family
+- every review explains the implementation strategy, not just whether the feature exists
+- every review identifies real-world failure modes
+- every review compares the current solution to stronger approaches
+- every feature has a justified quality rating
+- a prioritized improvement backlog exists for the engine
 
-If any feature family was skipped, the audit is not complete.
+If the output does not tell us **how good our implementation is**, the audit is not complete.
