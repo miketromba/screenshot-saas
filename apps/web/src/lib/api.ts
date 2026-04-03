@@ -6,5 +6,6 @@ const baseUrl =
 		? window.location.origin
 		: (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
 
-// @ts-expect-error — elysia type mismatch under bun isolated linker (hoisted is fine)
+// biome-ignore lint/suspicious/noTsIgnore: must use @ts-ignore; type error only exists under bun isolated linker, not hoisted
+// @ts-ignore
 export const api = treaty<App>(baseUrl).api
